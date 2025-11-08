@@ -6,7 +6,7 @@ Suggests hypotheses or trends using reasoning chains.
 import logging
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_llm, INSIGHT_MODEL
+from utils.llm_config import create_insight_llm, INSIGHT_MODEL, TEMPERATURES
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,22 @@ logger = logging.getLogger(__name__)
 class InsightGenerationAgent:
     """Generates insights, hypotheses, and trends from analyzed sources."""
     
-    def __init__(self, model: str = None, temperature: float = 0.7):
-        """Initialize the insight generation agent with LLM via OpenRouter."""
-        self.llm = create_llm(model=model or INSIGHT_MODEL, temperature=temperature)
+    def __init__(self, model: str = None, temperature: float = None):
+        """Initialize the insight generation agent with LLM via OpenRouter.
+        
+        Uses GPT-4o for creative pattern matching and hypothesis generation.
+        Default temperature: 0.7 (higher creativity for trends).
+        """
+        # Use optimized insight LLM with GPT-4o
+        if model or temperature is not None:
+            from utils.llm_config import create_llm
+            self.llm = create_llm(
+                model=model or INSIGHT_MODEL,
+                temperature=temperature if temperature is not None else TEMPERATURES["insight"],
+                max_tokens=1500
+            )
+        else:
+            self.llm = create_insight_llm()
         if not self.llm:
             logger.warning("OpenRouter API key not found. Insights will use mock data.")
     
@@ -97,7 +110,25 @@ REASONING CHAINS:
             }
         
         except Exception as e:
-            logger.error(f"Insight generation failed: {e}")
+            error_msg = str(e)
+            logger.error(f"Insight generation failed: {error_msg}")
+            
+            # Check for authentication errors
+            if "401" in error_msg or "Unauthorized" in error_msg or "User not found" in error_msg:
+                logger.error("=" * 60)
+                logger.error("OPENROUTER API KEY ERROR:")
+                logger.error("The API key is invalid, expired, or not set correctly.")
+                logger.error("")
+                logger.error("Please check:")
+                logger.error("1. OPEN_ROUTER_KEY is set in your .env file")
+                logger.error("2. API key is correct (starts with 'sk-or-')")
+                logger.error("3. API key is active at https://openrouter.ai/keys")
+                logger.error("4. API key has sufficient credits")
+                logger.error("5. No extra quotes or spaces in .env file")
+                logger.error("")
+                logger.error("Get your API key from: https://openrouter.ai/keys")
+                logger.error("=" * 60)
+            
             return self._mock_insights(analysis, query)
     
     def _format_analysis(self, analysis: Dict[str, Any]) -> str:

@@ -6,7 +6,7 @@ Summarizes findings, highlights contradictions, and validates sources.
 import logging
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_llm, ANALYZER_MODEL
+from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,22 @@ logger = logging.getLogger(__name__)
 class CriticalAnalysisAgent:
     """Analyzes retrieved sources for contradictions, credibility, and key findings."""
     
-    def __init__(self, model: str = None, temperature: float = 0.3):
-        """Initialize the analysis agent with LLM via OpenRouter."""
-        self.llm = create_llm(model=model or ANALYZER_MODEL, temperature=temperature)
+    def __init__(self, model: str = None, temperature: float = None):
+        """Initialize the analysis agent with LLM via OpenRouter.
+        
+        Uses Claude 3.5 Sonnet for strong reasoning capabilities.
+        Default temperature: 0.5 (balanced reasoning).
+        """
+        # Use optimized analyzer LLM with Claude 3.5 Sonnet
+        if model or temperature is not None:
+            from utils.llm_config import create_llm
+            self.llm = create_llm(
+                model=model or ANALYZER_MODEL,
+                temperature=temperature if temperature is not None else TEMPERATURES["analyzer"],
+                max_tokens=2000
+            )
+        else:
+            self.llm = create_analyzer_llm()
         if not self.llm:
             logger.warning("OpenRouter API key not found. Analysis will use mock data.")
     

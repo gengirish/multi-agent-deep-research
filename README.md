@@ -64,6 +64,8 @@ The app will open in your browser at `http://localhost:8501`
 ## 📋 Features
 
 - **Multi-Source Retrieval**: Searches web, research papers (ArXiv), and news articles
+  - **Tavily Search API**: AI-optimized web search with structured results, relevance scores, and AI-generated answers
+  - **ArXiv Integration**: Research paper search for academic sources
 - **Critical Analysis**: Identifies contradictions and assesses source credibility
 - **Insight Generation**: Creates hypotheses, trends, and reasoning chains
 - **Structured Reports**: Generates professional markdown reports with citations
@@ -135,9 +137,10 @@ Edit model configuration in `utils/llm_config.py`:
 
 Required:
 - `OPEN_ROUTER_KEY` - OpenRouter API key (get from https://openrouter.ai/keys)
+- `TAVILY_API_KEY` - Tavily Search API key (get from https://tavily.com/)
 
 Optional:
-- `NEWS_API_KEY` - Enhanced news search
+- `NEWS_API_KEY` - Enhanced news search (if not using Tavily)
 
 ## 📝 Usage Example
 

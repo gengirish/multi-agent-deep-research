@@ -6,7 +6,7 @@ Compiles all insights into a structured report.
 import logging
 from typing import Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_llm, REPORT_MODEL
+from utils.llm_config import create_report_llm, REPORT_MODEL, TEMPERATURES
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,22 @@ logger = logging.getLogger(__name__)
 class ReportBuilderAgent:
     """Compiles research findings into a structured markdown report."""
     
-    def __init__(self, model: str = None, temperature: float = 0.3):
-        """Initialize the report builder agent with LLM via OpenRouter."""
-        self.llm = create_llm(model=model or REPORT_MODEL, temperature=temperature)
+    def __init__(self, model: str = None, temperature: float = None):
+        """Initialize the report builder agent with LLM via OpenRouter.
+        
+        Uses Claude 3.5 Haiku for fast, consistent formatting.
+        Default temperature: 0.2 (low creativity, consistent formatting).
+        """
+        # Use optimized report LLM with Claude 3.5 Haiku
+        if model or temperature is not None:
+            from utils.llm_config import create_llm
+            self.llm = create_llm(
+                model=model or REPORT_MODEL,
+                temperature=temperature if temperature is not None else TEMPERATURES["report"],
+                max_tokens=4000
+            )
+        else:
+            self.llm = create_report_llm()
         if not self.llm:
             logger.warning("OpenRouter API key not found. Report will use template.")
     

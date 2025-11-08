@@ -25,6 +25,8 @@ if "workflow" not in st.session_state:
     st.session_state.workflow = ResearchWorkflow()
 if "results" not in st.session_state:
     st.session_state.results = None
+if "current_query" not in st.session_state:
+    st.session_state.current_query = ""
 
 # Title and description
 st.title("🤖 Multi-Agent AI Deep Researcher")
@@ -82,6 +84,7 @@ if st.button("🚀 Start Research", type="primary") or st.session_state.get("dem
         if cached_result:
             st.success("✅ Using cached results")
             st.session_state.results = cached_result
+            st.session_state.current_query = query  # Store query for download filename
             st.rerun()
         else:
             st.warning(f"No cached result for '{demo_key}'. Running live research...")
@@ -126,6 +129,7 @@ if st.button("🚀 Start Research", type="primary") or st.session_state.get("dem
             cache_result(demo_key, result)
             
             st.session_state.results = result
+            st.session_state.current_query = query  # Store query for download filename
             st.session_state.demo_query = None  # Clear demo query
             
         except Exception as e:
@@ -145,10 +149,16 @@ if st.session_state.results:
         st.markdown(result.get("report", "No report generated"))
         
         # Download button
+        # Get query from session state or use default
+        current_query = st.session_state.get("current_query", "research")
+        # Sanitize filename
+        safe_query = current_query[:30].replace(' ', '_').replace('/', '_').replace('\\', '_') if current_query else "research"
+        file_name = f"research_report_{safe_query}.md"
+        
         st.download_button(
             label="📥 Download Report (Markdown)",
             data=result.get("report", ""),
-            file_name=f"research_report_{query[:30].replace(' ', '_')}.md",
+            file_name=file_name,
             mime="text/markdown"
         )
     
