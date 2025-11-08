@@ -28,12 +28,15 @@ Or use the setup script:
 python setup.py
 ```
 
-### Step 3: Configure API Key
+### Step 3: Configure API Keys
 1. Copy `env.example` to `.env` (or create `.env` file)
-2. Get your OpenRouter API key from https://openrouter.ai/keys
+2. Get your API keys:
+   - OpenRouter API key from https://openrouter.ai/keys
+   - Tavily API key from https://tavily.com/
 3. Add to `.env`:
 ```
 OPEN_ROUTER_KEY=sk-or-your-key-here
+TAVILY_API_KEY=your_tavily_key_here
 ```
 
 ### Step 4: Run the Application

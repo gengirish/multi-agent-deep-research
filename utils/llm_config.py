@@ -37,9 +37,21 @@ def create_llm(model: str = None, temperature: float = 0.3, base_url: str = None
     """
     api_key = OPENROUTER_API_KEY
     
+    # Validate API key
     if not api_key or api_key == "your_openrouter_key_here":
         logger.warning("OPEN_ROUTER_KEY not found. LLM will not be available.")
+        logger.warning("Please set OPEN_ROUTER_KEY in your .env file. Get your key from: https://openrouter.ai/keys")
         return None
+    
+    # Clean API key (remove quotes and whitespace)
+    api_key = api_key.strip().strip('"').strip("'")
+    
+    # Validate API key format (OpenRouter keys start with 'sk-or-')
+    if not api_key.startswith('sk-or-'):
+        logger.warning(f"OPEN_ROUTER_KEY format appears invalid. OpenRouter keys should start with 'sk-or-'")
+        logger.warning(f"Current key starts with: {api_key[:10]}...")
+        logger.warning("Please verify your API key at: https://openrouter.ai/keys")
+        # Continue anyway in case format changes
     
     # Use provided model or default
     model_name = model or DEFAULT_MODEL
@@ -62,6 +74,10 @@ def create_llm(model: str = None, temperature: float = 0.3, base_url: str = None
         return llm
     except Exception as e:
         logger.error(f"Failed to initialize LLM: {e}")
+        logger.error("Please check:")
+        logger.error("1. OPEN_ROUTER_KEY is set correctly in .env file")
+        logger.error("2. API key is valid and active at https://openrouter.ai/keys")
+        logger.error("3. API key has sufficient credits")
         return None
 
 

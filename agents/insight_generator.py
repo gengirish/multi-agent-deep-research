@@ -97,7 +97,25 @@ REASONING CHAINS:
             }
         
         except Exception as e:
-            logger.error(f"Insight generation failed: {e}")
+            error_msg = str(e)
+            logger.error(f"Insight generation failed: {error_msg}")
+            
+            # Check for authentication errors
+            if "401" in error_msg or "Unauthorized" in error_msg or "User not found" in error_msg:
+                logger.error("=" * 60)
+                logger.error("OPENROUTER API KEY ERROR:")
+                logger.error("The API key is invalid, expired, or not set correctly.")
+                logger.error("")
+                logger.error("Please check:")
+                logger.error("1. OPEN_ROUTER_KEY is set in your .env file")
+                logger.error("2. API key is correct (starts with 'sk-or-')")
+                logger.error("3. API key is active at https://openrouter.ai/keys")
+                logger.error("4. API key has sufficient credits")
+                logger.error("5. No extra quotes or spaces in .env file")
+                logger.error("")
+                logger.error("Get your API key from: https://openrouter.ai/keys")
+                logger.error("=" * 60)
+            
             return self._mock_insights(analysis, query)
     
     def _format_analysis(self, analysis: Dict[str, Any]) -> str:

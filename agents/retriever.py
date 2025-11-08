@@ -1,14 +1,17 @@
 """
 Contextual Retriever Agent
 Pulls data from research papers, news articles, reports, and APIs.
+Uses Tavily Search API for AI-optimized web search.
 """
 
 import logging
+import os
 from typing import Dict, List, Any
-from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_community.utilities import ArxivAPIWrapper
-import requests
-from bs4 import BeautifulSoup
+from tavily import TavilyClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +21,23 @@ class ContextualRetrieverAgent:
     
     def __init__(self):
         """Initialize retrieval tools."""
-        try:
-            self.web_search = DuckDuckGoSearchRun()
-        except Exception as e:
-            logger.warning(f"DuckDuckGo search not available: {e}")
-            self.web_search = None
+        # Initialize Tavily client
+        tavily_api_key = os.getenv("TAVILY_API_KEY")
+        if tavily_api_key and tavily_api_key != "your_tavily_api_key_here":
+            try:
+                self.tavily = TavilyClient(api_key=tavily_api_key)
+                logger.info("Tavily search initialized successfully")
+            except Exception as e:
+                logger.warning(f"Tavily search not available: {e}")
+                self.tavily = None
+        else:
+            logger.warning("TAVILY_API_KEY not found. Web search will be limited.")
+            self.tavily = None
         
+        # Initialize ArXiv wrapper
         try:
             self.arxiv = ArxivAPIWrapper()
+            logger.info("ArXiv wrapper initialized successfully")
         except Exception as e:
             logger.warning(f"Arxiv wrapper not available: {e}")
             self.arxiv = None
@@ -50,16 +62,21 @@ class ContextualRetrieverAgent:
             "query": query
         }
         
-        # Web search
-        if self.web_search:
+        # Web search using Tavily
+        if self.tavily:
             try:
                 web_query = f"{query} recent"
-                web_results = self.web_search.run(web_query)
-                # Parse results (DuckDuckGo returns string, need to parse)
-                results["web"] = self._parse_web_results(web_results, max_results)
-                logger.info(f"Retriever: Found {len(results['web'])} web sources")
+                tavily_results = self.tavily.search(
+                    query=web_query,
+                    max_results=max_results,
+                    search_depth="advanced",  # Use advanced search for better results
+                    include_answer=True,  # Include AI-generated answer
+                    include_raw_content=False  # Don't include full page content
+                )
+                results["web"] = self._parse_tavily_results(tavily_results, max_results)
+                logger.info(f"Retriever: Found {len(results['web'])} web sources via Tavily")
             except Exception as e:
-                logger.error(f"Web search failed: {e}")
+                logger.error(f"Tavily web search failed: {e}")
                 results["web"] = []
         
         # ArXiv papers
@@ -72,50 +89,62 @@ class ContextualRetrieverAgent:
                 logger.error(f"ArXiv search failed: {e}")
                 results["papers"] = []
         
-        # News search (using web search with news filter)
-        if self.web_search:
+        # News search using Tavily (with news filter)
+        if self.tavily:
             try:
                 news_query = f"{query} news 2024"
-                news_results = self.web_search.run(news_query)
-                results["news"] = self._parse_web_results(news_results, max_results)
-                logger.info(f"Retriever: Found {len(results['news'])} news sources")
+                tavily_news = self.tavily.search(
+                    query=news_query,
+                    max_results=max_results,
+                    search_depth="advanced",
+                    include_answer=True,
+                    include_raw_content=False
+                )
+                results["news"] = self._parse_tavily_results(tavily_news, max_results)
+                logger.info(f"Retriever: Found {len(results['news'])} news sources via Tavily")
             except Exception as e:
-                logger.error(f"News search failed: {e}")
+                logger.error(f"Tavily news search failed: {e}")
                 results["news"] = []
         
         return results
     
-    def _parse_web_results(self, results: str, max_results: int) -> List[Dict[str, str]]:
-        """Parse web search results into structured format."""
+    def _parse_tavily_results(self, tavily_response: Dict[str, Any], max_results: int) -> List[Dict[str, Any]]:
+        """
+        Parse Tavily search results into structured format.
+        Tavily provides pre-structured results perfect for AI agents.
+        """
         parsed = []
-        if not results:
+        if not tavily_response:
             return parsed
         
-        # DuckDuckGo returns a string, split by lines
-        lines = results.split('\n')[:max_results * 2]  # Get more lines to parse
+        # Extract results from Tavily response
+        results_list = tavily_response.get("results", [])
         
-        current_entry = {}
-        for line in lines:
-            line = line.strip()
-            if not line:
-                if current_entry:
-                    parsed.append(current_entry)
-                    current_entry = {}
-                continue
+        for result in results_list[:max_results]:
+            entry = {
+                "title": result.get("title", "No title"),
+                "url": result.get("url", ""),
+                "snippet": result.get("content", ""),  # Tavily provides parsed content
+                "score": result.get("score", 0.0),  # Relevance score
+                "published_date": result.get("published_date", ""),
+            }
             
-            # Try to extract title and snippet
-            if 'http' in line or 'www.' in line:
-                current_entry['url'] = line
-            elif not current_entry.get('title'):
-                current_entry['title'] = line
-            else:
-                current_entry['snippet'] = line
+            # Add raw content if available (for deeper analysis)
+            if result.get("raw_content"):
+                entry["raw_content"] = result.get("raw_content")[:500]  # Limit size
             
-            if len(parsed) >= max_results:
-                break
+            parsed.append(entry)
         
-        if current_entry and len(parsed) < max_results:
-            parsed.append(current_entry)
+        # Include AI-generated answer if available
+        if tavily_response.get("answer"):
+            parsed.insert(0, {
+                "title": "AI-Generated Answer",
+                "url": "",
+                "snippet": tavily_response.get("answer"),
+                "score": 1.0,
+                "published_date": "",
+                "is_answer": True
+            })
         
         return parsed
     

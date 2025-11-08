@@ -60,14 +60,35 @@ def test_api_key():
     """Check API key configuration."""
     print("\nChecking API key...")
     api_key = os.getenv("OPEN_ROUTER_KEY")
-    if api_key and api_key != "your_openrouter_key_here":
-        print("✅ OpenRouter API key configured")
-        print(f"   Using OpenRouter endpoint: https://openrouter.ai/api/v1")
-        return True
-    else:
-        print("⚠️  OpenRouter API key not configured (will use mock responses)")
+    
+    if not api_key:
+        print("❌ OPEN_ROUTER_KEY not found in environment")
+        print("   Please set it in your .env file")
         print("   Get your key from: https://openrouter.ai/keys")
         return False
+    
+    if api_key == "your_openrouter_key_here":
+        print("❌ OPEN_ROUTER_KEY is still set to placeholder value")
+        print("   Please update your .env file with your actual API key")
+        print("   Get your key from: https://openrouter.ai/keys")
+        return False
+    
+    # Clean and validate
+    api_key = api_key.strip().strip('"').strip("'")
+    
+    if not api_key.startswith('sk-or-'):
+        print(f"⚠️  API key format may be invalid")
+        print(f"   Expected to start with 'sk-or-'")
+        print(f"   Your key starts with: {api_key[:10]}...")
+        print("   Please verify at: https://openrouter.ai/keys")
+        return False
+    
+    print("✅ OpenRouter API key configured")
+    print(f"   Key: {api_key[:15]}...")
+    print(f"   Using OpenRouter endpoint: https://openrouter.ai/api/v1")
+    print()
+    print("   To test if the key works, run: python utils/test_api_key.py")
+    return True
 
 def main():
     """Run all tests."""
