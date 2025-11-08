@@ -1,8 +1,12 @@
 import React, { useState } from 'react'
 import { ResearchForm } from './components/ResearchForm'
 import { ResearchResults } from './components/ResearchResults'
-import { LoadingProgress } from './components/LoadingProgress'
+import { ResearchProgress } from './components/ResearchProgress'
+import { useResearchProgress } from './hooks/useResearchProgress'
 import './App.css'
+
+// API URL from environment variable or default to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export interface ResearchData {
   sources: Record<string, any>
@@ -17,8 +21,8 @@ export const App: React.FC = () => {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<ResearchData | null>(null)
-  const [currentStage, setCurrentStage] = useState<string>('')
-  const [progress, setProgress] = useState(0)
+  const { stages, startStage, updateStage, completeStage, errorStage, resetStages } =
+    useResearchProgress()
 
   const handleResearch = async (q: string) => {
     setQuery(q)
@@ -61,11 +65,10 @@ export const App: React.FC = () => {
     setQuery(q)
     setLoading(true)
     setResults(null)
-    setCurrentStage('')
-    setProgress(0)
+    resetStages()
 
     try {
-      const response = await fetch('http://localhost:8000/api/research-stream', {
+      const response = await fetch(`${API_URL}/api/research-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q })
@@ -82,6 +85,17 @@ export const App: React.FC = () => {
         throw new Error('No response body')
       }
 
+      // Stage mapping: Map backend stages to our progress stages
+      const stageMap: Record<string, number> = {
+        'retrieval': 0,  // Retriever
+        'analyzer': 1,   // Analyzer
+        'insight': 2,    // Insight
+        'report': 3,     // Reporter
+      }
+
+      // Track which stages have been started
+      const startedStages = new Set<number>()
+
       while (true) {
         const { done, value } = await reader.read()
         
@@ -95,25 +109,48 @@ export const App: React.FC = () => {
             try {
               const data = JSON.parse(line.slice(6))
               
+              // Handle stage updates
               if (data.stage) {
-                setCurrentStage(data.stage)
-                if (data.message) {
-                  // Update progress
-                }
-                if (data.progress !== undefined) {
-                  setProgress(data.progress)
+                const stageIndex = stageMap[data.stage]
+                
+                if (stageIndex !== undefined) {
+                  // Start the stage if not already started
+                  if (!startedStages.has(stageIndex)) {
+                    startStage(stageIndex)
+                    startedStages.add(stageIndex)
+                  }
+                  
+                  // Update stage with message and progress
+                  if (data.message) {
+                    updateStage(stageIndex, { message: data.message })
+                  }
+                  
+                  if (data.progress !== undefined) {
+                    updateStage(stageIndex, { progress: data.progress })
+                  }
                 }
               }
 
+              // Handle completion
               if (data.stage === 'complete' && data.data) {
+                // Complete all stages
+                completeStage(0, '✓ Retrieved sources')
+                completeStage(1, '✓ Analysis complete')
+                completeStage(2, '✓ Insights generated')
+                completeStage(3, '✓ Report compiled')
+                
                 setResults(data.data)
                 setLoading(false)
-                setCurrentStage('')
-                setProgress(100)
                 return
               }
 
+              // Handle errors
               if (data.stage === 'error') {
+                // Find the last started stage (most likely to be active)
+                if (startedStages.size > 0) {
+                  const lastStartedIndex = Math.max(...Array.from(startedStages))
+                  errorStage(lastStartedIndex, data.message || 'Unknown error')
+                }
                 throw new Error(data.message || 'Unknown error')
               }
             } catch (e) {
@@ -124,6 +161,11 @@ export const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Streaming research failed:', error)
+      // Mark the last stage as error if any stages were started
+      if (stages.some(s => s.status === 'active' || s.status === 'complete')) {
+        const lastActiveIndex = stages.length - 1
+        errorStage(lastActiveIndex, error instanceof Error ? error.message : 'Unknown error')
+      }
       setResults({
         sources: {},
         analysis: {},
@@ -133,8 +175,6 @@ export const App: React.FC = () => {
         error: error instanceof Error ? error.message : 'Unknown error'
       })
       setLoading(false)
-      setCurrentStage('')
-      setProgress(0)
     }
   }
 
@@ -157,10 +197,7 @@ export const App: React.FC = () => {
         />
         
         {loading && (
-          <LoadingProgress 
-            stage={currentStage} 
-            progress={progress}
-          />
+          <ResearchProgress stages={stages} />
         )}
         
         {results && !loading && (
