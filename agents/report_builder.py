@@ -5,7 +5,7 @@ Compiles all insights into a structured report.
 
 import logging
 from typing import Dict, Any
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_llm, REPORT_MODEL
 
 logger = logging.getLogger(__name__)

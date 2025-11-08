@@ -5,7 +5,7 @@ Suggests hypotheses or trends using reasoning chains.
 
 import logging
 from typing import Dict, Any, List
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_llm, INSIGHT_MODEL
 
 logger = logging.getLogger(__name__)
