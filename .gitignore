@@ -1,4 +1,6 @@
 .env
+.env.local
+.env.production
 __pycache__/
 *.pyc
 *.pyo
@@ -20,4 +22,21 @@ venv/
 .venv/
 env/
 ENV/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
 
