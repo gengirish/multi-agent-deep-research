@@ -1,13 +1,35 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface Props {
   onSubmit: (query: string) => void
   loading: boolean
   disabled?: boolean
+  initialQuery?: string
+  onQueryChange?: (query: string) => void
 }
 
-export const ResearchForm: React.FC<Props> = ({ onSubmit, loading, disabled = false }) => {
-  const [query, setQuery] = useState('')
+export const ResearchForm: React.FC<Props> = ({ 
+  onSubmit, 
+  loading, 
+  disabled = false,
+  initialQuery = '',
+  onQueryChange
+}) => {
+  const [query, setQuery] = useState(initialQuery)
+
+  // Update query when initialQuery changes (from sidebar demo queries)
+  useEffect(() => {
+    if (initialQuery) {
+      setQuery(initialQuery)
+    }
+  }, [initialQuery])
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value)
+    if (onQueryChange) {
+      onQueryChange(value)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +48,7 @@ export const ResearchForm: React.FC<Props> = ({ onSubmit, loading, disabled = fa
         id="query-input"
         type="text"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => handleQueryChange(e.target.value)}
         placeholder="e.g., Latest developments in quantum computing 2024"
         disabled={loading || disabled}
         aria-busy={loading}

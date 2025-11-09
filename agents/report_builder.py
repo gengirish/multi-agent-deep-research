@@ -81,7 +81,7 @@ Discussion of any contradictory information and how it was validated.
 Synthesized insights, hypotheses, and trends identified.
 
 ## Sources Cited
-List of all sources with URLs in proper citation format.
+List of all sources with URLs in proper citation format. Format sources as markdown links: [Title](URL)
 
 Make the report professional, clear, and well-formatted in markdown.
 """)
@@ -226,9 +226,11 @@ Make the report professional, clear, and well-formatted in markdown.
             all_sources.extend([(s.get("title", "No title"), s.get("url", "")) for s in sources["news"]])
         
         for i, (title, url) in enumerate(all_sources, 1):
-            report += f"{i}. {title}\n"
             if url:
-                report += f"   {url}\n"
+                # Create markdown link: [Title](URL)
+                report += f"{i}. [{title}]({url})\n"
+            else:
+                report += f"{i}. {title}\n"
             report += "\n"
         
         return report

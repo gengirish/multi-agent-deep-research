@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { ResearchForm } from './components/ResearchForm'
 import { ResearchResults } from './components/ResearchResults'
-import { LoadingProgress } from './components/LoadingProgress'
+import { ResearchProgress } from './components/ResearchProgress'
+import { Sidebar } from './components/Sidebar'
+import { useResearchProgress } from './hooks/useResearchProgress'
 import './App.css'
 
 // API URL from environment variable or default to localhost
@@ -20,52 +22,22 @@ export const App: React.FC = () => {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<ResearchData | null>(null)
-  const [currentStage, setCurrentStage] = useState<string>('')
-  const [progress, setProgress] = useState(0)
+  const [demoMode, setDemoMode] = useState(false)
+  const [initialQuery, setInitialQuery] = useState<string>('')
+  const { stages, startStage, updateStage, completeStage, errorStage, resetStages } =
+    useResearchProgress()
 
-  const handleResearch = async (q: string) => {
-    setQuery(q)
-    setLoading(true)
-    setResults(null)
-    setCurrentStage('')
-    setProgress(0)
-
-    try {
-      const response = await fetch(`${API_URL}/api/research`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q })
-      })
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setResults(data)
-    } catch (error) {
-      console.error('Research failed:', error)
-      setResults({
-        sources: {},
-        analysis: {},
-        insights: {},
-        report: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-    } finally {
-      setLoading(false)
-      setCurrentStage('')
-      setProgress(0)
-    }
+  const handleQuerySelect = (selectedQuery: string) => {
+    setInitialQuery(selectedQuery)
+    // Auto-submit the query
+    handleStreamingResearch(selectedQuery)
   }
 
   const handleStreamingResearch = async (q: string) => {
     setQuery(q)
     setLoading(true)
     setResults(null)
-    setCurrentStage('')
-    setProgress(0)
+    resetStages()
 
     try {
       const response = await fetch(`${API_URL}/api/research-stream`, {
@@ -85,6 +57,17 @@ export const App: React.FC = () => {
         throw new Error('No response body')
       }
 
+      // Stage mapping: Map backend stages to our progress stages
+      const stageMap: Record<string, number> = {
+        'retrieval': 0,  // Retriever
+        'analyzer': 1,   // Analyzer
+        'insight': 2,    // Insight
+        'report': 3,     // Reporter
+      }
+
+      // Track which stages have been started
+      const startedStages = new Set<number>()
+
       while (true) {
         const { done, value } = await reader.read()
         
@@ -98,25 +81,48 @@ export const App: React.FC = () => {
             try {
               const data = JSON.parse(line.slice(6))
               
+              // Handle stage updates
               if (data.stage) {
-                setCurrentStage(data.stage)
-                if (data.message) {
-                  // Update progress
-                }
-                if (data.progress !== undefined) {
-                  setProgress(data.progress)
+                const stageIndex = stageMap[data.stage]
+                
+                if (stageIndex !== undefined) {
+                  // Start the stage if not already started
+                  if (!startedStages.has(stageIndex)) {
+                    startStage(stageIndex)
+                    startedStages.add(stageIndex)
+                  }
+                  
+                  // Update stage with message and progress
+                  if (data.message) {
+                    updateStage(stageIndex, { message: data.message })
+                  }
+                  
+                  if (data.progress !== undefined) {
+                    updateStage(stageIndex, { progress: data.progress })
+                  }
                 }
               }
 
+              // Handle completion
               if (data.stage === 'complete' && data.data) {
+                // Complete all stages
+                completeStage(0, '✓ Retrieved sources')
+                completeStage(1, '✓ Analysis complete')
+                completeStage(2, '✓ Insights generated')
+                completeStage(3, '✓ Report compiled')
+                
                 setResults(data.data)
                 setLoading(false)
-                setCurrentStage('')
-                setProgress(100)
                 return
               }
 
+              // Handle errors
               if (data.stage === 'error') {
+                // Find the last started stage (most likely to be active)
+                if (startedStages.size > 0) {
+                  const lastStartedIndex = Math.max(...Array.from(startedStages))
+                  errorStage(lastStartedIndex, data.message || 'Unknown error')
+                }
                 throw new Error(data.message || 'Unknown error')
               }
             } catch (e) {
@@ -127,6 +133,11 @@ export const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Streaming research failed:', error)
+      // Mark the last stage as error if any stages were started
+      if (stages.some(s => s.status === 'active' || s.status === 'complete')) {
+        const lastActiveIndex = stages.length - 1
+        errorStage(lastActiveIndex, error instanceof Error ? error.message : 'Unknown error')
+      }
       setResults({
         sources: {},
         analysis: {},
@@ -136,16 +147,24 @@ export const App: React.FC = () => {
         error: error instanceof Error ? error.message : 'Unknown error'
       })
       setLoading(false)
-      setCurrentStage('')
-      setProgress(0)
     }
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
   return (
-    <div className="app-container" role="main">
+    <div className={`app-container ${sidebarOpen ? 'sidebar-open' : ''}`} role="main">
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
+      
+      <Sidebar
+        onQuerySelect={handleQuerySelect}
+        demoMode={demoMode}
+        onDemoModeChange={setDemoMode}
+        isOpen={sidebarOpen}
+        onToggle={setSidebarOpen}
+      />
       
       <header className="app-header" role="banner">
         <h1>🤖 Multi-Agent AI Deep Researcher</h1>
@@ -157,13 +176,12 @@ export const App: React.FC = () => {
           onSubmit={handleStreamingResearch} 
           loading={loading}
           disabled={loading}
+          initialQuery={initialQuery}
+          onQueryChange={setInitialQuery}
         />
         
         {loading && (
-          <LoadingProgress 
-            stage={currentStage} 
-            progress={progress}
-          />
+          <ResearchProgress stages={stages} />
         )}
         
         {results && !loading && (

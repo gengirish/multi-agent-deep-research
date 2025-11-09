@@ -7,6 +7,7 @@ import streamlit as st
 import logging
 from orchestration.coordinator import ResearchWorkflow
 from utils.demo_cache import get_cached_result, cache_result
+from streamlit_tts_component import text_to_speech_component
 import time
 
 # Configure logging
@@ -146,7 +147,15 @@ if st.session_state.results:
     
     with tab1:
         st.markdown("## Research Report")
-        st.markdown(result.get("report", "No report generated"))
+        
+        # Text-to-Speech Component
+        report_text = result.get("report", "No report generated")
+        if report_text and report_text != "No report generated":
+            st.markdown("### 🔊 Listen to Report")
+            text_to_speech_component(report_text, "Listen to Report")
+            st.markdown("---")
+        
+        st.markdown(report_text)
         
         # Download button
         # Get query from session state or use default
