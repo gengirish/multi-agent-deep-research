@@ -19,7 +19,7 @@ export interface ResearchData {
 }
 
 export const App: React.FC = () => {
-  const [query, setQuery] = useState('')
+  const [, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<ResearchData | null>(null)
   const [demoMode, setDemoMode] = useState(false)
