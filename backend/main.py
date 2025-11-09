@@ -61,8 +61,20 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Initialize workflow
-workflow = ResearchWorkflow()
+# Initialize workflow lazily to prevent crashes on startup
+# Workflow will be initialized on first use
+_workflow_instance = None
+
+def get_workflow():
+    """Get or create workflow instance (lazy initialization)."""
+    global _workflow_instance
+    if _workflow_instance is None:
+        try:
+            _workflow_instance = ResearchWorkflow()
+        except Exception as e:
+            logger.error(f"Failed to initialize workflow: {e}")
+            raise
+    return _workflow_instance
 
 # Request/Response models
 class ResearchRequest(BaseModel):
@@ -107,8 +119,8 @@ async def research(req: ResearchRequest):
     logger.info(f"Research request received: {req.query}")
     
     try:
-        # Run workflow
-        result = workflow.run(req.query)
+        # Run workflow (lazy initialization)
+        result = get_workflow().run(req.query)
         
         # Format response
         return ResearchResponse(
@@ -153,7 +165,7 @@ async def research_stream(req: ResearchRequest):
             # Run full workflow in background
             # We'll simulate stages but run the full workflow
             full_result = await asyncio.to_thread(
-                lambda: workflow.run(req.query)
+                lambda: get_workflow().run(req.query)
             )
             
             # Extract results
@@ -205,6 +217,14 @@ async def research_voice(audio_data: bytes = None):
         "status": "success",
         "note": "Currently using Web Speech API in frontend. Backend integration pending."
     }
+
+# Startup event handler
+@app.on_event("startup")
+async def startup_event():
+    """Log startup and verify app is ready."""
+    logger.info("FastAPI app starting up...")
+    logger.info("App is ready to accept requests")
+    # Don't initialize workflow here - let it initialize lazily on first use
 
 # Root endpoint
 @app.get("/")
