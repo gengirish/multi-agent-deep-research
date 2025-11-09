@@ -28,6 +28,10 @@ if "results" not in st.session_state:
     st.session_state.results = None
 if "current_query" not in st.session_state:
     st.session_state.current_query = ""
+if "input_mode" not in st.session_state:
+    st.session_state.input_mode = "text"  # "text" or "voice"
+if "voice_transcript" not in st.session_state:
+    st.session_state.voice_transcript = ""
 
 # Title and description
 st.title("🤖 Multi-Agent AI Deep Researcher")
@@ -60,12 +64,74 @@ with st.sidebar:
             st.session_state.demo_key = key
             st.rerun()
 
-# Main input
-query = st.text_input(
-    "What would you like to research?",
-    value=st.session_state.get("demo_query", ""),
-    placeholder="e.g., Latest developments in quantum computing 2024"
+# Input Mode Toggle
+st.markdown("### Choose Input Method")
+input_mode = st.radio(
+    "Select input method:",
+    ["⌨️ Type", "🎤 Speak"],
+    horizontal=True,
+    index=0 if st.session_state.input_mode == "text" else 1,
+    key="input_mode_radio"
 )
+
+# Update session state
+st.session_state.input_mode = "text" if input_mode == "⌨️ Type" else "voice"
+
+# Main input based on selected mode
+query = ""  # Initialize query variable
+
+if st.session_state.input_mode == "text":
+    # Text Input Mode
+    query = st.text_input(
+        "What would you like to research?",
+        value=st.session_state.get("demo_query", st.session_state.get("voice_transcript", "")),
+        placeholder="e.g., Latest developments in quantum computing 2024",
+        key="text_query_input"
+    )
+    
+    # Clear voice transcript when switching to text mode
+    if st.session_state.voice_transcript and not query:
+        st.session_state.voice_transcript = ""
+        
+elif st.session_state.input_mode == "voice":
+    # Voice Input Mode
+    st.markdown("**🎤 Voice Input Mode**")
+    st.info("💡 **Tip:** Record your research query using the audio recorder below. For best voice recognition, use the React version of the app.")
+    
+    # Audio input
+    audio_data = st.audio_input("Record your research query:", key="voice_audio_input")
+    
+    if audio_data:
+        # Display audio player
+        st.audio(audio_data, format="audio/wav")
+        
+        # Note about processing
+        st.warning("⚠️ **Note:** Audio transcription requires additional setup. For now, please use the text input below or switch to the React version for full voice support.")
+        
+        # Option to manually enter what was said
+        st.markdown("**Enter what you said:**")
+        voice_text = st.text_input(
+            "Type your query:",
+            value=st.session_state.get("voice_transcript", ""),
+            placeholder="Enter the text you spoke...",
+            key="voice_text_input"
+        )
+        
+        if voice_text:
+            st.session_state.voice_transcript = voice_text
+            query = voice_text
+    else:
+        # Show text input as fallback
+        st.markdown("**Or type your query:**")
+        query = st.text_input(
+            "Enter your research query:",
+            value=st.session_state.get("voice_transcript", ""),
+            placeholder="e.g., Latest developments in quantum computing 2024",
+            key="voice_fallback_input"
+        )
+        
+        if query:
+            st.session_state.voice_transcript = query
 
 # Demo mode checkbox
 if demo_mode:
