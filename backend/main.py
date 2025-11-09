@@ -13,6 +13,7 @@ import os
 import json
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,11 +24,23 @@ from orchestration.coordinator import ResearchWorkflow
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for startup and shutdown."""
+    # Startup
+    logger.info("FastAPI app starting up...")
+    logger.info("App is ready to accept requests")
+    # Don't initialize workflow here - let it initialize lazily on first use
+    yield
+    # Shutdown (if needed)
+    logger.info("FastAPI app shutting down...")
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Multi-Agent AI Deep Researcher API",
     description="API for multi-agent research system",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Enable CORS for React frontend
@@ -36,8 +49,8 @@ allowed_origins_str = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"
 )
-# Split and strip whitespace from each origin
-allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+# Split and strip whitespace and trailing slashes from each origin
+allowed_origins = [origin.strip().rstrip('/') for origin in allowed_origins_str.split(",") if origin.strip()]
 
 # Add Vercel production URL if provided
 vercel_url = os.getenv("VERCEL_URL")
@@ -218,13 +231,6 @@ async def research_voice(audio_data: bytes = None):
         "note": "Currently using Web Speech API in frontend. Backend integration pending."
     }
 
-# Startup event handler
-@app.on_event("startup")
-async def startup_event():
-    """Log startup and verify app is ready."""
-    logger.info("FastAPI app starting up...")
-    logger.info("App is ready to accept requests")
-    # Don't initialize workflow here - let it initialize lazily on first use
 
 # Root endpoint
 @app.get("/")
