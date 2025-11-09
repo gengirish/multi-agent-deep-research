@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ResearchData } from '../App'
+import { TextToSpeechControls } from './TextToSpeechControls'
 import './ResearchResults.css'
 
 interface Props {
@@ -526,6 +527,14 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Text-to-Speech Controls */}
+        <div className="report-tts-section">
+          <TextToSpeechControls
+            text={data.report || ''}
+            title="Listen to Report"
+          />
         </div>
 
         <div className="report-content">

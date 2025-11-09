@@ -469,6 +469,11 @@
   flex-shrink: 0;
 }
 
+.report-tts-section {
+  padding: 0 24px 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 .report-content {
   padding: 24px;
   max-height: 600px;
