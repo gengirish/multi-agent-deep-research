@@ -173,6 +173,25 @@ async def research_stream(req: ResearchRequest):
         }
     )
 
+# Voice input endpoint (for future Wispr Flow integration)
+@app.post("/api/research-voice")
+async def research_voice(audio_data: bytes = None):
+    """
+    Accept voice input and convert to text query.
+    Currently a placeholder for future Wispr Flow integration.
+    
+    In production, this would:
+    1. Accept audio data from frontend
+    2. Use Wispr Flow API or Web Speech API to convert to text
+    3. Return the transcribed query
+    """
+    logger.info("Voice endpoint called (placeholder)")
+    return {
+        "message": "Voice endpoint ready for Wispr Flow integration",
+        "status": "success",
+        "note": "Currently using Web Speech API in frontend. Backend integration pending."
+    }
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -184,6 +203,7 @@ async def root():
             "health": "/api/health",
             "research": "/api/research",
             "research_stream": "/api/research-stream",
+            "research_voice": "/api/research-voice",
             "demo_queries": "/api/demo-queries"
         }
     }
