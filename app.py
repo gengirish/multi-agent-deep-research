@@ -3,11 +3,17 @@ Streamlit UI for Multi-Agent AI Deep Researcher
 Hackathon Demo Application
 """
 
+from langchain_chroma import Chroma
 import streamlit as st
 import logging
 from orchestration.coordinator import ResearchWorkflow
 from utils.demo_cache import get_cached_result, cache_result
 import time
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+import tempfile, os
+from langchain_community.document_loaders import PyPDFLoader, CSVLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +25,41 @@ st.set_page_config(
     page_icon="🤖",
     layout="wide"
 )
+
+def ingest_documents(uploaded_files):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    documents = []
+
+    for uploaded_file in uploaded_files:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(uploaded_file.getvalue())
+            file_path = tmp.name
+
+        if uploaded_file.name.endswith(".pdf"):
+            loader = PyPDFLoader(file_path)
+            docs = loader.load()
+        elif uploaded_file.name.endswith(".csv"):
+            loader = CSVLoader(file_path)
+            docs = loader.load()
+        else:
+            st.warning(f"Unsupported file type: {uploaded_file.name}")
+            continue
+
+        for d in docs:
+            for chunk in text_splitter.split_text(d.page_content):
+                documents.append(Document(page_content=chunk))
+
+    
+    # Create embeddings and store in Chroma (local folder)
+    embeddings = OpenAIEmbeddings(
+         model=os.getenv("EMBEDDING_MODEL", "openrouter/text-embedding-3-large"),        # You can change to another embedding model
+         openai_api_key=os.getenv("OPEN_ROUTER_KEY"),
+         openai_api_base=os.getenv("OPENAI_BASE_URL") or "https://openrouter.ai/api/v1"
+    )
+    vectordb = Chroma.from_documents(documents, embeddings, persist_directory="./chroma_store")    
+   
+    
+    return (len(documents),vectordb)
 
 # Initialize session state
 if "workflow" not in st.session_state:
@@ -58,7 +99,19 @@ with st.sidebar:
             st.session_state.demo_query = query
             st.session_state.demo_key = key
             st.rerun()
+            
+uploaded_files = st.file_uploader("Upload Files", type=["csv", "pdf"], accept_multiple_files=True)
 
+gvectordatabase = None
+
+if uploaded_files:    
+    count,vectordatabase = ingest_documents(uploaded_files)
+    gvectordatabase=vectordatabase
+    st.success(f"✅ {count} document chunks ingested and stored in vector database successfully!")
+else:    
+    st.info("ℹ️ Upload CSV or PDF files to enhance research with your own documents.")
+
+            
 # Main input
 query = st.text_input(
     "What would you like to research?",
@@ -120,7 +173,7 @@ if st.button("🚀 Start Research", type="primary") or st.session_state.get("dem
         
         # Run workflow
         try:
-            result = st.session_state.workflow.run(query)
+            result = st.session_state.workflow.run(query,gvectordatabase)
             progress_bar.progress(100)
             status_text.success("✅ Research complete!")
             
@@ -167,7 +220,7 @@ if st.session_state.results:
         
         sources = result.get("sources", {})
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.subheader("🌐 Web Sources")
@@ -199,6 +252,13 @@ if st.session_state.results:
                         st.write(f"**Snippet:** {news.get('snippet', 'No snippet')}")
             else:
                 st.info("No news sources found")
+        
+        with col4:
+            st.subheader("📄 RAG Context Documents")
+            if sources.get("rag_context"):
+                st.text_area("RAG Context", value=sources["rag_context"][:5000], height=300)
+            else:
+                st.info("No RAG context available")
     
     with tab3:
         st.markdown("## Analysis Results")

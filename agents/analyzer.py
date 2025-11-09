@@ -139,6 +139,11 @@ KEY CLAIMS:
                 formatted.append(f"   URL: {news.get('url', 'No URL')}")
                 formatted.append("")
         
+        if sources.get("rag_context"):
+            formatted.append("RAG CONTEXT DOCUMENTS:")
+            formatted.append(sources["rag_context"])  # Limit to first 2000 chars
+            formatted.append("")
+        
         return "\n".join(formatted)
     
     def _parse_analysis(self, analysis_text: str) -> Dict[str, Any]:

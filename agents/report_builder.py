@@ -121,6 +121,10 @@ Make the report professional, clear, and well-formatted in markdown.
             formatted.append("News Sources:")
             for news in sources["news"]:
                 formatted.append(f"- {news.get('title', 'No title')}: {news.get('url', 'No URL')}")
+                
+        if sources.get("rag_context"):
+            formatted.append("RAG Context Documents:")
+            formatted.append(sources["rag_context"])
         
         formatted.append("\n")
         

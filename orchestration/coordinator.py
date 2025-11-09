@@ -10,6 +10,7 @@ from agents.retriever import ContextualRetrieverAgent
 from agents.analyzer import CriticalAnalysisAgent
 from agents.insight_generator import InsightGenerationAgent
 from agents.report_builder import ReportBuilderAgent
+from langchain_chroma import Chroma
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 class ResearchState(TypedDict):
     """State schema for the research workflow."""
     query: str
+    gvectordatabase: Chroma
     sources: Dict[str, Any]
     analysis: Dict[str, Any]
     insights: Dict[str, Any]
@@ -67,7 +69,7 @@ class ResearchWorkflow:
         """Retriever agent node."""
         try:
             logger.info(f"Workflow: Running Retriever for query: {state['query']}")
-            sources = self.retriever.retrieve(state["query"])
+            sources = self.retriever.retrieve(state["query"],state["gvectordatabase"])
             state["sources"] = sources
             logger.info("Workflow: Retriever completed")
         except Exception as e:
@@ -133,7 +135,7 @@ class ResearchWorkflow:
             state["report"] = f"# Error\n\nFailed to generate report: {str(e)}"
         return state
     
-    def run(self, query: str) -> Dict[str, Any]:
+    def run(self, query: str,gvectordatabase:Chroma) -> Dict[str, Any]:
         """
         Execute the research workflow.
         
@@ -147,6 +149,7 @@ class ResearchWorkflow:
         
         initial_state: ResearchState = {
             "query": query,
+            "gvectordatabase":gvectordatabase,
             "sources": {},
             "analysis": {},
             "insights": {},

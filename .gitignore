@@ -20,4 +20,6 @@ venv/
 .venv/
 env/
 ENV/
+chroma_store/
+gvectordb/
 

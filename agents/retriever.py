@@ -10,6 +10,8 @@ from typing import Dict, List, Any
 from langchain_community.utilities import ArxivAPIWrapper
 from tavily import TavilyClient
 from dotenv import load_dotenv
+from langchain_chroma import Chroma
+import asyncio
 
 load_dotenv()
 
@@ -17,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContextualRetrieverAgent:
-    """Retrieves information from multiple sources: web, papers, and news."""
+    """Retrieves information from multiple sources: web, papers, news and rag."""
     
     def __init__(self):
         """Initialize retrieval tools."""
@@ -42,7 +44,7 @@ class ContextualRetrieverAgent:
             logger.warning(f"Arxiv wrapper not available: {e}")
             self.arxiv = None
     
-    def retrieve(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+    def retrieve(self, query: str,gvectordatabase: Chroma, max_results: int = 5) -> Dict[str, Any]:
         """
         Retrieve information from multiple sources.
         
@@ -59,7 +61,8 @@ class ContextualRetrieverAgent:
             "web": [],
             "papers": [],
             "news": [],
-            "query": query
+            "query": query,
+            "rag_context":[]
         }
         
         # Web search using Tavily
@@ -105,6 +108,18 @@ class ContextualRetrieverAgent:
             except Exception as e:
                 logger.error(f"Tavily news search failed: {e}")
                 results["news"] = []
+                
+        if gvectordatabase:
+            try:
+                retriever = gvectordatabase.as_retriever(search_kwargs={"k": max_results})
+                retrieved_docs = asyncio.run(retriever.ainvoke(query))
+                #retrieved_docs = retriever.ainvoke(query)
+                context_text = "\n\n".join([doc.page_content for doc in retrieved_docs])
+                results["rag_context"] = context_text
+                logger.info(f"Retriever: Retrieved {len(retrieved_docs)} documents from vector store")
+            except Exception as e:
+                logger.error(f"Vector store retrieval failed: {e}")
+                results["rag_context"] = []
         
         return results
     
