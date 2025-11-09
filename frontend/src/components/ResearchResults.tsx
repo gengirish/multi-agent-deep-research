@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ResearchData } from '../App'
 import { TextToSpeechControls } from './TextToSpeechControls'
+import { ResearchMetrics } from './ResearchMetrics'
 import './ResearchResults.css'
 
 interface Props {
@@ -372,6 +373,9 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
 
   return (
     <section className="results-container" role="region" aria-label="Research results">
+      {/* Research Metrics */}
+      <ResearchMetrics data={data} />
+      
       {/* Floating Stats Bar */}
       <div className="stats-bar" role="complementary" aria-label="Research statistics">
         <div className="stat-item">

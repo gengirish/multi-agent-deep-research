@@ -133,8 +133,12 @@ async def research_stream(req: ResearchRequest):
     async def event_generator():
         try:
             # Stage 1: Retrieval
-            yield f"data: {json.dumps({'stage': 'retrieval', 'message': '🔍 Retrieving sources from web, papers, and news...', 'progress': 25})}\n\n"
+            yield f"data: {json.dumps({'stage': 'retrieval', 'message': '🔍 Retrieving sources from web, papers, and news...', 'progress': 20})}\n\n"
             await asyncio.sleep(0.5)
+            
+            # Stage 2: Enrichment
+            yield f"data: {json.dumps({'stage': 'enrichment', 'message': '📊 Enriching sources with metadata and sentiment...', 'progress': 40})}\n\n"
+            await asyncio.sleep(0.3)
             
             # Run full workflow in background
             # We'll simulate stages but run the full workflow
