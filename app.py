@@ -111,8 +111,7 @@ with st.sidebar:
 uploaded_files = st.file_uploader("Upload Files", type=["csv", "pdf"], accept_multiple_files=True)
 
 # Ingest documents if uploaded
-print(st.session_state.vectordatabase)
-print(not st.session_state.vectordatabase)
+
 if  not st.session_state.vectordatabase:
     if uploaded_files:
         count,vectordatabase = ingest_documents(uploaded_files)

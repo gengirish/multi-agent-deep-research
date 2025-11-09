@@ -120,6 +120,7 @@ class ContextualRetrieverAgent:
             try:
                 paper_results = self.arxiv.run(query)
                 results["papers"] = self._parse_arxiv_results(paper_results, max_results)
+                print(">>>>>>>>>>>>>>>>>>>")
                 logger.info(f"Retriever: Found {len(results['papers'])} papers")
             except Exception as e:
                 logger.error(f"ArXiv search failed: {e}")
