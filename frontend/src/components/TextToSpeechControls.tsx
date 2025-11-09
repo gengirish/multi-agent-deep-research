@@ -10,7 +10,6 @@ interface Props {
 
 export const TextToSpeechControls: React.FC<Props> = ({
   text,
-  title = 'Listen to Summary',
 }) => {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0)

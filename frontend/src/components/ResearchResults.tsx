@@ -468,7 +468,7 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
         >
           <div className="insights-list">
             {insightsList.length > 0 ? (
-              insightsList.map((insight, idx) => (
+              insightsList.map((insight: any, idx: number) => (
                 <div key={idx} className="insight-item">
                   <div className="insight-number">{idx + 1}</div>
                   <p className="insight-text">{String(insight)}</p>
