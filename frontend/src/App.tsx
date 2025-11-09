@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ResearchForm } from './components/ResearchForm'
 import { ResearchResults } from './components/ResearchResults'
 import { ResearchProgress } from './components/ResearchProgress'
+import { Sidebar } from './components/Sidebar'
 import { useResearchProgress } from './hooks/useResearchProgress'
 import './App.css'
 
@@ -21,44 +22,15 @@ export const App: React.FC = () => {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<ResearchData | null>(null)
+  const [demoMode, setDemoMode] = useState(false)
+  const [initialQuery, setInitialQuery] = useState<string>('')
   const { stages, startStage, updateStage, completeStage, errorStage, resetStages } =
     useResearchProgress()
 
-  const handleResearch = async (q: string) => {
-    setQuery(q)
-    setLoading(true)
-    setResults(null)
-    setCurrentStage('')
-    setProgress(0)
-
-    try {
-      const response = await fetch('http://localhost:8000/api/research', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q })
-      })
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setResults(data)
-    } catch (error) {
-      console.error('Research failed:', error)
-      setResults({
-        sources: {},
-        analysis: {},
-        insights: {},
-        report: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-    } finally {
-      setLoading(false)
-      setCurrentStage('')
-      setProgress(0)
-    }
+  const handleQuerySelect = (selectedQuery: string) => {
+    setInitialQuery(selectedQuery)
+    // Auto-submit the query
+    handleStreamingResearch(selectedQuery)
   }
 
   const handleStreamingResearch = async (q: string) => {
@@ -178,11 +150,21 @@ export const App: React.FC = () => {
     }
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
   return (
-    <div className="app-container" role="main">
+    <div className={`app-container ${sidebarOpen ? 'sidebar-open' : ''}`} role="main">
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
+      
+      <Sidebar
+        onQuerySelect={handleQuerySelect}
+        demoMode={demoMode}
+        onDemoModeChange={setDemoMode}
+        isOpen={sidebarOpen}
+        onToggle={setSidebarOpen}
+      />
       
       <header className="app-header" role="banner">
         <h1>🤖 Multi-Agent AI Deep Researcher</h1>
@@ -194,6 +176,8 @@ export const App: React.FC = () => {
           onSubmit={handleStreamingResearch} 
           loading={loading}
           disabled={loading}
+          initialQuery={initialQuery}
+          onQueryChange={setInitialQuery}
         />
         
         {loading && (
