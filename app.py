@@ -108,19 +108,20 @@ with st.sidebar:
             st.rerun()
             
             
-uploaded_files = st.file_uploader("Upload Files", type=["csv", "pdf"], accept_multiple_files=True)
+
 
 # Ingest documents if uploaded
+uploaded_files = st.file_uploader("Upload Files", type=["csv", "pdf"], accept_multiple_files=True)
 
-if  not st.session_state.vectordatabase:
-    if uploaded_files:
+if uploaded_files:
+    if st.button("📥 Ingest and Store Documents"):
         count,vectordatabase = ingest_documents(uploaded_files)
         st.session_state.vectordatabase=vectordatabase
-        st.success(f"✅ {count} document chunks ingested and stored in vector database successfully!")        
+        st.success(f"✅ {count} document chunks ingested and stored in vector database successfully!")
 else:
-    if 'vectordatabase' in st.session_state:
-        st.session_state.vectordatabase=None
-        st.info("ℹ️ Upload CSV or PDF files to enhance research with your own documents.")
+    st.info("Please upload documents to enable RAG context retrieval.")    
+    st.session_state.vectordatabase=None  
+
         
 
             
