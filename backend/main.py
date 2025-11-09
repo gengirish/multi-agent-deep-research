@@ -248,10 +248,7 @@ async def root():
         }
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    # Disable reload in production
-    reload = os.getenv("ENVIRONMENT", "development") == "development"
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=reload)
+# Removed if __name__ == "__main__" block
+# Railway should use Procfile: uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# This prevents Railway from using python main.py which causes the uvicorn warning
 
