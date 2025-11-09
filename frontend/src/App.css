@@ -59,6 +59,28 @@
   margin-bottom: 1rem;
 }
 
+.input-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  width: 100%;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.divider-text {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .submit-button {
   width: 100%;
   margin-top: 1rem;
