@@ -58,7 +58,7 @@ export const ResearchForm: React.FC<Props> = ({
       </label>
       
       {/* Input Mode Toggle */}
-      <div className="input-mode-toggle" role="tablist" aria-label="Input method selection">
+      <div className="input-mode-toggle" role="toolbar" aria-label="Input method selection">
         <button
           type="button"
           className={`mode-button ${inputMode === 'text' ? 'active' : ''}`}
