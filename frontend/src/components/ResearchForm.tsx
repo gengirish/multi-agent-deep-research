@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { VoiceInput } from './VoiceInput'
 
 interface Props {
   onSubmit: (query: string) => void
@@ -44,6 +45,22 @@ export const ResearchForm: React.FC<Props> = ({
         What would you like to research?
       </label>
       
+      {/* Voice Input Section */}
+      <VoiceInput 
+        onVoiceCapture={(text) => {
+          handleQueryChange(text)
+        }}
+        disabled={loading || disabled}
+      />
+      
+      {/* Divider */}
+      <div className="input-divider">
+        <span className="divider-line"></span>
+        <span className="divider-text">or</span>
+        <span className="divider-line"></span>
+      </div>
+      
+      {/* Text Input */}
       <input
         id="query-input"
         type="text"
