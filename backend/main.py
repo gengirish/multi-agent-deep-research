@@ -32,23 +32,33 @@ app = FastAPI(
 
 # Enable CORS for React frontend
 # Get allowed origins from environment or use defaults
-allowed_origins = os.getenv(
+allowed_origins_str = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000"
-).split(",")
+)
+# Split and strip whitespace from each origin
+allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
 
 # Add Vercel production URL if provided
 vercel_url = os.getenv("VERCEL_URL")
 if vercel_url:
+    vercel_url = vercel_url.strip()
     allowed_origins.append(f"https://{vercel_url}")
     allowed_origins.append(f"http://{vercel_url}")
 
+# Log allowed origins for debugging
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
+# Configure CORS middleware
+# Use allow_origin_regex to handle all Vercel preview and production deployments
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Matches all Vercel deployments
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Initialize workflow
