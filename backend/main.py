@@ -97,6 +97,7 @@ class ResearchResponse(BaseModel):
     sources: Dict[str, Any]
     analysis: Dict[str, Any]
     insights: Dict[str, Any]
+    credibility: Dict[str, Any]  # Source credibility assessments
     report: str
     status: str
     error: Optional[str] = None
@@ -140,6 +141,7 @@ async def research(req: ResearchRequest):
             sources=result.get("sources", {}),
             analysis=result.get("analysis", {}),
             insights=result.get("insights", {}),
+            credibility=result.get("credibility", {}),
             report=result.get("report", ""),
             status="success" if not result.get("error") else "error",
             error=result.get("error", "")
@@ -151,6 +153,7 @@ async def research(req: ResearchRequest):
             sources={},
             analysis={},
             insights={},
+            credibility={},
             report=f"Error: {str(e)}",
             status="error",
             error=str(e)
@@ -185,6 +188,7 @@ async def research_stream(req: ResearchRequest):
             retrieval_result = full_result.get("sources", {})
             analysis_result = full_result.get("analysis", {})
             insights_result = full_result.get("insights", {})
+            credibility_result = full_result.get("credibility", {})
             report_result = full_result.get("report", "")
             
             # Final result
@@ -192,6 +196,7 @@ async def research_stream(req: ResearchRequest):
                 "sources": retrieval_result,
                 "analysis": analysis_result,
                 "insights": insights_result,
+                "credibility": credibility_result,
                 "report": report_result,
                 "status": "success"
             }
