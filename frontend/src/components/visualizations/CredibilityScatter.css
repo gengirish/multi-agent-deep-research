@@ -1,0 +1,24 @@
+.credibility-scatter {
+  margin: 20px 0;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.credibility-scatter .chart-title {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.credibility-scatter .d3-chart {
+  display: block;
+  margin: 0 auto;
+}
+
+.credibility-scatter circle {
+  transition: r 0.2s, opacity 0.2s;
+}
+
