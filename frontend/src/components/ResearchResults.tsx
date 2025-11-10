@@ -398,12 +398,14 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
         return (
           <div className="agent-conversation-visualizations">
             <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
-            <div className="conversation-info">
-              <p className="conversation-meta">
-                Query ID: {data.conversation.query_id || 'N/A'} | 
-                Total Entries: {data.conversation.total_entries || conversationArray.length}
-              </p>
-            </div>
+            {data.conversation && (
+              <div className="conversation-info">
+                <p className="conversation-meta">
+                  Query ID: {data.conversation.query_id || 'N/A'} | 
+                  Total Entries: {data.conversation.total_entries || conversationArray.length}
+                </p>
+              </div>
+            )}
             <div className="conversation-charts">
               <AgentTimeline conversation={conversationArray} />
               <AgentPerformance conversation={conversationArray} />

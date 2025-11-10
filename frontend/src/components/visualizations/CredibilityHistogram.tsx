@@ -57,11 +57,6 @@ export const CredibilityHistogram: React.FC<Props> = ({
       .range([innerHeight, 0])
       .nice()
 
-    // Create color scale by source type
-    const colorScale = d3.scaleOrdinal<string>()
-      .domain(['web', 'papers', 'news'])
-      .range(['#3b82f6', '#10b981', '#f59e0b'])
-
     // Create group for chart
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`)
