@@ -59,7 +59,7 @@ export const CredibilityScatter: React.FC<Props> = ({
 
     // Create size scale (based on relevance or count)
     const sizeScale = d3.scaleSqrt()
-      .domain([0, d3.max(data, d => 1) || 1])
+      .domain([0, 1])
       .range([4, 10])
 
     // Create group for chart
@@ -82,7 +82,7 @@ export const CredibilityScatter: React.FC<Props> = ({
       .style('max-width', '250px')
 
     // Add grid lines
-    const xGrid = g.append('g')
+    g.append('g')
       .attr('class', 'grid')
       .attr('transform', `translate(0,${innerHeight})`)
       .call(
@@ -95,7 +95,7 @@ export const CredibilityScatter: React.FC<Props> = ({
       .attr('stroke', '#e5e7eb')
       .attr('stroke-dasharray', '2,2')
 
-    const yGrid = g.append('g')
+    g.append('g')
       .attr('class', 'grid')
       .call(
         d3.axisLeft(yScale)
@@ -114,7 +114,7 @@ export const CredibilityScatter: React.FC<Props> = ({
       .append('circle')
       .attr('cx', d => xScale(d.domainScore))
       .attr('cy', d => yScale(d.credibility))
-      .attr('r', d => sizeScale(1))
+      .attr('r', () => sizeScale(1))
       .attr('fill', d => colorScale(d.type) || '#999')
       .attr('opacity', 0.7)
       .attr('stroke', 'white')
@@ -141,6 +141,7 @@ export const CredibilityScatter: React.FC<Props> = ({
         tooltip
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 10) + 'px')
+        // event is used in the tooltip positioning above
       })
       .on('mouseout', function() {
         d3.select(this)
@@ -150,7 +151,7 @@ export const CredibilityScatter: React.FC<Props> = ({
           .duration(200)
           .style('opacity', 0)
       })
-      .on('click', function(event, d) {
+      .on('click', function(_event, d) {
         if (d.url) {
           window.open(d.url, '_blank')
         }
