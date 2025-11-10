@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { ResearchData } from '../App'
+import { CredibilityHistogram, SourceTypeDonut, CredibilityScatter } from './visualizations'
 import './ResearchMetrics.css'
 
 interface Props {
@@ -7,8 +8,10 @@ interface Props {
 }
 
 export const ResearchMetrics: React.FC<Props> = ({ data }) => {
+  const [useD3Visualizations, setUseD3Visualizations] = useState(true)
   const sources = data.sources || {}
   const metadata = sources.metadata || {}
+  const credibility = data.credibility || {}
   
   // Collect enriched data from sources
   const enrichedSources: Array<{
@@ -76,6 +79,97 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
   const highQuality = domainScores.filter((s) => s >= 0.8).length
   const mediumQuality = domainScores.filter((s) => s >= 0.5 && s < 0.8).length
   const lowQuality = domainScores.filter((s) => s < 0.5).length
+
+  // Prepare data for D3 visualizations
+  const credibilityData = useMemo(() => {
+    const data: Array<{ score: number; type: string; title: string; url?: string }> = []
+    
+    // Extract credibility scores from credibility data
+    // Structure: credibility.web/papers/news = [{ source: {...}, score: 0.8, ... }]
+    if (credibility.web && Array.isArray(credibility.web)) {
+      credibility.web.forEach((item: any) => {
+        if (item.score !== undefined && item.source) {
+          data.push({
+            score: item.score,
+            type: 'web',
+            title: item.source.title || item.source.url || 'Unknown',
+            url: item.source.url
+          })
+        }
+      })
+    }
+    
+    if (credibility.papers && Array.isArray(credibility.papers)) {
+      credibility.papers.forEach((item: any) => {
+        if (item.score !== undefined && item.source) {
+          data.push({
+            score: item.score,
+            type: 'papers',
+            title: item.source.title || item.source.url || 'Unknown',
+            url: item.source.url
+          })
+        }
+      })
+    }
+    
+    if (credibility.news && Array.isArray(credibility.news)) {
+      credibility.news.forEach((item: any) => {
+        if (item.score !== undefined && item.source) {
+          data.push({
+            score: item.score,
+            type: 'news',
+            title: item.source.title || item.source.url || 'Unknown',
+            url: item.source.url
+          })
+        }
+      })
+    }
+    
+    return data
+  }, [credibility])
+
+  // Prepare source type data for donut chart
+  const sourceTypeData = useMemo(() => {
+    const webCount = sources.web?.length || 0
+    const papersCount = sources.papers?.length || 0
+    const newsCount = sources.news?.length || 0
+    
+    return [
+      { type: 'web', count: webCount },
+      { type: 'papers', count: papersCount },
+      { type: 'news', count: newsCount }
+    ].filter(item => item.count > 0)
+  }, [sources])
+
+  // Prepare scatter plot data
+  const scatterData = useMemo(() => {
+    const data: Array<{
+      credibility: number
+      domainScore: number
+      type: string
+      title: string
+      url?: string
+    }> = []
+    
+    // Combine credibility scores with domain scores
+    credibilityData.forEach(credItem => {
+      const enrichedSource = enrichedSources.find(
+        s => s.title === credItem.title || s.url === credItem.url
+      )
+      
+      if (enrichedSource && enrichedSource.domain_score !== undefined) {
+        data.push({
+          credibility: credItem.score,
+          domainScore: enrichedSource.domain_score,
+          type: credItem.type,
+          title: credItem.title,
+          url: credItem.url || enrichedSource.url
+        })
+      }
+    })
+    
+    return data
+  }, [credibilityData, enrichedSources])
   
   if (!enrichmentApplied && enrichedSources.length === 0) {
     return (
@@ -90,7 +184,19 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
   
   return (
     <div className="research-metrics" role="region" aria-label="Research metrics">
-      <h2 className="metrics-title">📈 Research Metrics</h2>
+      <div className="metrics-header">
+        <h2 className="metrics-title">📈 Research Metrics</h2>
+        <div className="visualization-toggle">
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={useD3Visualizations}
+              onChange={(e) => setUseD3Visualizations(e.target.checked)}
+            />
+            <span>D3.js Visualizations (Default)</span>
+          </label>
+        </div>
+      </div>
       
       {/* Summary Cards */}
       <div className="metrics-summary">
@@ -112,6 +218,23 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
           <div className="metric-label">Enrichment Applied</div>
         </div>
       </div>
+
+      {/* D3 Visualizations */}
+      {useD3Visualizations && (
+        <div className="d3-visualizations">
+          {credibilityData.length > 0 && (
+            <CredibilityHistogram credibilityData={credibilityData} />
+          )}
+          
+          {sourceTypeData.length > 0 && (
+            <SourceTypeDonut data={sourceTypeData} />
+          )}
+          
+          {scatterData.length > 0 && (
+            <CredibilityScatter data={scatterData} />
+          )}
+        </div>
+      )}
       
       {/* Sentiment Analysis */}
       {sentimentCounts.positive + sentimentCounts.negative + sentimentCounts.neutral > 0 && (

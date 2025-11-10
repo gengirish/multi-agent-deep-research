@@ -13,6 +13,7 @@ export interface ResearchData {
   sources: Record<string, any>
   analysis: Record<string, any>
   insights: Record<string, any>
+  credibility?: Record<string, any>
   report: string
   status: string
   error?: string
