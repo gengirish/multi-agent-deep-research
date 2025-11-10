@@ -311,8 +311,15 @@ class ResearchWorkflow:
             result = self.workflow.invoke(initial_state)
             logger.info("Research workflow completed successfully")
             
+            # Get conversation data before ending (end_conversation clears it)
+            conversation_data = self.agent_logger.get_current_conversation()
+            
             # End conversation logging
             self.agent_logger.end_conversation(result)
+            
+            # Include conversation data in result
+            if conversation_data.get("status") != "no_active_conversation":
+                result["conversation"] = conversation_data
             
             return result
         except Exception as e:
@@ -320,8 +327,15 @@ class ResearchWorkflow:
             initial_state["error"] = str(e)
             initial_state["report"] = f"# Error\n\nWorkflow failed: {str(e)}"
             
+            # Get conversation data before ending
+            conversation_data = self.agent_logger.get_current_conversation()
+            
             # End conversation logging with error
             self.agent_logger.end_conversation(initial_state)
+            
+            # Include conversation data in result
+            if conversation_data.get("status") != "no_active_conversation":
+                initial_state["conversation"] = conversation_data
             
             return initial_state
 

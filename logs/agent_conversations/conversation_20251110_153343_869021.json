@@ -1,0 +1,145 @@
+{
+  "query_id": "20251110_153343_869021",
+  "conversation": [
+    {
+      "timestamp": "2025-11-10T15:33:43.869063",
+      "type": "query",
+      "content": "Emerging climate technology solutions 2024"
+    },
+    {
+      "timestamp": "2025-11-10T15:33:43.870258",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": {
+        "query": "Emerging climate technology solutions 2024"
+      },
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:33:49.555574",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": null,
+      "output": {
+        "sources_count": {
+          "web": 6,
+          "papers": 3,
+          "news": 6
+        }
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:33:49.556591",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:33:49.560479",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": {
+        "status": "success"
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:33:49.566108",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:33:49.567223",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:22.682764",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": {
+        "total_sources": 15,
+        "average_score": 0.69
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:22.682809",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": {
+        "contradictions_count": 1,
+        "key_claims_count": 0
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:22.684040",
+      "agent": "insight_generator",
+      "action": "generate",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:28.653877",
+      "agent": "insight_generator",
+      "action": "generate",
+      "input": null,
+      "output": {
+        "insights_count": 3,
+        "hypotheses_count": 2
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:28.654879",
+      "agent": "report_builder",
+      "action": "compile",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:45.337891",
+      "agent": "report_builder",
+      "action": "compile",
+      "input": null,
+      "output": {
+        "report_length": 4049
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:34:45.341112",
+      "type": "final_result",
+      "content": {
+        "_truncated": true,
+        "_size": 51699,
+        "_keys": [
+          "query",
+          "sources",
+          "analysis",
+          "insights",
+          "credibility",
+          "report",
+          "error"
+        ]
+      }
+    }
+  ],
+  "total_entries": 14
+}

@@ -378,15 +378,39 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
       <ResearchMetrics data={data} />
       
       {/* Agent Conversation Visualizations */}
-      {data.conversation && data.conversation.conversation && data.conversation.conversation.length > 0 && (
-        <div className="agent-conversation-visualizations">
-          <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
-          <div className="conversation-charts">
-            <AgentTimeline conversation={data.conversation.conversation} />
-            <AgentPerformance conversation={data.conversation.conversation} />
+      {(() => {
+        const conversationArray = data.conversation?.conversation || []
+        const hasConversation = conversationArray.length > 0
+        
+        if (!hasConversation) {
+          // Show placeholder if no conversation data
+          return (
+            <div className="agent-conversation-visualizations">
+              <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
+              <div className="conversation-placeholder">
+                <p>📊 Conversation data will appear here after running a research query.</p>
+                <p className="hint">The conversation log tracks all agent interactions during the research process.</p>
+              </div>
+            </div>
+          )
+        }
+        
+        return (
+          <div className="agent-conversation-visualizations">
+            <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
+            <div className="conversation-info">
+              <p className="conversation-meta">
+                Query ID: {data.conversation.query_id || 'N/A'} | 
+                Total Entries: {data.conversation.total_entries || conversationArray.length}
+              </p>
+            </div>
+            <div className="conversation-charts">
+              <AgentTimeline conversation={conversationArray} />
+              <AgentPerformance conversation={conversationArray} />
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
       
       {/* Floating Stats Bar */}
       <div className="stats-bar" role="complementary" aria-label="Research statistics">

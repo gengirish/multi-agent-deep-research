@@ -1,0 +1,104 @@
+{
+  "query_id": "20251110_152729_035858",
+  "conversation": [
+    {
+      "timestamp": "2025-11-10T15:27:29.035940",
+      "type": "query",
+      "content": "Emerging climate technology solutions 2024"
+    },
+    {
+      "timestamp": "2025-11-10T15:27:29.040329",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": {
+        "query": "Emerging climate technology solutions 2024"
+      },
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:27:34.967090",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": null,
+      "output": {
+        "sources_count": {
+          "web": 6,
+          "papers": 3,
+          "news": 6
+        }
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:27:34.968947",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:27:34.976994",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": {
+        "status": "success"
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:27:34.980331",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:27:34.986238",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:27:48.288896",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": {
+        "contradictions_count": 2,
+        "key_claims_count": 0
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:28:09.248905",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": {
+        "total_sources": 15,
+        "average_score": 0.66
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:28:09.250158",
+      "type": "final_result",
+      "content": {
+        "query": "Emerging climate technology solutions 2024",
+        "sources": {},
+        "analysis": {},
+        "insights": {},
+        "credibility": {},
+        "report": "# Error\n\nWorkflow failed: At key 'query': Can receive only one value per step. Use an Annotated key to handle multiple values.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE",
+        "error": "At key 'query': Can receive only one value per step. Use an Annotated key to handle multiple values.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE"
+      }
+    }
+  ],
+  "total_entries": 10
+}
