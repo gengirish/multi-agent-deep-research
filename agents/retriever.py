@@ -6,6 +6,7 @@ Uses Tavily Search API for AI-optimized web search.
 
 import logging
 import os
+import asyncio
 from typing import Dict, List, Any
 from langchain_community.utilities import ArxivAPIWrapper
 from tavily import TavilyClient
@@ -56,7 +57,7 @@ class ContextualRetrieverAgent:
     
     def retrieve(self, query: str, max_results: int = 5) -> Dict[str, Any]:
         """
-        Retrieve information from multiple sources.
+        Retrieve information from multiple sources (parallel execution).
         
         Args:
             query: Research query
@@ -65,8 +66,20 @@ class ContextualRetrieverAgent:
         Returns:
             Dictionary with sources from web, papers, and news
         """
-        logger.info(f"Retriever: Searching for '{query}'")
+        logger.info(f"Retriever: Searching for '{query}' (parallel execution)")
         
+        # Run all searches in parallel using asyncio
+        try:
+            results = asyncio.run(self._retrieve_parallel(query, max_results))
+        except Exception as e:
+            logger.error(f"Parallel retrieval failed, falling back to sequential: {e}")
+            # Fallback to sequential if parallel fails
+            results = self._retrieve_sequential(query, max_results)
+        
+        return results
+    
+    async def _retrieve_parallel(self, query: str, max_results: int) -> Dict[str, Any]:
+        """Retrieve from all sources in parallel using asyncio."""
         results = {
             "web": [],
             "papers": [],
@@ -74,55 +87,123 @@ class ContextualRetrieverAgent:
             "query": query
         }
         
-        # Web search using Tavily (primary), fallback to Perplexity
+        # Create tasks for parallel execution
+        tasks = []
+        
+        # Web search task
+        if self.tavily or self.perplexity_api_key:
+            tasks.append(self._retrieve_web_async(query, max_results))
+        else:
+            async def empty_web():
+                return []
+            tasks.append(empty_web())
+        
+        # Papers search task
+        if self.arxiv:
+            tasks.append(self._retrieve_papers_async(query, max_results))
+        else:
+            async def empty_papers():
+                return []
+            tasks.append(empty_papers())
+        
+        # News search task
+        if self.tavily or self.perplexity_api_key:
+            tasks.append(self._retrieve_news_async(query, max_results))
+        else:
+            async def empty_news():
+                return []
+            tasks.append(empty_news())
+        
+        # Execute all tasks in parallel
+        web_results, papers_results, news_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Handle results (with error handling)
+        if isinstance(web_results, Exception):
+            logger.error(f"Web search failed: {web_results}")
+            results["web"] = []
+        else:
+            results["web"] = web_results
+        
+        if isinstance(papers_results, Exception):
+            logger.error(f"Papers search failed: {papers_results}")
+            results["papers"] = []
+        else:
+            results["papers"] = papers_results
+        
+        if isinstance(news_results, Exception):
+            logger.error(f"News search failed: {news_results}")
+            results["news"] = []
+        else:
+            results["news"] = news_results
+        
+        logger.info(f"Retriever: Parallel search complete - Web: {len(results['web'])}, Papers: {len(results['papers'])}, News: {len(results['news'])}")
+        
+        return results
+    
+    async def _retrieve_web_async(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Retrieve web sources asynchronously."""
+        return await asyncio.to_thread(self._retrieve_web_sync, query, max_results)
+    
+    async def _retrieve_papers_async(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Retrieve papers asynchronously."""
+        return await asyncio.to_thread(self._retrieve_papers_sync, query, max_results)
+    
+    async def _retrieve_news_async(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Retrieve news sources asynchronously."""
+        return await asyncio.to_thread(self._retrieve_news_sync, query, max_results)
+    
+    def _retrieve_web_sync(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Synchronous web search (runs in thread pool)."""
         if self.tavily:
             try:
                 web_query = f"{query} recent"
                 tavily_results = self.tavily.search(
                     query=web_query,
                     max_results=max_results,
-                    search_depth="advanced",  # Use advanced search for better results
-                    include_answer=True,  # Include AI-generated answer
-                    include_raw_content=False  # Don't include full page content
+                    search_depth="advanced",
+                    include_answer=True,
+                    include_raw_content=False
                 )
-                results["web"] = self._parse_tavily_results(tavily_results, max_results)
-                logger.info(f"Retriever: Found {len(results['web'])} web sources via Tavily")
+                results = self._parse_tavily_results(tavily_results, max_results)
+                logger.info(f"Retriever: Found {len(results)} web sources via Tavily")
+                return results
             except Exception as e:
                 logger.error(f"Tavily web search failed: {e}")
                 # Fallback to Perplexity
                 if self.perplexity_api_key:
                     try:
                         perplexity_results = self._search_perplexity(query, max_results)
-                        results["web"] = perplexity_results
-                        logger.info(f"Retriever: Fallback to Perplexity - Found {len(results['web'])} sources")
+                        logger.info(f"Retriever: Fallback to Perplexity - Found {len(perplexity_results)} sources")
+                        return perplexity_results
                     except Exception as e2:
                         logger.error(f"Perplexity fallback also failed: {e2}")
-                        results["web"] = []
-                else:
-                    results["web"] = []
+                        return []
+                return []
         elif self.perplexity_api_key:
-            # Use Perplexity if Tavily not available
             try:
                 perplexity_results = self._search_perplexity(query, max_results)
-                results["web"] = perplexity_results
-                logger.info(f"Retriever: Using Perplexity - Found {len(results['web'])} sources")
+                logger.info(f"Retriever: Using Perplexity - Found {len(perplexity_results)} sources")
+                return perplexity_results
             except Exception as e:
                 logger.error(f"Perplexity search failed: {e}")
-                results["web"] = []
-        else:
-            results["web"] = []
-        
-        # ArXiv papers
+                return []
+        return []
+    
+    def _retrieve_papers_sync(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Synchronous papers search (runs in thread pool)."""
         if self.arxiv:
             try:
                 paper_results = self.arxiv.run(query)
-                results["papers"] = self._parse_arxiv_results(paper_results, max_results)
-                logger.info(f"Retriever: Found {len(results['papers'])} papers")
+                results = self._parse_arxiv_results(paper_results, max_results)
+                logger.info(f"Retriever: Found {len(results)} papers")
+                return results
             except Exception as e:
                 logger.error(f"ArXiv search failed: {e}")
-                results["papers"] = []
-        
-        # News search using Tavily (with news filter), fallback to Perplexity
+                return []
+        return []
+    
+    def _retrieve_news_sync(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Synchronous news search (runs in thread pool)."""
         if self.tavily:
             try:
                 news_query = f"{query} news 2024"
@@ -133,8 +214,9 @@ class ContextualRetrieverAgent:
                     include_answer=True,
                     include_raw_content=False
                 )
-                results["news"] = self._parse_tavily_results(tavily_news, max_results)
-                logger.info(f"Retriever: Found {len(results['news'])} news sources via Tavily")
+                results = self._parse_tavily_results(tavily_news, max_results)
+                logger.info(f"Retriever: Found {len(results)} news sources via Tavily")
+                return results
             except Exception as e:
                 logger.error(f"Tavily news search failed: {e}")
                 # Fallback to Perplexity for news
@@ -142,25 +224,42 @@ class ContextualRetrieverAgent:
                     try:
                         news_query_perplexity = f"{query} news 2024"
                         perplexity_news = self._search_perplexity(news_query_perplexity, max_results)
-                        results["news"] = perplexity_news
-                        logger.info(f"Retriever: Fallback to Perplexity for news - Found {len(results['news'])} sources")
+                        logger.info(f"Retriever: Fallback to Perplexity for news - Found {len(perplexity_news)} sources")
+                        return perplexity_news
                     except Exception as e2:
                         logger.error(f"Perplexity news fallback also failed: {e2}")
-                        results["news"] = []
-                else:
-                    results["news"] = []
+                        return []
+                return []
         elif self.perplexity_api_key:
-            # Use Perplexity if Tavily not available
             try:
                 news_query = f"{query} news 2024"
                 perplexity_news = self._search_perplexity(news_query, max_results)
-                results["news"] = perplexity_news
-                logger.info(f"Retriever: Using Perplexity for news - Found {len(results['news'])} sources")
+                logger.info(f"Retriever: Using Perplexity for news - Found {len(perplexity_news)} sources")
+                return perplexity_news
             except Exception as e:
                 logger.error(f"Perplexity news search failed: {e}")
-                results["news"] = []
-        else:
-            results["news"] = []
+                return []
+        return []
+    
+    def _retrieve_sequential(self, query: str, max_results: int) -> Dict[str, Any]:
+        """Fallback sequential retrieval (original implementation)."""
+        logger.info(f"Retriever: Using sequential retrieval for '{query}'")
+        
+        results = {
+            "web": [],
+            "papers": [],
+            "news": [],
+            "query": query
+        }
+        
+        # Web search
+        results["web"] = self._retrieve_web_sync(query, max_results)
+        
+        # Papers search
+        results["papers"] = self._retrieve_papers_sync(query, max_results)
+        
+        # News search
+        results["news"] = self._retrieve_news_sync(query, max_results)
         
         return results
     
