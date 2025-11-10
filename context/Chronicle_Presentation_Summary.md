@@ -6,7 +6,7 @@
 ## 🎯 Project Overview
 
 ### Vision Statement
-**Multi-Agent AI Deep Researcher** is an intelligent research assistant that leverages specialized AI agents working in collaboration to conduct comprehensive, multi-source investigations. The system transforms complex research queries into structured, cited reports through a sophisticated multi-agent orchestration framework.
+**Multi-Agent AI Deep Researcher** is an intelligent research assistant that leverages specialized AI agents working in collaboration to conduct comprehensive, multi-source investigations. The system transforms complex research queries into structureteamd, cited reports through a sophisticated multi-agent orchestration framework.
 
 ### Core Value Proposition
 - **Multi-Source Intelligence**: Aggregates data from web, academic papers, and news sources

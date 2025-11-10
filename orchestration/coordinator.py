@@ -4,6 +4,8 @@ Manages the multi-agent workflow.
 """
 
 import logging
+import asyncio
+import concurrent.futures
 from typing import TypedDict, Dict, Any, List
 from langgraph.graph import StateGraph, END
 from agents.retriever import ContextualRetrieverAgent
@@ -52,24 +54,26 @@ class ResearchWorkflow:
         logger.info("Research Workflow initialized")
     
     def _build_workflow(self) -> StateGraph:
-        """Build the LangGraph workflow."""
+        """Build the LangGraph workflow with parallel execution."""
         # Create state graph
         graph = StateGraph(ResearchState)
         
         # Add nodes (agents)
         graph.add_node("retriever", self._retriever_node)
         graph.add_node("enricher", self._enricher_node)
-        graph.add_node("credibility", self._credibility_node)
-        graph.add_node("analyzer", self._analyzer_node)
+        graph.add_node("parallel_analysis", self._parallel_analysis_node)  # Parallel credibility + analyzer
         graph.add_node("insight_generator", self._insight_generator_node)
         graph.add_node("report_builder", self._report_builder_node)
         
-        # Define edges (linear flow)
+        # Define edges with parallel execution
         graph.set_entry_point("retriever")
         graph.add_edge("retriever", "enricher")
-        graph.add_edge("enricher", "credibility")
-        graph.add_edge("credibility", "analyzer")
-        graph.add_edge("analyzer", "insight_generator")
+        
+        # Parallel execution: credibility and analyzer run in parallel after enrichment
+        graph.add_edge("enricher", "parallel_analysis")
+        
+        # Continue with sequential flow after parallel analysis
+        graph.add_edge("parallel_analysis", "insight_generator")
         graph.add_edge("insight_generator", "report_builder")
         graph.add_edge("report_builder", END)
         
@@ -118,13 +122,76 @@ class ResearchWorkflow:
             logger.warning("Continuing with original sources (enrichment failed)")
         return state
     
-    def _credibility_node(self, state: ResearchState) -> ResearchState:
-        """Source credibility agent node."""
+    def _parallel_analysis_node(self, state: ResearchState) -> ResearchState:
+        """
+        Parallel analysis node: runs credibility and analyzer in parallel using asyncio.
+        This avoids LangGraph state conflicts while achieving parallel execution.
+        """
         try:
-            logger.info("Workflow: Running Credibility Agent")
-            self.agent_logger.log_agent_action("credibility", "evaluate_credibility")
-            credibility_results = self.credibility_agent.evaluate_credibility(state["sources"])
+            logger.info("Workflow: Running parallel analysis (credibility + analyzer)")
+            
+            # Run both operations in parallel using asyncio
+            async def run_parallel():
+                async def run_credibility():
+                    try:
+                        self.agent_logger.log_agent_action("credibility", "evaluate_credibility")
+                        return await asyncio.to_thread(
+                            self.credibility_agent.evaluate_credibility,
+                            state["sources"]
+                        )
+                    except Exception as e:
+                        logger.error(f"Credibility evaluation failed: {e}")
+                        self.agent_logger.log_agent_error("credibility", "evaluate_credibility", e)
+                        return {
+                            "web": [],
+                            "papers": [],
+                            "news": [],
+                            "overall_credibility": {}
+                        }
+                
+                async def run_analyzer():
+                    try:
+                        self.agent_logger.log_agent_action("analyzer", "analyze")
+                        return await asyncio.to_thread(
+                            self.analyzer.analyze,
+                            state["sources"]
+                        )
+                    except Exception as e:
+                        logger.error(f"Analysis failed: {e}")
+                        self.agent_logger.log_agent_error("analyzer", "analyze", e)
+                        return {
+                            "summary": [],
+                            "contradictions": [],
+                            "credibility": [],
+                            "key_claims": []
+                        }
+                
+                # Execute both in parallel
+                credibility_results, analysis_results = await asyncio.gather(
+                    run_credibility(),
+                    run_analyzer()
+                )
+                
+                return credibility_results, analysis_results
+            
+            # Run the async parallel execution
+            # Check if there's already an event loop running
+            try:
+                loop = asyncio.get_running_loop()
+                # If loop exists, we need to use a different approach
+                # Create a new event loop in a thread
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, run_parallel())
+                    credibility_results, analysis_results = future.result()
+            except RuntimeError:
+                # No event loop running, safe to use asyncio.run
+                credibility_results, analysis_results = asyncio.run(run_parallel())
+            
+            # Update state with results
             state["credibility"] = credibility_results
+            state["analysis"] = analysis_results
+            
+            # Log completion
             self.agent_logger.log_agent_action(
                 "credibility", "evaluate_credibility",
                 output_data={
@@ -132,45 +199,33 @@ class ResearchWorkflow:
                     "average_score": credibility_results.get("overall_credibility", {}).get("average_score", 0)
                 }
             )
-            logger.info("Workflow: Credibility Agent completed")
+            self.agent_logger.log_agent_action(
+                "analyzer", "analyze",
+                output_data={
+                    "contradictions_count": len(analysis_results.get("contradictions", [])),
+                    "key_claims_count": len(analysis_results.get("key_claims", []))
+                }
+            )
+            
+            logger.info("Workflow: Parallel analysis completed (credibility + analyzer)")
+            
         except Exception as e:
-            logger.error(f"Credibility node failed: {e}")
-            self.agent_logger.log_agent_error("credibility", "evaluate_credibility", e)
-            # Continue with empty credibility if evaluation fails
+            logger.error(f"Parallel analysis node failed: {e}")
+            # Set default values if parallel execution fails
             state["credibility"] = {
                 "web": [],
                 "papers": [],
                 "news": [],
                 "overall_credibility": {}
             }
-            logger.warning("Continuing without credibility assessment")
-        return state
-    
-    def _analyzer_node(self, state: ResearchState) -> ResearchState:
-        """Analyzer agent node."""
-        try:
-            logger.info("Workflow: Running Analyzer")
-            self.agent_logger.log_agent_action("analyzer", "analyze")
-            analysis = self.analyzer.analyze(state["sources"])
-            state["analysis"] = analysis
-            self.agent_logger.log_agent_action(
-                "analyzer", "analyze",
-                output_data={
-                    "contradictions_count": len(analysis.get("contradictions", [])),
-                    "key_claims_count": len(analysis.get("key_claims", []))
-                }
-            )
-            logger.info("Workflow: Analyzer completed")
-        except Exception as e:
-            logger.error(f"Analyzer node failed: {e}")
-            self.agent_logger.log_agent_error("analyzer", "analyze", e)
-            state["error"] = f"Analysis failed: {str(e)}"
             state["analysis"] = {
                 "summary": [],
                 "contradictions": [],
                 "credibility": [],
                 "key_claims": []
             }
+            logger.warning("Continuing with default values after parallel analysis failure")
+        
         return state
     
     def _insight_generator_node(self, state: ResearchState) -> ResearchState:
