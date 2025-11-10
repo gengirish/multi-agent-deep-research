@@ -13,6 +13,14 @@ export const useD3 = (
       svg.selectAll('*').remove() // Clear previous render
       renderFn(svg)
     }
+    
+    // Cleanup: remove any tooltips created by D3
+    return () => {
+      const tooltip = d3.select('body').select('.d3-tooltip')
+      if (!tooltip.empty()) {
+        tooltip.remove()
+      }
+    }
   }, dependencies)
 
   return ref

@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import { ResearchData } from '../App'
 import { TextToSpeechControls } from './TextToSpeechControls'
 import { ResearchMetrics } from './ResearchMetrics'
+import { AgentTimeline, AgentPerformance } from './visualizations'
 import './ResearchResults.css'
 
 interface Props {
@@ -375,6 +376,17 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
     <section className="results-container" role="region" aria-label="Research results">
       {/* Research Metrics */}
       <ResearchMetrics data={data} />
+      
+      {/* Agent Conversation Visualizations */}
+      {data.conversation && data.conversation.conversation && data.conversation.conversation.length > 0 && (
+        <div className="agent-conversation-visualizations">
+          <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
+          <div className="conversation-charts">
+            <AgentTimeline conversation={data.conversation.conversation} />
+            <AgentPerformance conversation={data.conversation.conversation} />
+          </div>
+        </div>
+      )}
       
       {/* Floating Stats Bar */}
       <div className="stats-bar" role="complementary" aria-label="Research statistics">

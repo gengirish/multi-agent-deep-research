@@ -195,6 +195,21 @@ class AgentLogger:
             "agent_actions": agent_actions,
             "has_errors": any(entry.get("type") == "error" for entry in self.current_conversation)
         }
+    
+    def get_current_conversation(self) -> Dict[str, Any]:
+        """Get the current conversation data.
+        
+        Returns:
+            Current conversation data including query_id and conversation entries
+        """
+        if not self.current_conversation:
+            return {"status": "no_active_conversation"}
+        
+        return {
+            "query_id": self.query_id,
+            "conversation": self.current_conversation.copy(),
+            "total_entries": len(self.current_conversation)
+        }
 
 
 # Global instance

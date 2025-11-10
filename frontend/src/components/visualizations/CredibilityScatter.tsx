@@ -204,10 +204,6 @@ export const CredibilityScatter: React.FC<Props> = ({
         .text(type.charAt(0).toUpperCase() + type.slice(1))
     })
 
-    // Cleanup tooltip on unmount
-    return () => {
-      tooltip.remove()
-    }
   }, [data, width, height])
 
   return (

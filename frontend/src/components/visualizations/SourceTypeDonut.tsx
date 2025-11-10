@@ -155,10 +155,6 @@ export const SourceTypeDonut: React.FC<Props> = ({
       .style('font-size', '14px')
       .text('Total Sources')
 
-    // Cleanup tooltip on unmount
-    return () => {
-      tooltip.remove()
-    }
   }, [data, width, height])
 
   return (
