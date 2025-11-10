@@ -141,10 +141,6 @@ export const CredibilityHistogram: React.FC<Props> = ({
       .style('font-size', '12px')
       .text('Number of Sources')
 
-    // Cleanup tooltip on unmount
-    return () => {
-      tooltip.remove()
-    }
   }, [credibilityData, width, height])
 
   return (

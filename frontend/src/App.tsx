@@ -17,6 +17,19 @@ export interface ResearchData {
   report: string
   status: string
   error?: string
+  conversation?: {
+    query_id?: string
+    conversation?: Array<{
+      timestamp: string
+      agent?: string
+      action?: string
+      type?: string
+      input?: any
+      output?: any
+      metadata?: any
+    }>
+    total_entries?: number
+  }
 }
 
 export const App: React.FC = () => {

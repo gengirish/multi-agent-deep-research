@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from orchestration.coordinator import ResearchWorkflow
+from utils.agent_logger import get_agent_logger
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -101,6 +102,7 @@ class ResearchResponse(BaseModel):
     report: str
     status: str
     error: Optional[str] = None
+    conversation: Optional[Dict[str, Any]] = None  # Agent conversation log
 
 class HealthResponse(BaseModel):
     status: str
@@ -136,6 +138,9 @@ async def research(req: ResearchRequest):
         # Run workflow (lazy initialization)
         result = get_workflow().run(req.query)
         
+        # Get conversation log
+        conversation_log = get_agent_logger().get_current_conversation()
+        
         # Format response
         return ResearchResponse(
             sources=result.get("sources", {}),
@@ -144,7 +149,8 @@ async def research(req: ResearchRequest):
             credibility=result.get("credibility", {}),
             report=result.get("report", ""),
             status="success" if not result.get("error") else "error",
-            error=result.get("error", "")
+            error=result.get("error", ""),
+            conversation=conversation_log if conversation_log.get("status") != "no_active_conversation" else None
         )
     
     except Exception as e:
@@ -191,6 +197,9 @@ async def research_stream(req: ResearchRequest):
             credibility_result = full_result.get("credibility", {})
             report_result = full_result.get("report", "")
             
+            # Get conversation log
+            conversation_log = get_agent_logger().get_current_conversation()
+            
             # Final result
             final_result = {
                 "sources": retrieval_result,
@@ -198,7 +207,8 @@ async def research_stream(req: ResearchRequest):
                 "insights": insights_result,
                 "credibility": credibility_result,
                 "report": report_result,
-                "status": "success"
+                "status": "success",
+                "conversation": conversation_log if conversation_log.get("status") != "no_active_conversation" else None
             }
             
             yield f"data: {json.dumps({'stage': 'complete', 'message': '✅ Research complete!', 'progress': 100, 'data': final_result})}\n\n"
