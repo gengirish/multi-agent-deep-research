@@ -138,10 +138,7 @@ async def research(req: ResearchRequest):
         # Run workflow (lazy initialization)
         result = get_workflow().run(req.query)
         
-        # Get conversation log
-        conversation_log = get_agent_logger().get_current_conversation()
-        
-        # Format response
+        # Format response (conversation data is already included in result)
         return ResearchResponse(
             sources=result.get("sources", {}),
             analysis=result.get("analysis", {}),
@@ -150,7 +147,7 @@ async def research(req: ResearchRequest):
             report=result.get("report", ""),
             status="success" if not result.get("error") else "error",
             error=result.get("error", ""),
-            conversation=conversation_log if conversation_log.get("status") != "no_active_conversation" else None
+            conversation=result.get("conversation")
         )
     
     except Exception as e:
@@ -197,10 +194,7 @@ async def research_stream(req: ResearchRequest):
             credibility_result = full_result.get("credibility", {})
             report_result = full_result.get("report", "")
             
-            # Get conversation log
-            conversation_log = get_agent_logger().get_current_conversation()
-            
-            # Final result
+            # Final result (conversation data is already included in full_result)
             final_result = {
                 "sources": retrieval_result,
                 "analysis": analysis_result,
@@ -208,7 +202,7 @@ async def research_stream(req: ResearchRequest):
                 "credibility": credibility_result,
                 "report": report_result,
                 "status": "success",
-                "conversation": conversation_log if conversation_log.get("status") != "no_active_conversation" else None
+                "conversation": full_result.get("conversation")
             }
             
             yield f"data: {json.dumps({'stage': 'complete', 'message': '✅ Research complete!', 'progress': 100, 'data': final_result})}\n\n"

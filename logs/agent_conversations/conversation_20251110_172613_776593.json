@@ -1,0 +1,145 @@
+{
+  "query_id": "20251110_172613_776593",
+  "conversation": [
+    {
+      "timestamp": "2025-11-10T17:26:13.776667",
+      "type": "query",
+      "content": "Latest developments in quantum computing 2024"
+    },
+    {
+      "timestamp": "2025-11-10T17:26:13.784840",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": {
+        "query": "Latest developments in quantum computing 2024"
+      },
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:26.256048",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": null,
+      "output": {
+        "sources_count": {
+          "web": 6,
+          "papers": 3,
+          "news": 6
+        }
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:26.267289",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:26.281382",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": {
+        "status": "success"
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:26.287544",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:26.292383",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:59.664491",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": {
+        "total_sources": 15,
+        "average_score": 0.66
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:59.664584",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": {
+        "contradictions_count": 2,
+        "key_claims_count": 0
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:26:59.674124",
+      "agent": "insight_generator",
+      "action": "generate",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:27:05.250687",
+      "agent": "insight_generator",
+      "action": "generate",
+      "input": null,
+      "output": {
+        "insights_count": 3,
+        "hypotheses_count": 4
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:27:05.251786",
+      "agent": "report_builder",
+      "action": "compile",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:27:20.548559",
+      "agent": "report_builder",
+      "action": "compile",
+      "input": null,
+      "output": {
+        "report_length": 3806
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T17:27:20.550558",
+      "type": "final_result",
+      "content": {
+        "_truncated": true,
+        "_size": 53245,
+        "_keys": [
+          "query",
+          "sources",
+          "analysis",
+          "insights",
+          "credibility",
+          "report",
+          "error"
+        ]
+      }
+    }
+  ],
+  "total_entries": 14
+}

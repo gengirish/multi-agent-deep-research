@@ -1,0 +1,145 @@
+{
+  "query_id": "20251110_154624_528749",
+  "conversation": [
+    {
+      "timestamp": "2025-11-10T15:46:24.528819",
+      "type": "query",
+      "content": "Current state of AI safety research and regulations"
+    },
+    {
+      "timestamp": "2025-11-10T15:46:24.548900",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": {
+        "query": "Current state of AI safety research and regulations"
+      },
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:46:30.422818",
+      "agent": "retriever",
+      "action": "retrieve",
+      "input": null,
+      "output": {
+        "sources_count": {
+          "web": 6,
+          "papers": 3,
+          "news": 6
+        }
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:46:30.424659",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:46:30.428906",
+      "agent": "enricher",
+      "action": "enrich_sources",
+      "input": null,
+      "output": {
+        "status": "success"
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:46:30.432253",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:46:30.433216",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:09.703921",
+      "agent": "credibility",
+      "action": "evaluate_credibility",
+      "input": null,
+      "output": {
+        "total_sources": 15,
+        "average_score": 0.7
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:09.703967",
+      "agent": "analyzer",
+      "action": "analyze",
+      "input": null,
+      "output": {
+        "contradictions_count": 2,
+        "key_claims_count": 5
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:09.705231",
+      "agent": "insight_generator",
+      "action": "generate",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:18.276122",
+      "agent": "insight_generator",
+      "action": "generate",
+      "input": null,
+      "output": {
+        "insights_count": 3,
+        "hypotheses_count": 2
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:18.276951",
+      "agent": "report_builder",
+      "action": "compile",
+      "input": null,
+      "output": null,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:35.911238",
+      "agent": "report_builder",
+      "action": "compile",
+      "input": null,
+      "output": {
+        "report_length": 4504
+      },
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-11-10T15:47:35.912266",
+      "type": "final_result",
+      "content": {
+        "_truncated": true,
+        "_size": 52271,
+        "_keys": [
+          "query",
+          "sources",
+          "analysis",
+          "insights",
+          "credibility",
+          "report",
+          "error"
+        ]
+      }
+    }
+  ],
+  "total_entries": 14
+}
