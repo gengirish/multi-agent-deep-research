@@ -14,6 +14,7 @@ import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -107,6 +108,22 @@ class ResearchResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     message: str
+
+class ConversationListItem(BaseModel):
+    id: str
+    timestamp: str
+    query: Optional[str] = None
+    file_name: str
+    file_size: int
+
+class ConversationDetail(BaseModel):
+    id: str
+    data: Dict[str, Any]
+
+# Helper function to get log directory
+def get_log_dir() -> Path:
+    """Get the agent conversation log directory."""
+    return Path(os.getenv("AGENT_LOG_DIR", "logs/agent_conversations"))
 
 # Health check endpoint
 @app.get("/api/health", response_model=HealthResponse)
@@ -221,6 +238,100 @@ async def research_stream(req: ResearchRequest):
         }
     )
 
+# Conversation history endpoints
+@app.get("/api/conversations", response_model=List[ConversationListItem])
+async def list_conversations(limit: int = 50, offset: int = 0):
+    """
+    List saved research conversation logs.
+    Returns conversations sorted by most recent first.
+    """
+    log_dir = get_log_dir()
+    if not log_dir.exists():
+        logger.warning(f"Log directory does not exist: {log_dir}")
+        return []
+    
+    try:
+        # Get all conversation files sorted by modification time (newest first)
+        files = sorted(
+            [p for p in log_dir.glob("conversation_*.json") if p.is_file()],
+            key=lambda p: p.stat().st_mtime,
+            reverse=True
+        )
+        
+        items: List[ConversationListItem] = []
+        for p in files[offset: offset + limit]:
+            try:
+                # Read minimal data to extract summary
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                # Extract query from first entry
+                query_text = None
+                conv = data.get("conversation", [])
+                if conv and isinstance(conv, list) and len(conv) > 0:
+                    first = conv[0]
+                    # First entry created by AgentLogger.start_conversation
+                    if first.get("type") == "query":
+                        query_text = first.get("content")
+                
+                # Extract ID and timestamp
+                query_id = data.get("query_id") or p.stem.replace("conversation_", "")
+                
+                items.append(ConversationListItem(
+                    id=query_id,
+                    timestamp=query_id,  # timestamp is embedded in the ID
+                    query=query_text,
+                    file_name=p.name,
+                    file_size=p.stat().st_size
+                ))
+            except Exception as e:
+                logger.warning(f"Failed to summarize log {p.name}: {e}")
+                continue
+        
+        logger.info(f"Retrieved {len(items)} conversation(s) from {len(files)} total")
+        return items
+    
+    except Exception as e:
+        logger.error(f"Failed to list conversations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to list conversations")
+
+
+@app.get("/api/conversations/{conversation_id}", response_model=ConversationDetail)
+async def get_conversation(conversation_id: str):
+    """
+    Get detailed conversation log by ID.
+    Returns the full conversation data including all agent interactions.
+    """
+    log_dir = get_log_dir()
+    
+    # Allow both raw ID and full filename
+    candidates = [
+        log_dir / f"conversation_{conversation_id}.json",
+        log_dir / conversation_id  # in case full filename was passed
+    ]
+    
+    file_path = next((p for p in candidates if p.exists()), None)
+    if not file_path:
+        logger.warning(f"Conversation not found: {conversation_id}")
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        logger.info(f"Retrieved conversation: {conversation_id}")
+        return ConversationDetail(
+            id=data.get("query_id") or conversation_id,
+            data=data
+        )
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse conversation {conversation_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse conversation data")
+    except Exception as e:
+        logger.error(f"Failed to read conversation {conversation_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load conversation")
+
+
 # Voice input endpoint (for future Wispr Flow integration)
 @app.post("/api/research-voice")
 async def research_voice(audio_data: bytes = None):
@@ -253,11 +364,12 @@ async def root():
             "research": "/api/research",
             "research_stream": "/api/research-stream",
             "research_voice": "/api/research-voice",
-            "demo_queries": "/api/demo-queries"
+            "demo_queries": "/api/demo-queries",
+            "conversations_list": "/api/conversations",
+            "conversation_detail": "/api/conversations/{conversation_id}"
         }
     }
 
 # Removed if __name__ == "__main__" block
 # Railway should use Procfile: uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
 # This prevents Railway from using python main.py which causes the uvicorn warning
-
