@@ -1,50 +1,113 @@
-import React from 'react'
-import './Sidebar.css'
+import React from "react";
+import { NavLink } from "react-router-dom";
+import "./Sidebar.css";
 
 interface Props {
-  onQuerySelect: (query: string) => void
-  demoMode: boolean
-  onDemoModeChange: (enabled: boolean) => void
-  isOpen: boolean
-  onToggle: (open: boolean) => void
+  onQuerySelect: (query: string) => void;
+  demoMode: boolean;
+  onDemoModeChange: (enabled: boolean) => void;
+  isOpen: boolean;
+  onToggle: (open: boolean) => void;
 }
 
 const DEMO_QUERIES = [
   {
-    id: 'quantum_computing',
-    query: 'Latest developments in quantum computing 2024',
-    icon: '🔬'
+    id: "quantum_computing",
+    query: "Latest developments in quantum computing 2024",
+    icon: "🔬",
   },
   {
-    id: 'ai_safety',
-    query: 'Current state of AI safety research and regulations',
-    icon: '🛡️'
+    id: "ai_safety",
+    query: "Current state of AI safety research and regulations",
+    icon: "🛡️",
   },
   {
-    id: 'climate_tech',
-    query: 'Emerging climate technology solutions 2024',
-    icon: '🌱'
-  }
-]
+    id: "climate_tech",
+    query: "Emerging climate technology solutions 2024",
+    icon: "🌱",
+  },
+];
 
-export const Sidebar: React.FC<Props> = ({ onQuerySelect, demoMode, onDemoModeChange, isOpen, onToggle }) => {
+export const Sidebar: React.FC<Props> = ({
+  onQuerySelect,
+  demoMode,
+  onDemoModeChange,
+  isOpen,
+  onToggle,
+}) => {
   const handleQueryClick = (query: string) => {
-    onQuerySelect(query)
-  }
+    onQuerySelect(query);
+  };
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`} role="complementary" aria-label="Settings and demo queries">
+    <aside
+      className={`sidebar ${isOpen ? "open" : "closed"}`}
+      role="complementary"
+      aria-label="Settings and demo queries"
+    >
       <button
         className="sidebar-toggle"
         onClick={() => onToggle(!isOpen)}
-        aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
+        aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
         aria-expanded={isOpen}
       >
-        {isOpen ? '◀' : '▶'}
+        {isOpen ? "◀" : "▶"}
       </button>
 
       {isOpen && (
         <div className="sidebar-content">
+          {/* Navigation Section */}
+          <nav className="sidebar-section" aria-label="Main navigation">
+            <h2 className="sidebar-heading">
+              <span className="sidebar-icon">🧭</span>
+              Navigation
+            </h2>
+            <div className="nav-links">
+              <NavLink
+                to="/research"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active" : ""}`
+                }
+              >
+                🔍 Research
+              </NavLink>
+              <NavLink
+                to="/history"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active" : ""}`
+                }
+              >
+                📚 History
+              </NavLink>
+              <NavLink
+                to="/visualizations"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active" : ""}`
+                }
+              >
+                📊 Visualizations
+              </NavLink>
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active" : ""}`
+                }
+              >
+                ⚙️ Settings
+              </NavLink>
+              <NavLink
+                to="/about"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active" : ""}`
+                }
+              >
+                ℹ️ About
+              </NavLink>
+            </div>
+          </nav>
+
+          <div className="sidebar-divider"></div>
+
           {/* Settings Section */}
           <div className="sidebar-section">
             <h2 className="sidebar-heading">
@@ -58,7 +121,9 @@ export const Sidebar: React.FC<Props> = ({ onQuerySelect, demoMode, onDemoModeCh
                 onChange={(e) => onDemoModeChange(e.target.checked)}
                 aria-label="Use demo mode with cached results"
               />
-              <span className="checkbox-label">Use Demo Mode (Cached Results)</span>
+              <span className="checkbox-label">
+                Use Demo Mode (Cached Results)
+              </span>
             </label>
           </div>
 
@@ -87,6 +152,5 @@ export const Sidebar: React.FC<Props> = ({ onQuerySelect, demoMode, onDemoModeCh
         </div>
       )}
     </aside>
-  )
-}
-
+  );
+};

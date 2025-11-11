@@ -10,6 +10,7 @@ venv/
 env/
 ENV/
 .venv
+logs/
 *.log
 demo_cache.json
 .pytest_cache/
