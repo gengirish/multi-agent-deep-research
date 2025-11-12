@@ -1,0 +1,124 @@
+.error-banner {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  max-width: 500px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.error-banner-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(239, 68, 68, 0.95);
+  border: 1px solid rgba(220, 38, 38, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.error-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.error-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.error-message strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.error-message p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.error-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+.error-button {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.retry-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.retry-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.dismiss-button {
+  background: transparent;
+  color: #ffffff;
+  padding: 0.5rem;
+  min-width: 32px;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.dismiss-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .error-banner {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .error-banner-content {
+    padding: 0.875rem 1rem;
+  }
+
+  .error-actions {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .error-button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}

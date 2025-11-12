@@ -19,6 +19,12 @@ const HistoryPage = lazy(() =>
   }))
 );
 
+const SessionDetailPage = lazy(() =>
+  import("./pages/history/SessionDetailPage").then((module) => ({
+    default: module.SessionDetailPage,
+  }))
+);
+
 const VisualizationsPage = lazy(() =>
   import("./pages/visualizations/VisualizationsPage").then((module) => ({
     default: module.VisualizationsPage,
@@ -85,6 +91,16 @@ export const createAppRouter = (props: AppRouterProps) => {
               fallback={<div className="loading">Loading...</div>}
             >
               <HistoryPage />
+            </React.Suspense>
+          ),
+        },
+        {
+          path: "history/:id",
+          element: (
+            <React.Suspense
+              fallback={<div className="loading">Loading...</div>}
+            >
+              <SessionDetailPage />
             </React.Suspense>
           ),
         },
