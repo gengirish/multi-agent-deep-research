@@ -13,9 +13,12 @@ export interface ResearchData {
       agent?: string;
       action?: string;
       type?: string;
+      content?: string;
       input?: any;
       output?: any;
       metadata?: any;
+      error?: string;
+      error_type?: string;
     }>;
     total_entries?: number;
   };
@@ -25,7 +28,8 @@ export interface ConversationLog {
   id: string;
   timestamp: string;
   query: string;
-  fileName: string;
+  file_name: string;
+  file_size: number;
 }
 
 export interface ConversationDetail extends ConversationLog {
