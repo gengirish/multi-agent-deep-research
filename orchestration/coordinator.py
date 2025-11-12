@@ -14,7 +14,9 @@ from agents.analyzer import CriticalAnalysisAgent
 from agents.insight_generator import InsightGenerationAgent
 from agents.report_builder import ReportBuilderAgent
 from agents.credibility import SourceCredibilityAgent
+from agents.credibility_enhanced import EnhancedCredibilityAgent
 from utils.agent_logger import get_agent_logger
+from utils.rag_service import get_rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +35,13 @@ class ResearchState(TypedDict):
 class ResearchWorkflow:
     """Orchestrates the multi-agent research workflow using LangGraph."""
     
-    def __init__(self):
-        """Initialize agents and build workflow graph."""
+    def __init__(self, use_enhanced_credibility: bool = False, enable_rag: bool = False):
+        """Initialize agents and build workflow graph.
+        
+        Args:
+            use_enhanced_credibility: Use multi-dimensional credibility scoring
+            enable_rag: Enable RAG indexing and semantic search
+        """
         logger.info("Initializing Research Workflow")
         
         # Initialize agent logger
@@ -43,10 +50,29 @@ class ResearchWorkflow:
         # Initialize agents
         self.retriever = ContextualRetrieverAgent()
         self.enricher = DataEnrichmentAgent()
-        self.credibility_agent = SourceCredibilityAgent()
+        
+        # Choose credibility agent
+        self.use_enhanced_credibility = use_enhanced_credibility
+        if use_enhanced_credibility:
+            self.credibility_agent = EnhancedCredibilityAgent()
+            logger.info("Using Enhanced Credibility Agent (multi-dimensional)")
+        else:
+            self.credibility_agent = SourceCredibilityAgent()
+            logger.info("Using Standard Credibility Agent")
+        
         self.analyzer = CriticalAnalysisAgent()
         self.insight_generator = InsightGenerationAgent()
         self.report_builder = ReportBuilderAgent()
+        
+        # RAG service
+        self.enable_rag = enable_rag
+        if enable_rag:
+            try:
+                self.rag_service = get_rag_service()
+                logger.info("RAG Service enabled")
+            except Exception as e:
+                logger.warning(f"Failed to initialize RAG service: {e}")
+                self.enable_rag = False
         
         # Build workflow graph
         self.workflow = self._build_workflow()
@@ -115,6 +141,27 @@ class ResearchWorkflow:
             state["sources"] = enriched_sources
             self.agent_logger.log_agent_action("enricher", "enrich_sources", output_data={"status": "success"})
             logger.info("Workflow: Enricher completed")
+            
+            # Index sources into RAG if enabled
+            if self.enable_rag and hasattr(self, 'rag_service'):
+                try:
+                    query_id = self.agent_logger.query_id or "unknown"
+                    all_sources = []
+                    for source_type in ["web", "papers", "news"]:
+                        if source_type in enriched_sources:
+                            for source in enriched_sources[source_type]:
+                                source["_type"] = source_type
+                                all_sources.append(source)
+                    
+                    indexed_count = self.rag_service.index_sources(
+                        all_sources,
+                        query_id,
+                        credibility_data=None  # Will be added after credibility evaluation
+                    )
+                    logger.info(f"Indexed {indexed_count} sources into RAG")
+                except Exception as rag_error:
+                    logger.warning(f"RAG indexing failed: {rag_error}")
+            
         except Exception as e:
             logger.error(f"Enricher node failed: {e}")
             self.agent_logger.log_agent_error("enricher", "enrich_sources", e)
@@ -338,4 +385,3 @@ class ResearchWorkflow:
                 initial_state["conversation"] = conversation_data
             
             return initial_state
-

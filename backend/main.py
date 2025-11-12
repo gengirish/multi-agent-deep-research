@@ -80,12 +80,20 @@ app.add_middleware(
 # Workflow will be initialized on first use
 _workflow_instance = None
 
-def get_workflow():
-    """Get or create workflow instance (lazy initialization)."""
+def get_workflow(use_enhanced_credibility: bool = False, enable_rag: bool = False):
+    """Get or create workflow instance (lazy initialization).
+    
+    Args:
+        use_enhanced_credibility: Use multi-dimensional credibility scoring
+        enable_rag: Enable RAG for semantic search
+    """
     global _workflow_instance
     if _workflow_instance is None:
         try:
-            _workflow_instance = ResearchWorkflow()
+            _workflow_instance = ResearchWorkflow(
+                use_enhanced_credibility=use_enhanced_credibility,
+                enable_rag=enable_rag
+            )
         except Exception as e:
             logger.error(f"Failed to initialize workflow: {e}")
             raise
@@ -407,6 +415,55 @@ async def export_markdown(conversation_id: str):
         raise HTTPException(status_code=500, detail="Failed to export conversation")
 
 
+# Semantic search endpoint (RAG)
+class SearchRequest(BaseModel):
+    query: str
+    n_results: int = 10
+    credibility_threshold: float = 0.6
+
+@app.post("/api/search")
+async def semantic_search(req: SearchRequest):
+    """
+    Semantic search across indexed research sources using RAG.
+    Requires RAG to be enabled in workflow.
+    """
+    try:
+        from utils.rag_service import get_rag_service
+        rag = get_rag_service()
+        
+        results = rag.hybrid_search(
+            query=req.query,
+            n_results=req.n_results,
+            credibility_threshold=req.credibility_threshold
+        )
+        
+        return {
+            "query": req.query,
+            "results": results,
+            "total_indexed": rag.get_stats().get("total_documents", 0),
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Semantic search failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Semantic search failed: {str(e)}"
+        )
+
+
+# RAG stats endpoint
+@app.get("/api/rag/stats")
+async def rag_stats():
+    """Get RAG vector store statistics."""
+    try:
+        from utils.rag_service import get_rag_service
+        rag = get_rag_service()
+        return rag.get_stats()
+    except Exception as e:
+        logger.error(f"Failed to get RAG stats: {e}")
+        return {"total_documents": 0, "error": str(e)}
+
+
 # Voice input endpoint (for future Wispr Flow integration)
 @app.post("/api/research-voice")
 async def research_voice(audio_data: bytes = None):
@@ -441,7 +498,10 @@ async def root():
             "research_voice": "/api/research-voice",
             "demo_queries": "/api/demo-queries",
             "conversations_list": "/api/conversations",
-            "conversation_detail": "/api/conversations/{conversation_id}"
+            "conversation_detail": "/api/conversations/{conversation_id}",
+            "export_markdown": "/api/export/{conversation_id}/markdown",
+            "semantic_search": "/api/search",
+            "rag_stats": "/api/rag/stats"
         }
     }
 
