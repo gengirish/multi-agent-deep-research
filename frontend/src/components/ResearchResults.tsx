@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { ResearchData } from '../App'
-import { TextToSpeechControls } from './TextToSpeechControls'
-import { ResearchMetrics } from './ResearchMetrics'
-import { AgentTimeline, AgentPerformance } from './visualizations'
-import './ResearchResults.css'
+import React, { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { ResearchData } from "../types/dto";
+import { ResearchMetrics } from "./ResearchMetrics";
+import "./ResearchResults.css";
+import { TextToSpeechControls } from "./TextToSpeechControls";
+import { AgentPerformance, AgentTimeline } from "./visualizations";
 
 interface Props {
-  data: ResearchData
+  data: ResearchData;
 }
 
 // Result Card Component
 interface ResultCardProps {
-  title: string
-  icon: string
-  count: number
-  isExpanded: boolean
-  onToggle: () => void
-  color: 'blue' | 'green' | 'purple'
-  children: React.ReactNode
+  title: string;
+  icon: string;
+  count: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+  color: "blue" | "green" | "purple";
+  children: React.ReactNode;
 }
 
 const ResultCard: React.FC<ResultCardProps> = ({
@@ -33,16 +33,16 @@ const ResultCard: React.FC<ResultCardProps> = ({
 }) => {
   return (
     <div className={`result-card ${color}`} role="region" aria-label={title}>
-      <div 
-        className="card-header" 
-        onClick={onToggle} 
+      <div
+        className="card-header"
+        onClick={onToggle}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onToggle()
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
           }
         }}
-        role="button" 
+        role="button"
         tabIndex={0}
         aria-expanded={isExpanded}
       >
@@ -53,132 +53,139 @@ const ResultCard: React.FC<ResultCardProps> = ({
             <span className="card-count">{count} item(s)</span>
           </div>
         </div>
-        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>
-          ▼
-        </span>
+        <span className={`expand-icon ${isExpanded ? "expanded" : ""}`}>▼</span>
       </div>
 
       {isExpanded && <div className="card-content">{children}</div>}
     </div>
-  )
-}
+  );
+};
 
 const downloadReportMD = (content: string) => {
-  const element = document.createElement('a')
-  const blob = new Blob([content], { type: 'text/markdown' })
-  const url = URL.createObjectURL(blob)
-  element.setAttribute('href', url)
-  const timestamp = new Date().toISOString().split('T')[0]
-  element.setAttribute('download', `research_report_${timestamp}.md`)
-  element.style.display = 'none'
-  document.body.appendChild(element)
-  element.click()
-  document.body.removeChild(element)
-  URL.revokeObjectURL(url)
-}
+  const element = document.createElement("a");
+  const blob = new Blob([content], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  element.setAttribute("href", url);
+  const timestamp = new Date().toISOString().split("T")[0];
+  element.setAttribute("download", `research_report_${timestamp}.md`);
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+  URL.revokeObjectURL(url);
+};
 
 // Process report to ensure sources are clickable links
-const processReportSources = (report: string, sources: Record<string, any>): string => {
-  if (!report || !sources) return report
-  
+const processReportSources = (
+  report: string,
+  sources: Record<string, any>
+): string => {
+  if (!report || !sources) return report;
+
   // Collect all source URLs
-  const sourceMap: Record<string, string> = {}
-  
+  const sourceMap: Record<string, string> = {};
+
   Object.values(sources).forEach((sourceArray) => {
     if (Array.isArray(sourceArray)) {
       sourceArray.forEach((source: any) => {
         if (source?.title && source?.url) {
-          sourceMap[source.title] = source.url
+          sourceMap[source.title] = source.url;
         }
-      })
+      });
     }
-  })
-  
+  });
+
   // Convert sources to markdown links if they're not already links
-  let processedReport = report
-  
+  let processedReport = report;
+
   // Pattern: "1. Title" or "Title" followed by URL on next line
   Object.entries(sourceMap).forEach(([title, url]) => {
     // If title is not already a markdown link, convert it
-    const titlePattern = new RegExp(`(\\d+\\.\\s*)(${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?!\\]\\()`, 'g')
+    const titlePattern = new RegExp(
+      `(\\d+\\.\\s*)(${title.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+      )})(?!\\]\\()`,
+      "g"
+    );
     if (titlePattern.test(processedReport)) {
       // Replace with markdown link
-      processedReport = processedReport.replace(
-        titlePattern,
-        `$1[$2](${url})`
-      )
+      processedReport = processedReport.replace(titlePattern, `$1[$2](${url})`);
     }
-    
+
     // Also handle cases where URL is on a separate line
-    const urlPattern = new RegExp(`(${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\s*\\n\\s*(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g')
-    processedReport = processedReport.replace(
-      urlPattern,
-      `[$1]($2)`
-    )
-  })
-  
-  return processedReport
-}
+    const urlPattern = new RegExp(
+      `(${title.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+      )})\\s*\\n\\s*(${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "g"
+    );
+    processedReport = processedReport.replace(urlPattern, `[$1]($2)`);
+  });
+
+  return processedReport;
+};
 
 const downloadReportPDF = (content: string) => {
   // Convert markdown to HTML for PDF
   const convertMarkdownToHTML = (md: string): string => {
-    let html = md
-    const lines = html.split('\n')
-    const htmlLines: string[] = []
-    let inList = false
-    
+    let html = md;
+    const lines = html.split("\n");
+    const htmlLines: string[] = [];
+    let inList = false;
+
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i]
-      const trimmed = line.trim()
-      
+      let line = lines[i];
+      const trimmed = line.trim();
+
       // Headers
       if (trimmed.match(/^#{1,6}\s/)) {
         if (inList) {
-          htmlLines.push('</ul>')
-          inList = false
+          htmlLines.push("</ul>");
+          inList = false;
         }
-        const level = trimmed.match(/^(#{1,6})/)?.[1].length || 1
-        const text = trimmed.replace(/^#{1,6}\s/, '')
-        htmlLines.push(`<h${level}>${text}</h${level}>`)
-        continue
+        const level = trimmed.match(/^(#{1,6})/)?.[1].length || 1;
+        const text = trimmed.replace(/^#{1,6}\s/, "");
+        htmlLines.push(`<h${level}>${text}</h${level}>`);
+        continue;
       }
-      
+
       // Lists
       if (trimmed.match(/^[-*]\s/)) {
         if (!inList) {
-          htmlLines.push('<ul>')
-          inList = true
+          htmlLines.push("<ul>");
+          inList = true;
         }
-        const text = trimmed.replace(/^[-*]\s/, '')
-        htmlLines.push(`<li>${text}</li>`)
-        continue
+        const text = trimmed.replace(/^[-*]\s/, "");
+        htmlLines.push(`<li>${text}</li>`);
+        continue;
       } else if (inList) {
-        htmlLines.push('</ul>')
-        inList = false
+        htmlLines.push("</ul>");
+        inList = false;
       }
-      
+
       // Paragraphs
       if (trimmed) {
         // Bold
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
         // Italic
-        line = line.replace(/\*(.*?)\*/g, '<em>$1</em>')
+        line = line.replace(/\*(.*?)\*/g, "<em>$1</em>");
         // Code
-        line = line.replace(/`([^`]+)`/g, '<code>$1</code>')
-        htmlLines.push(`<p>${line}</p>`)
+        line = line.replace(/`([^`]+)`/g, "<code>$1</code>");
+        htmlLines.push(`<p>${line}</p>`);
       } else {
-        htmlLines.push('<br>')
+        htmlLines.push("<br>");
       }
     }
-    
+
     if (inList) {
-      htmlLines.push('</ul>')
+      htmlLines.push("</ul>");
     }
-    
-    return htmlLines.join('\n')
-  }
-  
+
+    return htmlLines.join("\n");
+  };
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -258,151 +265,167 @@ const downloadReportPDF = (content: string) => {
         ${convertMarkdownToHTML(content)}
       </body>
     </html>
-  `
-  
+  `;
+
   // Open print dialog for PDF (user can save as PDF)
-  const printWindow = window.open('', '_blank')
+  const printWindow = window.open("", "_blank");
   if (printWindow) {
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
     printWindow.onload = () => {
       // Small delay to ensure content is rendered
       setTimeout(() => {
-        printWindow.print()
-      }, 250)
-    }
+        printWindow.print();
+      }, 250);
+    };
   }
-}
+};
 
 export const ResearchResults: React.FC<Props> = ({ data }) => {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
     sources: true,
     analysis: true,
     insights: true,
     report: true,
-  })
-  const headerDropdownRef = useRef<HTMLDivElement>(null)
+  });
+  const headerDropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
-    }))
-  }
+    }));
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
+      const target = event.target as Node;
       if (
-        headerDropdownRef.current && 
+        headerDropdownRef.current &&
         !headerDropdownRef.current.contains(target)
       ) {
-        const menus = document.querySelectorAll('.download-menu')
-        menus.forEach(menu => menu.classList.remove('show'))
+        const menus = document.querySelectorAll(".download-menu");
+        menus.forEach((menu) => menu.classList.remove("show"));
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
-  if (data.status === 'error') {
+  if (data.status === "error") {
     return (
       <section className="results-error" role="alert">
         <div className="error-icon">⚠️</div>
         <h2>Research Failed</h2>
-        <p className="error-message">{data.report || data.error || 'An unknown error occurred'}</p>
+        <p className="error-message">
+          {data.report || data.error || "An unknown error occurred"}
+        </p>
         <button onClick={() => window.location.reload()}>Try Again</button>
       </section>
-    )
+    );
   }
 
   // Calculate counts
   const sourcesCount = Object.values(data.sources || {}).reduce(
     (acc, sources) => acc + (Array.isArray(sources) ? sources.length : 0),
     0
-  )
-  
-  const analysisCount = data.analysis 
+  );
+
+  const analysisCount = data.analysis
     ? Object.keys(data.analysis).reduce((acc, key) => {
-        const value = data.analysis[key]
-        return acc + (Array.isArray(value) ? value.length : value ? 1 : 0)
+        const value = data.analysis[key];
+        return acc + (Array.isArray(value) ? value.length : value ? 1 : 0);
       }, 0)
-    : 0
-  
-  const insightCount = data.insights?.insights?.length || 0
+    : 0;
+
+  const insightCount = data.insights?.insights?.length || 0;
 
   // Get sources list
-  const sourcesList: Array<{ title: string; url: string; snippet?: string }> = []
+  const sourcesList: Array<{ title: string; url: string; snippet?: string }> =
+    [];
   if (data.sources) {
     Object.values(data.sources).forEach((sourceArray) => {
       if (Array.isArray(sourceArray)) {
         sourceArray.forEach((source: any) => {
           if (source && (source.url || source.title)) {
             sourcesList.push({
-              title: source.title || 'Untitled',
-              url: source.url || '',
-              snippet: source.snippet || source.summary || '',
-            })
+              title: source.title || "Untitled",
+              url: source.url || "",
+              snippet: source.snippet || source.summary || "",
+            });
           }
-        })
+        });
       }
-    })
+    });
   }
 
   // Get analysis items
-  const analysisItems: Array<{ key: string; value: string }> = []
+  const analysisItems: Array<{ key: string; value: string }> = [];
   if (data.analysis) {
     Object.entries(data.analysis).forEach(([key, value]) => {
       if (value) {
         if (Array.isArray(value)) {
           value.forEach((item) => {
-            analysisItems.push({ key, value: String(item) })
-          })
+            analysisItems.push({ key, value: String(item) });
+          });
         } else {
-          analysisItems.push({ key, value: String(value) })
+          analysisItems.push({ key, value: String(value) });
         }
       }
-    })
+    });
   }
 
   // Get insights list
-  const insightsList = data.insights?.insights || []
+  const insightsList = data.insights?.insights || [];
 
   return (
-    <section className="results-container" role="region" aria-label="Research results">
+    <section
+      className="results-container"
+      role="region"
+      aria-label="Research results"
+    >
       {/* Research Metrics */}
       <ResearchMetrics data={data} />
-      
+
       {/* Agent Conversation Visualizations */}
       {(() => {
-        const conversationArray = data.conversation?.conversation || []
-        const hasConversation = conversationArray.length > 0
-        
+        const conversationArray = data.conversation?.conversation || [];
+        const hasConversation = conversationArray.length > 0;
+
         if (!hasConversation) {
           // Show placeholder if no conversation data
           return (
             <div className="agent-conversation-visualizations">
               <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
               <div className="conversation-placeholder">
-                <p>📊 Conversation data will appear here after running a research query.</p>
-                <p className="hint">The conversation log tracks all agent interactions during the research process.</p>
+                <p>
+                  📊 Conversation data will appear here after running a research
+                  query.
+                </p>
+                <p className="hint">
+                  The conversation log tracks all agent interactions during the
+                  research process.
+                </p>
               </div>
             </div>
-          )
+          );
         }
-        
+
         return (
           <div className="agent-conversation-visualizations">
             <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
             {data.conversation && (
               <div className="conversation-info">
                 <p className="conversation-meta">
-                  Query ID: {data.conversation.query_id || 'N/A'} | 
-                  Total Entries: {data.conversation.total_entries || conversationArray.length}
+                  Query ID: {data.conversation.query_id || "N/A"} | Total
+                  Entries:{" "}
+                  {data.conversation.total_entries || conversationArray.length}
                 </p>
               </div>
             )}
@@ -411,11 +434,15 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
               <AgentPerformance conversation={conversationArray} />
             </div>
           </div>
-        )
+        );
       })()}
-      
+
       {/* Floating Stats Bar */}
-      <div className="stats-bar" role="complementary" aria-label="Research statistics">
+      <div
+        className="stats-bar"
+        role="complementary"
+        aria-label="Research statistics"
+      >
         <div className="stat-item">
           <div className="stat-number">{sourcesCount}</div>
           <div className="stat-label">📚 Sources</div>
@@ -440,7 +467,7 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
           icon="📚"
           count={sourcesCount}
           isExpanded={expandedSections.sources}
-          onToggle={() => toggleSection('sources')}
+          onToggle={() => toggleSection("sources")}
           color="blue"
         >
           <div className="sources-list">
@@ -461,7 +488,9 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
                       </a>
                     )}
                     {source.snippet && (
-                      <p className="source-snippet">{source.snippet.substring(0, 150)}...</p>
+                      <p className="source-snippet">
+                        {source.snippet.substring(0, 150)}...
+                      </p>
                     )}
                   </div>
                 </div>
@@ -478,7 +507,7 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
           icon="📊"
           count={analysisCount}
           isExpanded={expandedSections.analysis}
-          onToggle={() => toggleSection('analysis')}
+          onToggle={() => toggleSection("analysis")}
           color="green"
         >
           <div className="analysis-list">
@@ -501,7 +530,7 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
           icon="💡"
           count={insightCount}
           isExpanded={expandedSections.insights}
-          onToggle={() => toggleSection('insights')}
+          onToggle={() => toggleSection("insights")}
           color="purple"
         >
           <div className="insights-list">
@@ -524,7 +553,9 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
         <div className="report-header">
           <div>
             <h2>📄 Full Research Report</h2>
-            <p className="report-subtitle">Comprehensive analysis compiled by AI agents</p>
+            <p className="report-subtitle">
+              Comprehensive analysis compiled by AI agents
+            </p>
           </div>
           <div className="download-options">
             <div className="download-dropdown" ref={headerDropdownRef}>
@@ -532,9 +563,10 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
                 className="download-button primary"
                 aria-label="Download options"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  const dropdown = e.currentTarget.nextElementSibling as HTMLElement
-                  dropdown?.classList.toggle('show')
+                  e.stopPropagation();
+                  const dropdown = e.currentTarget
+                    .nextElementSibling as HTMLElement;
+                  dropdown?.classList.toggle("show");
                 }}
               >
                 <span className="download-icon">📥</span>
@@ -544,9 +576,11 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
               <div className="download-menu">
                 <button
                   onClick={() => {
-                    downloadReportMD(data.report || '')
-                    const menu = document.querySelector('.download-menu') as HTMLElement
-                    menu?.classList.remove('show')
+                    downloadReportMD(data.report || "");
+                    const menu = document.querySelector(
+                      ".download-menu"
+                    ) as HTMLElement;
+                    menu?.classList.remove("show");
                   }}
                   className="download-option"
                   aria-label="Download as Markdown"
@@ -556,9 +590,11 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
                 </button>
                 <button
                   onClick={() => {
-                    downloadReportPDF(data.report || '')
-                    const menu = document.querySelector('.download-menu') as HTMLElement
-                    menu?.classList.remove('show')
+                    downloadReportPDF(data.report || "");
+                    const menu = document.querySelector(
+                      ".download-menu"
+                    ) as HTMLElement;
+                    menu?.classList.remove("show");
                   }}
                   className="download-option"
                   aria-label="Download as PDF"
@@ -574,13 +610,13 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
         {/* Text-to-Speech Controls */}
         <div className="report-tts-section">
           <TextToSpeechControls
-            text={data.report || ''}
+            text={data.report || ""}
             title="Listen to Report"
           />
         </div>
 
         <div className="report-content">
-          <ReactMarkdown 
+          <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             className="markdown-content"
             components={{
@@ -590,7 +626,7 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
               ),
             }}
           >
-            {processReportSources(data.report || '', data.sources || {})}
+            {processReportSources(data.report || "", data.sources || {})}
           </ReactMarkdown>
         </div>
       </div>
@@ -598,12 +634,12 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
       {/* Action Bar */}
       <div className="action-bar">
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="action-button secondary"
         >
           ↑ New Research
         </button>
       </div>
     </section>
-  )
-}
+  );
+};
