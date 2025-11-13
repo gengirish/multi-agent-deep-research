@@ -15,3 +15,6 @@ arxiv>=2.1.0
 typing-extensions>=4.8.0
 openai>=1.0.0
 
+# Optional: RAG and vector search features
+# Uncomment to enable semantic search capabilities
+# chromadb>=0.4.0
