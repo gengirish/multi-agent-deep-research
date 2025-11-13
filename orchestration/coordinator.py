@@ -16,7 +16,15 @@ from agents.report_builder import ReportBuilderAgent
 from agents.credibility import SourceCredibilityAgent
 from agents.credibility_enhanced import EnhancedCredibilityAgent
 from utils.agent_logger import get_agent_logger
-from utils.rag_service import get_rag_service
+
+# Optional RAG import
+try:
+    from utils.rag_service import get_rag_service
+    RAG_AVAILABLE = True
+except ImportError:
+    logger.warning("RAG service not available (chromadb not installed)")
+    RAG_AVAILABLE = False
+    get_rag_service = None
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +73,12 @@ class ResearchWorkflow:
         self.report_builder = ReportBuilderAgent()
         
         # RAG service
-        self.enable_rag = enable_rag
-        if enable_rag:
+        self.enable_rag = enable_rag and RAG_AVAILABLE
+        if enable_rag and not RAG_AVAILABLE:
+            logger.warning("RAG requested but chromadb not installed. Install with: pip install chromadb")
+            self.enable_rag = False
+        
+        if self.enable_rag:
             try:
                 self.rag_service = get_rag_service()
                 logger.info("RAG Service enabled")

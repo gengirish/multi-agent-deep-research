@@ -7,10 +7,19 @@ import logging
 import os
 from typing import List, Dict, Any, Optional
 from pathlib import Path
-import chromadb
-from chromadb.config import Settings
 
 logger = logging.getLogger(__name__)
+
+# Optional chromadb import
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    logger.warning("chromadb not installed. RAG features will be disabled.")
+    CHROMADB_AVAILABLE = False
+    chromadb = None
+    Settings = None
 
 
 class RAGService:
@@ -26,6 +35,9 @@ class RAGService:
     
     def __init__(self, persist_directory: str = "chroma_store"):
         """Initialize RAG service with Chroma."""
+        if not CHROMADB_AVAILABLE:
+            raise ImportError("chromadb is not installed. Install with: pip install chromadb")
+        
         self.persist_directory = Path(persist_directory)
         self.persist_directory.mkdir(parents=True, exist_ok=True)
         
