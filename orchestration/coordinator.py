@@ -7,6 +7,7 @@ import logging
 from typing import TypedDict, Dict, Any, List
 from langgraph.graph import StateGraph, END
 from agents.retriever import ContextualRetrieverAgent
+from agents.enrichment import DataEnrichmentAgent
 from agents.analyzer import CriticalAnalysisAgent
 from agents.insight_generator import InsightGenerationAgent
 from agents.report_builder import ReportBuilderAgent
@@ -35,6 +36,7 @@ class ResearchWorkflow:
         
         # Initialize agents
         self.retriever = ContextualRetrieverAgent()
+        self.enricher = DataEnrichmentAgent()
         self.analyzer = CriticalAnalysisAgent()
         self.insight_generator = InsightGenerationAgent()
         self.report_builder = ReportBuilderAgent()
@@ -51,13 +53,15 @@ class ResearchWorkflow:
         
         # Add nodes (agents)
         graph.add_node("retriever", self._retriever_node)
+        graph.add_node("enricher", self._enricher_node)
         graph.add_node("analyzer", self._analyzer_node)
         graph.add_node("insight_generator", self._insight_generator_node)
         graph.add_node("report_builder", self._report_builder_node)
         
         # Define edges (linear flow)
         graph.set_entry_point("retriever")
-        graph.add_edge("retriever", "analyzer")
+        graph.add_edge("retriever", "enricher")
+        graph.add_edge("enricher", "analyzer")
         graph.add_edge("analyzer", "insight_generator")
         graph.add_edge("insight_generator", "report_builder")
         graph.add_edge("report_builder", END)
@@ -76,6 +80,19 @@ class ResearchWorkflow:
             logger.error(f"Retriever node failed: {e}")
             state["error"] = f"Retrieval failed: {str(e)}"
             state["sources"] = {"web": [], "papers": [], "news": [], "query": state["query"]}
+        return state
+    
+    def _enricher_node(self, state: ResearchState) -> ResearchState:
+        """Enrichment agent node."""
+        try:
+            logger.info("Workflow: Running Enricher")
+            enriched_sources = self.enricher.enrich_sources(state["sources"])
+            state["sources"] = enriched_sources
+            logger.info("Workflow: Enricher completed")
+        except Exception as e:
+            logger.error(f"Enricher node failed: {e}")
+            # Continue with original sources if enrichment fails
+            logger.warning("Continuing with original sources (enrichment failed)")
         return state
     
     def _analyzer_node(self, state: ResearchState) -> ResearchState:

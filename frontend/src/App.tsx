@@ -19,7 +19,7 @@ export interface ResearchData {
 }
 
 export const App: React.FC = () => {
-  const [query, setQuery] = useState('')
+  const [, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<ResearchData | null>(null)
   const [demoMode, setDemoMode] = useState(false)
@@ -59,10 +59,11 @@ export const App: React.FC = () => {
 
       // Stage mapping: Map backend stages to our progress stages
       const stageMap: Record<string, number> = {
-        'retrieval': 0,  // Retriever
-        'analyzer': 1,   // Analyzer
-        'insight': 2,    // Insight
-        'report': 3,     // Reporter
+        'retrieval': 0,   // Retriever
+        'enrichment': 1,  // Enricher
+        'analyzer': 2,    // Analyzer
+        'insight': 3,     // Insight
+        'report': 4,      // Reporter
       }
 
       // Track which stages have been started
@@ -107,9 +108,10 @@ export const App: React.FC = () => {
               if (data.stage === 'complete' && data.data) {
                 // Complete all stages
                 completeStage(0, '✓ Retrieved sources')
-                completeStage(1, '✓ Analysis complete')
-                completeStage(2, '✓ Insights generated')
-                completeStage(3, '✓ Report compiled')
+                completeStage(1, '✓ Enrichment complete')
+                completeStage(2, '✓ Analysis complete')
+                completeStage(3, '✓ Insights generated')
+                completeStage(4, '✓ Report compiled')
                 
                 setResults(data.data)
                 setLoading(false)

@@ -168,6 +168,28 @@
 .card-content {
   padding: 20px;
   animation: expandDown 0.3s ease;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for card content */
+.card-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.card-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.card-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.card-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 @keyframes expandDown {
@@ -177,7 +199,7 @@
   }
   to {
     opacity: 1;
-    max-height: 1000px;
+    max-height: 400px;
   }
 }
 
@@ -255,27 +277,55 @@
   line-height: 1.4;
 }
 
-.analysis-item {
-  padding: 12px;
+/* New grouped analysis styles */
+.analysis-group {
+  padding: 16px;
   background: #f0fdf4;
   border-radius: 8px;
   border-left: 3px solid #10b981;
+  margin-bottom: 12px;
 }
 
-.analysis-label {
-  font-size: 12px;
+.analysis-group:last-child {
+  margin-bottom: 0;
+}
+
+.analysis-heading {
+  font-size: 13px;
   font-weight: 700;
   color: #059669;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-.analysis-content {
+.analysis-bullets {
+  list-style: none;
+  padding: 0;
   margin: 0;
+}
+
+.analysis-bullet-item {
+  padding: 8px 0 8px 20px;
   font-size: 13px;
   color: #1f2937;
   line-height: 1.5;
+  position: relative;
+}
+
+.analysis-bullet-item::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.analysis-bullet-item:not(:last-child) {
+  border-bottom: 1px solid rgba(16, 185, 129, 0.1);
 }
 
 .insight-item {
