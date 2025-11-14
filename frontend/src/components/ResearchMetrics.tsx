@@ -9,7 +9,12 @@ interface Props {
 export const ResearchMetrics: React.FC<Props> = ({ data }) => {
   const sources = data.sources || {}
   const metadata = sources.metadata || {}
-  
+
+  // Debug logging
+  console.log('[ResearchMetrics] Full data:', data)
+  console.log('[ResearchMetrics] Sources:', sources)
+  console.log('[ResearchMetrics] Metadata:', metadata)
+
   // Collect enriched data from sources
   const enrichedSources: Array<{
     title: string
@@ -35,10 +40,16 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
       })
     }
   })
-  
+
+  console.log('[ResearchMetrics] Enriched sources count:', enrichedSources.length)
+  console.log('[ResearchMetrics] Enriched sources:', enrichedSources)
+
   // Calculate statistics
   const totalSources = metadata.total_sources || enrichedSources.length
   const enrichmentApplied = metadata.enrichment_applied || false
+
+  console.log('[ResearchMetrics] Total sources:', totalSources)
+  console.log('[ResearchMetrics] Enrichment applied:', enrichmentApplied)
   
   // Sentiment distribution
   const sentimentCounts = {
@@ -68,9 +79,14 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
   const domainScores = enrichedSources
     .map((s) => s.domain_score)
     .filter((score): score is number => score !== undefined)
+
+  console.log('[ResearchMetrics] Domain scores:', domainScores)
+
   const avgDomainScore = domainScores.length > 0
     ? domainScores.reduce((a, b) => a + b, 0) / domainScores.length
     : 0
+
+  console.log('[ResearchMetrics] Average domain score:', avgDomainScore)
   
   // Quality breakdown
   const highQuality = domainScores.filter((s) => s >= 0.8).length

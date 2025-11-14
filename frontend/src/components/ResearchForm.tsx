@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { VoiceInput } from './VoiceInput'
+import { PictureInput } from './PictureInput'
 import './ResearchForm.css'
 
-type InputMode = 'text' | 'voice'
+type InputMode = 'text' | 'voice' | 'picture'
 
 interface Props {
   onSubmit: (query: string) => void
@@ -44,11 +45,17 @@ export const ResearchForm: React.FC<Props> = ({
   }
 
   const handleVoiceCapture = (text: string) => {
+    // Update the query when voice is captured (after stop is clicked)
     handleQueryChange(text)
-    // Auto-submit after voice capture (optional - you can remove this if you want manual submit)
-    // if (text.trim() && !loading) {
-    //   onSubmit(text)
-    // }
+  }
+
+  const handlePictureCapture = (text: string) => {
+    // Update the query when picture text is extracted
+    handleQueryChange(text)
+  }
+
+  const handleReset = () => {
+    handleQueryChange('')
   }
 
   return (
@@ -81,40 +88,104 @@ export const ResearchForm: React.FC<Props> = ({
           <span className="mode-icon">🎤</span>
           <span className="mode-text">Speak</span>
         </button>
+        <button
+          type="button"
+          className={`mode-button ${inputMode === 'picture' ? 'active' : ''}`}
+          onClick={() => setInputMode('picture')}
+          aria-pressed={inputMode === 'picture'}
+          aria-label="Switch to picture input mode"
+          disabled={loading || disabled}
+        >
+          <span className="mode-icon">📷</span>
+          <span className="mode-text">Picture</span>
+        </button>
       </div>
       
       {/* Voice Input Section */}
       {inputMode === 'voice' && (
         <div className="voice-input-container">
-          <VoiceInput 
+          <VoiceInput
             onVoiceCapture={handleVoiceCapture}
+            onReset={handleReset}
             disabled={loading || disabled}
           />
           {query && (
             <div className="captured-query">
-              <p className="captured-label">Captured query:</p>
-              <p className="captured-text">{query}</p>
+              <label htmlFor="captured-query-textarea" className="captured-label">
+                Captured query:
+              </label>
+              <textarea
+                id="captured-query-textarea"
+                value={query}
+                onChange={(e) => handleQueryChange(e.target.value)}
+                disabled={loading || disabled}
+                className="captured-textarea"
+                placeholder="Your voice input will appear here. You can edit it before submitting."
+                rows={4}
+                aria-label="Edit captured voice query"
+              />
             </div>
           )}
         </div>
       )}
-      
+
+      {/* Picture Input Section */}
+      {inputMode === 'picture' && (
+        <div className="picture-input-container">
+          <PictureInput
+            onPictureCapture={handlePictureCapture}
+            onReset={handleReset}
+            disabled={loading || disabled}
+          />
+          {query && (
+            <div className="captured-query">
+              <label htmlFor="captured-picture-textarea" className="captured-label">
+                Extracted query:
+              </label>
+              <textarea
+                id="captured-picture-textarea"
+                value={query}
+                onChange={(e) => handleQueryChange(e.target.value)}
+                disabled={loading || disabled}
+                className="captured-textarea"
+                placeholder="Extracted text from your picture will appear here. You can edit it before submitting."
+                rows={4}
+                aria-label="Edit extracted picture query"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Text Input Section */}
       {inputMode === 'text' && (
         <div className="text-input-container">
-          <input
-            id="query-input"
-            type="text"
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            placeholder="e.g., Latest developments in quantum computing 2024"
-            disabled={loading || disabled}
-            aria-busy={loading}
-            aria-describedby="query-hint"
-            aria-required="true"
-            className="query-input"
-            autoComplete="off"
-          />
+          <div className="input-with-reset">
+            <input
+              id="query-input"
+              type="text"
+              value={query}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              placeholder="e.g., Latest developments in quantum computing 2024"
+              disabled={loading || disabled}
+              aria-busy={loading}
+              aria-describedby="query-hint"
+              aria-required="true"
+              className="query-input"
+              autoComplete="off"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={loading || disabled}
+                className="text-reset-button"
+                aria-label="Clear input"
+              >
+                <span className="reset-icon">✕</span>
+              </button>
+            )}
+          </div>
           <p id="query-hint" className="form-hint">
             Enter your research topic. Results will appear below.
           </p>
