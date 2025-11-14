@@ -10,7 +10,6 @@ export interface TTSOptions {
 export const useTextToSpeech = (options: TTSOptions = {}) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [currentWord, setCurrentWord] = useState(0)
   const [progress, setProgress] = useState(0)
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const synth = typeof window !== 'undefined' ? window.speechSynthesis : null

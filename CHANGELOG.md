@@ -1,6 +1,121 @@
 # Changelog
 
-## Model Selection Optimization (Latest)
+## Picture Input Feature + UI Improvements (Latest - 2025-11-11)
+
+### 🎉 Major Features Added
+
+#### 1. Picture Input Mode
+- **New Tab**: Added "Picture" tab alongside "Type" and "Speak"
+- **Camera Access**: Live webcam preview with paper detection indicator
+- **Hybrid AI Processing**:
+  - Stage 1 (0-45%): OCR text extraction using Tesseract.js
+  - Stage 2 (45-100%): GPT-4 Vision enhancement via OpenRouter
+- **Image Preprocessing**:
+  - 2x image scaling for better resolution
+  - Grayscale conversion with adaptive thresholding
+  - Noise reduction using median filter
+  - High contrast black/white conversion
+- **Smart Corrections**: AI automatically fixes OCR mistakes
+  - Example: "aaa L Tadia on dlekal STAGE" → "India on global STAGE"
+- **Progress Tracking**: Two-stage progress bar with stage descriptions
+- **User Guidance**: Tips for optimal capture results
+
+#### 2. Analysis Findings Improvements
+- **Before**: Repeated headings (SUMMARY, SUMMARY, CREDIBILITY, CREDIBILITY...)
+- **After**: Single headings with organized bullet points
+- **Grouping**: Related items consolidated under each heading
+- **Visual Design**:
+  - Green-themed bullet points
+  - Underlined section headings
+  - Subtle borders between items
+  - Proper spacing and padding
+
+#### 3. Scrollable Result Cards
+- **Vertical Scrolling**: Added to all three result sections
+  - 📚 Sources Retrieved
+  - 📊 Analysis Findings
+  - 💡 Emerging Trends
+- **Max Height**: 400px per card with smooth scrolling
+- **Custom Scrollbar**: Styled scrollbar for better UX
+- **Independent Scrolling**: Each card scrolls separately
+- **Smooth Animation**: Expand/collapse with fade-in effect
+
+### 🔧 Technical Implementation
+
+#### Frontend Changes
+1. **New Component**: `PictureInput.tsx`
+   - Camera access using MediaDevices API
+   - Paper detection using edge detection algorithm
+   - Image capture to canvas
+   - Integration with backend API
+
+2. **Updated Component**: `ResearchResults.tsx`
+   - Changed analysis rendering from individual items to grouped format
+   - Added `analysisGroups` data structure
+   - Implemented bullet list rendering
+
+3. **New Styles**: `PictureInput.css`
+   - Camera interface styling
+   - Progress indicators
+   - Processing stages
+   - AI badge and labels
+
+4. **Updated Styles**: `ResearchResults.css`
+   - Added `.card-content` scrolling (max-height: 400px)
+   - Custom scrollbar styling
+   - New `.analysis-group` styles
+   - Bullet point formatting
+
+#### Backend Changes
+1. **New Endpoint**: `POST /api/extract-image-text`
+   - Accepts base64 image + optional OCR text
+   - Uses GPT-4o Vision via OpenRouter
+   - Returns cleaned, corrected text
+   - Includes confidence level
+
+2. **Updated**: `backend/main.py`
+   - Added `ImageExtractionRequest` model
+   - Added `ImageExtractionResponse` model
+   - Integrated OpenAI client with OpenRouter
+   - Added image text extraction logic
+
+#### Dependencies Added
+- `tesseract.js` - OCR processing in browser
+- No backend dependencies (reused existing OpenAI/OpenRouter setup)
+
+### 📊 Impact
+
+**User Experience**:
+- ✅ Three input methods: Type, Speak, Picture
+- ✅ Much better OCR accuracy with AI enhancement
+- ✅ Cleaner, more organized analysis display
+- ✅ Better content management with scrolling
+- ✅ Professional, polished interface
+
+**Performance**:
+- OCR processing: ~3-5 seconds (client-side)
+- AI enhancement: ~2-3 seconds (server-side)
+- Total processing: ~5-8 seconds for image to query
+
+**Code Quality**:
+- Modular component design
+- Proper error handling and fallbacks
+- TypeScript type safety
+- Responsive CSS with animations
+
+### 🐛 Bug Fixes
+- Fixed OCR text extraction accuracy issues
+- Resolved repeated headings in analysis display
+- Fixed content overflow in result cards
+
+### 📝 Documentation Updates
+- Created `PROJECT_CONTEXT.md` - Complete project overview
+- Created `.clinerules` - Quick reference for Claude Code
+- Updated `CHANGELOG.md` - This file!
+
+---
+
+## Model Selection Optimization
 
 ### Changes Made
 
