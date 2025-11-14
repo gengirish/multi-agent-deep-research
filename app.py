@@ -3,18 +3,12 @@ Streamlit UI for Multi-Agent AI Deep Researcher
 Hackathon Demo Application
 """
 
-from langchain_chroma import Chroma
 import streamlit as st
 import logging
 from orchestration.coordinator import ResearchWorkflow
 from utils.demo_cache import get_cached_result, cache_result
 from streamlit_tts_component import text_to_speech_component
 import time
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-import tempfile, os
-from langchain_community.document_loaders import PyPDFLoader, CSVLoader
-from langchain_openai import OpenAIEmbeddings
-from langchain_core.documents import Document
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,41 +21,6 @@ st.set_page_config(
     layout="wide"
 )
 
-def ingest_documents(uploaded_files):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    documents = []
-
-    for uploaded_file in uploaded_files:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(uploaded_file.getvalue())
-            file_path = tmp.name
-
-        if uploaded_file.name.endswith(".pdf"):
-            loader = PyPDFLoader(file_path)
-            docs = loader.load()
-        elif uploaded_file.name.endswith(".csv"):
-            loader = CSVLoader(file_path)
-            docs = loader.load()
-        else:
-            st.warning(f"Unsupported file type: {uploaded_file.name}")
-            continue
-
-        for d in docs:
-            for chunk in text_splitter.split_text(d.page_content):
-                documents.append(Document(page_content=chunk))
-
-    
-    # Create embeddings and store in Chroma (local folder)
-    embeddings = OpenAIEmbeddings(
-         model=os.getenv("EMBEDDING_MODEL", "openrouter/text-embedding-3-large"),        # You can change to another embedding model
-         openai_api_key=os.getenv("OPEN_ROUTER_KEY"),
-         openai_api_base=os.getenv("OPENAI_BASE_URL") or "https://openrouter.ai/api/v1"
-    )
-    vectordb = Chroma.from_documents(documents, embeddings, persist_directory="./chroma_store")    
-   
-    
-    return (len(documents),vectordb)
-
 # Initialize session state
 if "workflow" not in st.session_state:
     st.session_state.workflow = ResearchWorkflow()
@@ -73,17 +32,16 @@ if "input_mode" not in st.session_state:
     st.session_state.input_mode = "text"  # "text" or "voice"
 if "voice_transcript" not in st.session_state:
     st.session_state.voice_transcript = ""
-if "vectordatabase" not in st.session_state:
-    st.session_state.vectordatabase = None
 
 # Title and description
 st.title("🤖 Multi-Agent AI Deep Researcher")
 st.markdown("""
 **An AI-powered research assistant using specialized agents for multi-source investigation.**
 
-This system uses four specialized agents:
+This system uses five specialized agents:
 - 🔍 **Contextual Retriever** - Pulls data from web, papers, and news
-- 📊 **Critical Analyzer** - Summarizes findings and validates sources
+- 📊 **Data Enrichment** - Enriches sources with metadata and sentiment
+- 🎯 **Critical Analyzer** - Summarizes findings and validates sources
 - 💡 **Insight Generator** - Suggests hypotheses and trends
 - 📄 **Report Builder** - Compiles structured research reports
 """)
@@ -106,25 +64,7 @@ with st.sidebar:
             st.session_state.demo_query = query
             st.session_state.demo_key = key
             st.rerun()
-            
-            
 
-
-# Ingest documents if uploaded
-uploaded_files = st.file_uploader("Upload Files", type=["csv", "pdf"], accept_multiple_files=True)
-
-if uploaded_files:
-    if st.button("📥 Ingest and Store Documents"):
-        count,vectordatabase = ingest_documents(uploaded_files)
-        st.session_state.vectordatabase=vectordatabase
-        st.success(f"✅ {count} document chunks ingested and stored in vector database successfully!")
-else:
-    st.info("Please upload documents to enable RAG context retrieval.")    
-    st.session_state.vectordatabase=None  
-
-        
-
-            
 # Input Mode Toggle
 st.markdown("### Choose Input Method")
 input_mode = st.radio(
@@ -248,7 +188,7 @@ if st.button("🚀 Start Research", type="primary") or st.session_state.get("dem
         
         # Run workflow
         try:
-            result = st.session_state.workflow.run(query,st.session_state.vectordatabase)
+            result = st.session_state.workflow.run(query)
             progress_bar.progress(100)
             status_text.success("✅ Research complete!")
             
@@ -300,11 +240,11 @@ if st.session_state.results:
     
     with tab2:
         st.markdown("## Retrieved Sources")
-        
+
         sources = result.get("sources", {})
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
+
+        col1, col2, col3 = st.columns(3)
+
         with col1:
             st.subheader("🌐 Web Sources")
             if sources.get("web"):
@@ -314,7 +254,7 @@ if st.session_state.results:
                         st.write(f"**Snippet:** {web.get('snippet', 'No snippet')}")
             else:
                 st.info("No web sources found")
-        
+
         with col2:
             st.subheader("📚 Research Papers")
             if sources.get("papers"):
@@ -325,7 +265,7 @@ if st.session_state.results:
                         st.write(f"**Summary:** {paper.get('summary', 'No summary')[:200]}...")
             else:
                 st.info("No papers found")
-        
+
         with col3:
             st.subheader("📰 News Sources")
             if sources.get("news"):
@@ -335,13 +275,6 @@ if st.session_state.results:
                         st.write(f"**Snippet:** {news.get('snippet', 'No snippet')}")
             else:
                 st.info("No news sources found")
-        
-        with col4:
-            st.subheader("📄 RAG Context Documents")
-            if sources.get("rag_context"):
-                st.text_area("RAG Context", value=sources["rag_context"][:5000], height=300)
-            else:
-                st.info("No RAG context available")
     
     with tab3:
         st.markdown("## Analysis Results")
