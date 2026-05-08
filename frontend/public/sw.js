@@ -2,7 +2,7 @@
  * Patterns adapted from .cursor/skills/pwa-offline/SKILL.md.
  */
 
-const CACHE_NAME = "chronicle-v6";
+const CACHE_NAME = "chronicle-v7";
 const OFFLINE_URL = "/offline";
 
 const PRECACHE_URLS = [OFFLINE_URL, "/favicon.svg", "/icons/icon-192.svg"];

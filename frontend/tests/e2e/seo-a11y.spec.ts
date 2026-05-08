@@ -59,12 +59,28 @@ test.describe("SEO + a11y basics", () => {
     expect(data.name).toBe("Chronicle");
   });
 
-  test("skip-link is the first focusable element on app pages", async ({
+  test("skip-link is present and points to main content on app pages", async ({
     page,
   }) => {
     await page.goto("/research");
-    const skip = page.locator(".skip-link");
+    const skip = page.locator(".skip-link").first();
     await expect(skip).toHaveAttribute("href", "#main-content");
+  });
+
+  test("sidebar workspace nav has correct ARIA labels", async ({ page }) => {
+    await page.goto("/research");
+    const sidebar = page.locator(".appsb");
+    await expect(sidebar).toHaveAttribute("aria-label", /workspace/i);
+    await expect(sidebar.locator("nav").first()).toHaveAttribute(
+      "aria-label",
+      /primary/i
+    );
+  });
+
+  test("active sidebar item has aria-current=page", async ({ page }) => {
+    await page.goto("/about");
+    const active = page.locator('.appsb__nav-item[aria-current="page"]');
+    await expect(active).toContainText(/About/i);
   });
 
   test("all GitHub links point to the canonical repo", async ({ page }) => {

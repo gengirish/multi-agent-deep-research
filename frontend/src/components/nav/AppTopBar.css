@@ -1,0 +1,147 @@
+.apptop {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background: rgba(11, 18, 32, 0.85);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-inter), Inter, sans-serif;
+  color: #e2e8f0;
+}
+
+.apptop__hamburger {
+  display: none;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.apptop__hamburger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+}
+
+.apptop__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #f8fafc;
+  font-weight: 700;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.apptop__brandname {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.apptop__actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.apptop__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  min-width: 240px;
+}
+
+.apptop__search:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(129, 140, 248, 0.3);
+  color: #f8fafc;
+}
+
+.apptop__search-label {
+  flex: 1;
+  text-align: left;
+}
+
+.apptop__kbd {
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
+    monospace;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  letter-spacing: 0.02em;
+}
+
+.apptop__icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.apptop__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+}
+
+@media (max-width: 900px) {
+  .apptop__hamburger {
+    display: inline-flex;
+  }
+  .apptop__search {
+    min-width: 0;
+    flex: 1;
+  }
+  .apptop__search-label,
+  .apptop__kbd {
+    display: none;
+  }
+  .apptop__brandname {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apptop__hamburger,
+  .apptop__search,
+  .apptop__icon-btn {
+    transition: none !important;
+  }
+}
