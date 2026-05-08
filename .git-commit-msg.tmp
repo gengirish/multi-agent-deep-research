@@ -1,0 +1,75 @@
+Navigation revamp: sidebar-first workspace with command palette, breadcrumbs, and keyboard shortcuts
+
+Replaces the duplicated TopNav-plus-Sidebar nav pattern on app pages with a
+modern sidebar-first workspace shell modeled after Linear, Vercel, and Notion.
+Public pages (/, /r/[id], /offline) keep the marketing-style top nav unchanged.
+
+App shell layout (app/(app)/layout.tsx)
+- New sticky 56px AppTopBar: hamburger (mobile only), brand logo, breadcrumbs,
+  "Search Chronicle..." trigger button with cross-platform Cmd/Ctrl K hint,
+  shortcuts help icon.
+- New AppSidebar (240px expanded, 64px icon-only): brand-gradient "+ New
+  research" CTA, primary nav (Research/History/Visualizations) with shortcut
+  hints, Recent sessions section (top 5 from /api/conversations with shimmer
+  skeleton), secondary nav (Settings/About), collapse toggle. Active state
+  shows a gradient pill plus a left-edge accent bar. On mobile becomes a
+  slide-in drawer with overlay.
+- Persists sidebar collapsed state in localStorage via SSR-safe hook.
+
+New components under src/components/nav/
+- AppSidebar.tsx + AppSidebar.css
+- AppTopBar.tsx + AppTopBar.css
+- Breadcrumbs.tsx + Breadcrumbs.css (auto-derives from pathname; collapses
+  to last 2 crumbs on mobile)
+- CommandPalette.tsx + CommandPalette.css (4 groups: Go to / Actions /
+  Starter queries / Recent research; arrow-key navigation; backdrop blur;
+  animated entrance; ESC to close)
+- ShortcutsHelp.tsx + ShortcutsHelp.css (overlay listing every shortcut)
+
+New hooks under src/hooks/ (all client-side, SSR-safe)
+- useLocalStorage<T>: hydration-safe persistence
+- useMediaQuery: tracks (max-width: 900px) for mobile drawer
+- useRecentSessions(limit): fetches top N from /api/conversations
+- useGlobalShortcuts: window keydown listener with leader-key pattern;
+  skips firing when focus is inside editable fields (input, textarea,
+  contenteditable, role=textbox/combobox)
+
+Keyboard shortcuts
+- Cmd/Ctrl+K        open command palette
+- ?                 show shortcuts help
+- ESC               close any overlay or drawer
+- N                 new research
+- G then R/H/V/S/A/I  navigate to research / history / visualizations /
+                       settings / about / landing
+- Up/Down + Enter   inside palette: navigate + run
+
+Accessibility (per ui-ux-pro-max skill recommendations)
+- aria-current="page" on the active sidebar item
+- aria-modal + aria-label on the palette and shortcuts dialogs
+- aria-hidden on every decorative SVG icon
+- All icon-only buttons have aria-label
+- Sidebar uses <aside aria-label="Workspace navigation"> with nested
+  <nav aria-label="Primary"|"Secondary">
+- Active state has both color and a structural left-bar (color is not the
+  only signal)
+- Skip link still first focusable
+- prefers-reduced-motion respected on shimmer, palette pop-in, transitions
+
+Cleanup
+- Removed src/components/Sidebar.tsx + Sidebar.css (replaced by AppSidebar).
+- Marketing TopNav still used by LandingPage and ShareableReport; renamed
+  in commentary as the "marketing variant" while AppTopBar is the workspace
+  variant.
+
+E2E tests
+- Updated navigation.spec.ts for the new sidebar-first selectors plus a
+  breadcrumbs test.
+- New command-palette.spec.ts (10 tests) covering Cmd/Ctrl+K open, ESC close,
+  search trigger button, type-to-filter, Enter runs top match, ArrowDown +
+  Enter, empty state, the help icon, G+H, G+A.
+- seo-a11y.spec.ts: added sidebar ARIA-label test plus aria-current=page
+  active-item test.
+- Total suite: 41 -> 52 tests, all passing against the live deployment in
+  about 1.4 min.
+
+Live URL:  https://deep-research.intelliforge.tech (SW cache bumped to v7)
