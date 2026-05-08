@@ -780,3 +780,186 @@
   }
 }
 
+
+/* ============================================================
+ * Dark theme overrides — Chronicle palette
+ * Appended in design pass; overrides earlier light-theme defaults.
+ * ============================================================ */
+
+.results-container {
+  color: var(--c-text, #e2e8f0);
+}
+
+.stats-bar {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(14, 165, 233, 0.12)
+  ) !important;
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  box-shadow: 0 12px 40px rgba(2, 6, 23, 0.45);
+}
+
+.stat-number {
+  background: linear-gradient(120deg, #818cf8 0%, #38bdf8 60%, #22d3ee 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.stat-label {
+  color: #cbd5e1 !important;
+}
+
+.stat-divider {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.result-card,
+.source-card,
+.insight-card,
+.analysis-card,
+.report-tab-content,
+.tab-content {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: var(--c-text, #e2e8f0) !important;
+  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.35) !important;
+}
+
+.result-card h3,
+.result-card h4,
+.source-card h3,
+.source-card h4,
+.insight-card h3,
+.insight-card h4,
+.analysis-card h3,
+.analysis-card h4 {
+  color: #f8fafc !important;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+}
+
+.result-card p,
+.source-card p,
+.insight-card p,
+.analysis-card p {
+  color: var(--c-text-muted, #94a3b8) !important;
+}
+
+.result-card a,
+.source-card a {
+  color: #c7d2fe !important;
+  border-bottom: 1px solid rgba(199, 210, 254, 0.3);
+}
+
+.result-card a:hover,
+.source-card a:hover {
+  border-bottom-color: #c7d2fe;
+}
+
+/* Tab UI */
+.tabs,
+.tab-list,
+.tabs-list {
+  border-bottom: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
+}
+
+.tab,
+.tab-button {
+  background: transparent !important;
+  color: var(--c-text-muted, #94a3b8) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab:hover,
+.tab-button:hover {
+  color: var(--c-text-strong, #f8fafc) !important;
+}
+
+.tab.active,
+.tab-button.active,
+.tab[aria-selected="true"] {
+  color: var(--c-text-strong, #f8fafc) !important;
+  border-bottom-color: #818cf8 !important;
+  background: transparent !important;
+}
+
+/* Badges and tags */
+.badge,
+.tag,
+.source-type,
+.credibility-badge {
+  background: rgba(129, 140, 248, 0.12) !important;
+  color: #c7d2fe !important;
+  border: 1px solid rgba(129, 140, 248, 0.25) !important;
+}
+
+/* Score / metric chips */
+.score,
+.score-high {
+  color: #86efac !important;
+}
+
+.score-medium {
+  color: #fcd34d !important;
+}
+
+.score-low {
+  color: #fca5a5 !important;
+}
+
+/* Section titles within results */
+.section-title,
+.results-section-title {
+  color: #f8fafc !important;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Misc text emphasis */
+.muted,
+.subtle,
+.help-text {
+  color: var(--c-text-dim, #64748b) !important;
+}
+
+/* Progress sub-bars inside results */
+.score-bar,
+.credibility-bar,
+.confidence-bar {
+  background: rgba(148, 163, 184, 0.12) !important;
+}
+
+.score-bar > div,
+.credibility-bar > div,
+.confidence-bar > div {
+  background: linear-gradient(90deg, #818cf8, #38bdf8) !important;
+}
+
+/* Lists */
+.results-container ul,
+.results-container ol {
+  color: var(--c-text, #e2e8f0);
+}
+
+.results-container li {
+  color: var(--c-text, #e2e8f0);
+}
+
+.results-container li::marker {
+  color: #818cf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-container {
+    animation: none !important;
+  }
+  .tab,
+  .tab-button {
+    transition: none !important;
+  }
+}

@@ -1,37 +1,52 @@
+"use client";
+
 import React from "react";
-import { NavLink } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "./Sidebar.css";
 
 interface Props {
   onQuerySelect: (query: string) => void;
-  demoMode: boolean;
-  onDemoModeChange: (enabled: boolean) => void;
   isOpen: boolean;
   onToggle: (open: boolean) => void;
 }
 
-const DEMO_QUERIES = [
+const STARTER_QUERIES = [
   {
-    id: "quantum_computing",
-    query: "Latest developments in quantum computing 2024",
-    icon: "🔬",
+    id: "ai_coding_assistants",
+    query: "Market size and key players in AI coding assistants 2025",
   },
   {
-    id: "ai_safety",
-    query: "Current state of AI safety research and regulations",
-    icon: "🛡️",
+    id: "smb_accounting",
+    query: "Top pain points cited by SMB owners about accounting software",
   },
   {
-    id: "climate_tech",
-    query: "Emerging climate technology solutions 2024",
-    icon: "🌱",
+    id: "vertical_saas_health",
+    query: "Recent Series A rounds in vertical SaaS for healthcare",
+  },
+  {
+    id: "support_agents",
+    query: "Competitive landscape for AI customer support agents",
   },
 ];
 
+interface NavItemProps {
+  href: string;
+  label: string;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ href, label }) => {
+  const pathname = usePathname();
+  const isActive = pathname === href || pathname?.startsWith(`${href}/`);
+  return (
+    <Link href={href} className={`nav-link${isActive ? " active" : ""}`}>
+      {label}
+    </Link>
+  );
+};
+
 export const Sidebar: React.FC<Props> = ({
   onQuerySelect,
-  demoMode,
-  onDemoModeChange,
   isOpen,
   onToggle,
 }) => {
@@ -43,7 +58,7 @@ export const Sidebar: React.FC<Props> = ({
     <aside
       className={`sidebar ${isOpen ? "open" : "closed"}`}
       role="complementary"
-      aria-label="Settings and demo queries"
+      aria-label="Navigation and starter queries"
     >
       <button
         className="sidebar-toggle"
@@ -56,94 +71,32 @@ export const Sidebar: React.FC<Props> = ({
 
       {isOpen && (
         <div className="sidebar-content">
-          {/* Navigation Section */}
           <nav className="sidebar-section" aria-label="Main navigation">
-            <h2 className="sidebar-heading">
-              <span className="sidebar-icon">🧭</span>
-              Navigation
-            </h2>
+            <h2 className="sidebar-heading">Workspace</h2>
             <div className="nav-links">
-              <NavLink
-                to="/research"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active" : ""}`
-                }
-              >
-                🔍 Research
-              </NavLink>
-              <NavLink
-                to="/history"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active" : ""}`
-                }
-              >
-                📚 History
-              </NavLink>
-              <NavLink
-                to="/visualizations"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active" : ""}`
-                }
-              >
-                📊 Visualizations
-              </NavLink>
-              <NavLink
-                to="/settings"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active" : ""}`
-                }
-              >
-                ⚙️ Settings
-              </NavLink>
-              <NavLink
-                to="/about"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active" : ""}`
-                }
-              >
-                ℹ️ About
-              </NavLink>
+              <NavItem href="/research" label="Research" />
+              <NavItem href="/history" label="History" />
+              <NavItem href="/visualizations" label="Visualizations" />
+              <NavItem href="/settings" label="Settings" />
+              <NavItem href="/about" label="About" />
             </div>
           </nav>
 
           <div className="sidebar-divider"></div>
 
-          {/* Settings Section */}
           <div className="sidebar-section">
-            <h2 className="sidebar-heading">
-              <span className="sidebar-icon">⚙️</span>
-              Settings
-            </h2>
-            <label className="demo-mode-toggle">
-              <input
-                type="checkbox"
-                checked={demoMode}
-                onChange={(e) => onDemoModeChange(e.target.checked)}
-                aria-label="Use demo mode with cached results"
-              />
-              <span className="checkbox-label">
-                Use Demo Mode (Cached Results)
-              </span>
-            </label>
-          </div>
-
-          <div className="sidebar-divider"></div>
-
-          {/* Demo Queries Section */}
-          <div className="sidebar-section">
-            <h2 className="sidebar-heading">
-              <span className="sidebar-icon">📝</span>
-              Demo Queries
-            </h2>
+            <h2 className="sidebar-heading">Starter queries</h2>
+            <p className="sidebar-subtle">
+              Real questions founders ask before a sprint, fundraise, or launch.
+            </p>
             <div className="demo-queries">
-              {DEMO_QUERIES.map((item) => (
+              {STARTER_QUERIES.map((item) => (
                 <button
                   key={item.id}
                   className="demo-query-button"
                   onClick={() => handleQueryClick(item.query)}
-                  aria-label={`Select demo query: ${item.query}`}
+                  aria-label={`Run starter query: ${item.query}`}
                 >
-                  <span className="query-icon">📌</span>
                   <span className="query-text">{item.query}</span>
                 </button>
               ))}

@@ -505,6 +505,5 @@ async def root():
         }
     }
 
-# Removed if __name__ == "__main__" block
-# Railway should use Procfile: uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
-# This prevents Railway from using python main.py which causes the uvicorn warning
+# Production entrypoint is the ASGI app `app` above.
+# Run with: uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}

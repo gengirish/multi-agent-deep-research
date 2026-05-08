@@ -1,33 +1,34 @@
-/* Input Mode Toggle */
+/* Research form — dark theme */
+
 .input-mode-toggle {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 20px;
   padding: 4px;
-  background: #f3f4f6;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
   width: fit-content;
 }
 
 .mode-button {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
+  gap: 8px;
+  padding: 8px 16px;
   background: transparent;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
+  transition: background 0.15s ease, color 0.15s ease;
+  font-size: 0.92rem;
   font-weight: 500;
-  color: #6b7280;
-  flex: 1;
+  color: #94a3b8;
 }
 
 .mode-button:hover:not(:disabled) {
-  background: #e5e7eb;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
 }
 
 .mode-button:disabled {
@@ -36,77 +37,69 @@
 }
 
 .mode-button.active {
-  background: white;
-  color: #667eea;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(14, 165, 233, 0.12)
+  );
+  color: #f8fafc;
+  border: 1px solid rgba(129, 140, 248, 0.35);
 }
 
 .mode-icon {
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .mode-text {
   font-weight: 500;
 }
 
-/* Voice Input Container */
-.voice-input-container {
-  margin-bottom: 20px;
-}
-
-.captured-query {
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 6px;
-  border-left: 4px solid #3b82f6;
-}
-
-.captured-label {
-  margin: 0 0 6px 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: #1e40af;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.captured-text {
-  margin: 0;
-  font-size: 14px;
-  color: #1e3a8a;
-  line-height: 1.5;
-}
-
-/* Text Input Container */
+.voice-input-container,
 .text-input-container {
   margin-bottom: 20px;
 }
 
-/* Responsive Design */
+.captured-query {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 8px;
+  border-left: 3px solid #22c55e;
+}
+
+.captured-label {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #86efac;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.captured-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #f0fdf4;
+  line-height: 1.55;
+}
+
 @media (max-width: 640px) {
   .input-mode-toggle {
     width: 100%;
   }
-  
   .mode-button {
     flex: 1;
     justify-content: center;
   }
-  
   .mode-text {
     display: none;
   }
-  
-  .mode-icon {
-    font-size: 20px;
-  }
 }
 
-/* Accessibility */
-.mode-button:focus {
-  outline: 2px solid #667eea;
+.mode-button:focus-visible {
+  outline: 2px solid #818cf8;
   outline-offset: 2px;
 }
 
@@ -114,3 +107,8 @@
   outline: none;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .mode-button {
+    transition: none !important;
+  }
+}

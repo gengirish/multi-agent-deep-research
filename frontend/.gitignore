@@ -12,6 +12,18 @@ dist
 dist-ssr
 *.local
 
+# Next.js
+.next
+next-env.d.ts
+out
+build
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,3 +35,6 @@ dist-ssr
 *.sln
 *.sw?
 
+
+.vercel
+.env*.local

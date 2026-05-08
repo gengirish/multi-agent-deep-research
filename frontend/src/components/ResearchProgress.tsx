@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react'
 import { ProgressStage } from '../hooks/useResearchProgress'
 import './ResearchProgress.css'

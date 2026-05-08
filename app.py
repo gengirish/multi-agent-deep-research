@@ -1,6 +1,7 @@
 """
-Streamlit UI for Multi-Agent AI Deep Researcher
-Hackathon Demo Application
+Streamlit UI for Chronicle (legacy entrypoint).
+The primary UI is the React app in `frontend/`; this Streamlit app is kept
+for local one-shot exploration and is not part of the production deployment.
 """
 
 import streamlit as st

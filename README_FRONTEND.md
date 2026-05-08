@@ -1,4 +1,4 @@
-# React + Vite Frontend Setup
+# Chronicle Frontend (React + Vite)
 
 ## Quick Start
 
