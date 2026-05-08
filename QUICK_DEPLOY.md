@@ -1,91 +1,73 @@
-# 🚀 Quick Deploy Guide (15 Minutes)
+# Quick Deploy Guide
 
-## Prerequisites
-- ✅ Code pushed to GitHub
-- ✅ Vercel account (free)
-- ✅ Railway account (free)
-- ✅ API keys ready
+A condensed version of [`DEPLOYMENT.md`](./DEPLOYMENT.md). The frontend goes to **Vercel**; the backend runs in a container on whichever host you choose (Fly.io, Render, Cloud Run, etc.).
 
 ---
 
-## Step 1: Deploy Backend to Railway (5 min)
+## 1. Backend (container host)
 
-1. **Go to Railway**: https://railway.app
-2. **New Project** → **Deploy from GitHub repo**
-3. **Select your repo**
-4. **Configure Service**:
-   - Root Directory: `backend`
-   - Start Command: `python main.py`
-5. **Set Environment Variables**:
-   ```
-   OPEN_ROUTER_KEY=sk-or-your-key
-   TAVILY_API_KEY=your-key
-   ENVIRONMENT=production
-   PORT=8000
-   ```
-6. **Wait for deployment** → Copy Railway URL
+Build and run locally first to confirm everything works:
+
+```bash
+docker compose up --build backend
+curl http://localhost:8000/api/health
+```
+
+Push the same image / repo to your host and set:
+
+```
+OPEN_ROUTER_KEY=sk-or-...
+TAVILY_API_KEY=tvly-...           # optional
+ENVIRONMENT=production
+ALLOWED_ORIGINS=https://your-app.vercel.app
+```
+
+Start command (`backend/` working dir):
+
+```
+uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+```
+
+Save the public URL the host gives you.
 
 ---
 
-## Step 2: Deploy Frontend to Vercel (5 min)
+## 2. Frontend → Vercel
 
-1. **Go to Vercel**: https://vercel.com
-2. **Add New Project** → **Select GitHub repo**
-3. **Configure**:
-   - Framework: Vite
+1. https://vercel.com → **Add New Project** → pick the repo.
+2. Configure:
+   - Framework: **Vite**
    - Root Directory: `frontend`
    - Build Command: `npm run build`
    - Output Directory: `dist`
-4. **Set Environment Variable**:
+3. Env var:
    ```
-   VITE_API_URL=https://your-railway-url.up.railway.app
+   VITE_API_URL=https://<your-backend-url>
    ```
-5. **Deploy** → Copy Vercel URL
+4. Deploy. Note the Vercel URL.
 
 ---
 
-## Step 3: Update CORS (2 min)
+## 3. Lock down CORS
 
-1. **Go back to Railway**
-2. **Update Environment Variable**:
-   ```
-   ALLOWED_ORIGINS=https://your-vercel-url.vercel.app
-   ```
-3. **Railway auto-redeploys**
+Back on the backend host, set:
 
----
+```
+ALLOWED_ORIGINS=https://<your-vercel-url>
+```
 
-## Step 4: Test (3 min)
-
-1. **Visit Vercel URL**
-2. **Enter test query**
-3. **Verify it works!**
+(`*.vercel.app` previews are already allowed via regex in `backend/main.py`.)
 
 ---
 
-## ✅ Done!
+## 4. Smoke test
 
-Your app is live:
-- **Frontend**: `https://your-app.vercel.app`
-- **Backend**: `https://your-app.up.railway.app`
+1. Open the Vercel URL.
+2. Run a demo query.
+3. Confirm in DevTools → Network that requests hit the backend URL.
 
----
-
-## 🆘 Troubleshooting
-
-**Backend not starting?**
-- Check Railway logs
-- Verify `Procfile` exists: `web: cd backend && python main.py`
-
-**CORS errors?**
-- Verify `ALLOWED_ORIGINS` includes Vercel URL
-- Check Railway logs
-
-**Frontend can't connect?**
-- Verify `VITE_API_URL` is set correctly
-- Check browser DevTools → Network tab
+Done.
 
 ---
 
-**Full guide**: See `DEPLOYMENT.md` for detailed instructions.
-
+**Detailed walkthrough, env var reference, and troubleshooting:** [`DEPLOYMENT.md`](./DEPLOYMENT.md)

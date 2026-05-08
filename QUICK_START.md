@@ -1,126 +1,117 @@
-# Quick Start Guide
+# Quick Start
 
-## 🚀 5-Minute Setup
+The fastest path to running Chronicle locally.
 
-### Step 1: Create Virtual Environment
+## TL;DR
 
-**Windows:**
 ```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-**macOS/Linux:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-You should see `(venv)` in your prompt.
-
-### Step 2: Install Dependencies
-```bash
+# Backend
+python -m venv venv && source venv/bin/activate    # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+cp env.example .env                                 # Windows: copy env.example .env
+# Edit .env: set OPEN_ROUTER_KEY (required) and TAVILY_API_KEY (recommended)
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend (in another terminal)
+cd frontend
+npm install
+echo "VITE_API_URL=http://localhost:8000" > .env.local
+npm run dev
 ```
 
-Or use the setup script:
-```bash
-python setup.py
-```
-
-### Step 3: Configure API Keys
-1. Copy `env.example` to `.env` (or create `.env` file)
-2. Get your API keys:
-   - OpenRouter API key from https://openrouter.ai/keys
-   - Tavily API key from https://tavily.com/
-3. Add to `.env`:
-```
-OPEN_ROUTER_KEY=sk-or-your-key-here
-TAVILY_API_KEY=your_tavily_key_here
-```
-
-### Step 4: Run the Application
-```bash
-streamlit run app.py
-```
-
-The app will open at `http://localhost:8501`
-
-**Note:** Make sure your virtual environment is activated (you should see `(venv)` in your prompt).
-
-### Deactivate Virtual Environment (When Done)
-```bash
-deactivate
-```
+Open http://localhost:5173.
 
 ---
 
-## 📖 Detailed Setup
+## Step-by-step
 
-For complete step-by-step instructions with troubleshooting, see:
-- **`VIRTUAL_ENV_SETUP.md`** - Comprehensive virtual environment setup guide
+### 1. Get API keys
 
-## 🎯 Demo Mode
+| Provider                              | What for                  | Required |
+| ------------------------------------- | ------------------------- | :------: |
+| [OpenRouter](https://openrouter.ai/keys) | LLM access (all agents)   |    ✅    |
+| [Tavily](https://tavily.com/)         | Web search (primary)       |    ➖    |
+| [Perplexity](https://perplexity.ai/)  | Web search (fallback)      |    ➖    |
 
-For hackathon presentations:
+The backend works without Tavily/Perplexity but loses live web search — it'll fall back to ArXiv-only retrieval.
 
-1. **First Run**: Execute a query normally to cache results
-2. **Demo Mode**: Check "Use Demo Mode" checkbox in sidebar
-3. **Select Query**: Click a demo query button for instant results
+### 2. Backend setup
 
-## 📝 Example Queries
+```bash
+# Virtual env
+python -m venv venv
 
-Try these queries:
-- "Latest developments in quantum computing 2024"
-- "Current state of AI safety research and regulations"
-- "Emerging climate technology solutions 2024"
+# Activate
+source venv/bin/activate            # macOS/Linux
+venv\Scripts\activate               # Windows PowerShell
 
-## ⚠️ Troubleshooting
+# Install
+pip install -r requirements.txt
 
-**No API Key?**
-- System will use mock/template responses
-- Full functionality requires OpenRouter API key
-- Get your key from https://openrouter.ai/keys
+# Configure
+cp env.example .env                 # macOS/Linux
+copy env.example .env               # Windows
+# Edit .env, fill in OPEN_ROUTER_KEY at minimum
 
-**Search Not Working?**
-- DuckDuckGo may be rate-limited
-- System continues with available sources
-
-**Import Errors?**
-- Ensure all dependencies installed: `pip install -r requirements.txt`
-- Check Python version: 3.8+
-
-## 🏗️ Project Structure
-
-```
-├── agents/              # Agent implementations
-├── orchestration/        # LangGraph workflow
-├── utils/               # Utilities (caching, etc.)
-├── app.py              # Streamlit UI
-├── requirements.txt    # Dependencies
-└── README.md           # Full documentation
+# Run
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## 🎨 Customization
+Verify: <http://localhost:8000/api/health> should return `{"status":"ok"}`.
 
-**Change LLM Model:**
-Edit `agents/analyzer.py`, `agents/insight_generator.py`, `agents/report_builder.py`
+### 3. Frontend setup
 
-**Add New Agent:**
-1. Create file in `agents/`
-2. Add node to `orchestration/coordinator.py`
-3. Update UI in `app.py`
+```bash
+cd frontend
+npm install
+echo "VITE_API_URL=http://localhost:8000" > .env.local
+npm run dev
+```
 
-## 📊 Demo Checklist
+Visit <http://localhost:5173>. You should see the Chronicle landing page.
 
-Before hackathon:
-- [ ] Test with 2-3 queries
-- [ ] Cache results for demo mode
-- [ ] Verify all agents working
-- [ ] Test download functionality
-- [ ] Prepare backup cached results
+### 4. Run a query
+
+Click any starter query on the landing page (or type your own on `/research`). Watch the five agents run live.
 
 ---
 
-**Ready to demo!** 🎉
+## Run with Docker
 
+```bash
+docker compose up
+```
+
+Backend at `http://localhost:8000`, frontend at `http://localhost:5173`.
+
+---
+
+## Troubleshooting
+
+**`OPEN_ROUTER_KEY` not set**
+- The backend will start but every query will fail. Set it in `.env` and restart.
+
+**CORS errors in the browser**
+- Frontend's `VITE_API_URL` must match the backend's actual URL.
+- For local dev, `http://localhost:5173` and `http://localhost:3000` are allowed by default.
+
+**Search returning nothing**
+- Tavily may be rate-limited or your key invalid. The retriever falls back to Perplexity, then ArXiv.
+- ArXiv-only results are biased toward academic content — set a Tavily key for general-web coverage.
+
+**Import errors**
+- Activate the virtualenv. Confirm `python --version` returns 3.8+ (3.11 recommended for parity with the production container).
+
+---
+
+## Where things live
+
+```
+agents/         # The five specialized agents
+orchestration/  # LangGraph state machine
+utils/          # LLM config, RAG, logging
+backend/        # FastAPI server entrypoint
+frontend/       # React + Vite UI
+```
+
+Full docs: [`README.md`](./README.md). Deploy guide: [`DEPLOYMENT.md`](./DEPLOYMENT.md).

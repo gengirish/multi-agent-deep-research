@@ -1,0 +1,205 @@
+.share {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: #0b1220;
+  color: #e2e8f0;
+  font-family: var(--font-inter), Inter, system-ui, -apple-system, sans-serif;
+}
+
+.share__main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+}
+
+.share__header {
+  margin-bottom: 36px;
+  padding: 32px 28px;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.08),
+    rgba(14, 165, 233, 0.04)
+  );
+  border: 1px solid rgba(129, 140, 248, 0.2);
+}
+
+.share__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(129, 140, 248, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  color: #c7d2fe;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+
+.share__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #818cf8;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.6);
+}
+
+.share__query {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #f8fafc;
+  margin: 0 0 12px;
+}
+
+.share__meta {
+  font-size: 0.92rem;
+  color: #94a3b8;
+  margin: 0 0 20px;
+}
+
+.share__meta code {
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
+    monospace;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #c7d2fe;
+}
+
+.share__cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.share__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.share__cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.4);
+}
+
+.share__cta-btn:active {
+  transform: scale(0.97);
+}
+
+.share__cta-sub {
+  font-size: 0.86rem;
+  color: #94a3b8;
+}
+
+.share__report {
+  padding: 28px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 36px;
+}
+
+.share__error {
+  text-align: center;
+  padding: 32px 16px;
+  color: #fca5a5;
+}
+
+.share__error h2 {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  margin: 0 0 8px;
+}
+
+.share__error a {
+  color: #c7d2fe;
+}
+
+.share__footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 32px;
+}
+
+.share__footer-card {
+  padding: 28px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.12),
+    rgba(14, 165, 233, 0.06)
+  );
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  margin-bottom: 24px;
+}
+
+.share__footer-card h3 {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  font-size: 1.3rem;
+  color: #f8fafc;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.share__footer-card p {
+  color: #cbd5e1;
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+
+.share__footer-link {
+  display: inline-block;
+  color: #c7d2fe;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(199, 210, 254, 0.3);
+  transition: border-color 0.15s ease;
+}
+
+.share__footer-link:hover {
+  border-bottom-color: #c7d2fe;
+}
+
+.share__credit {
+  text-align: center;
+  font-size: 0.86rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.share__credit a {
+  color: #94a3b8;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.share__credit a:hover {
+  color: #f8fafc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share__cta-btn {
+    transition: none !important;
+  }
+}

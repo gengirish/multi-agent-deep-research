@@ -1,3 +1,24 @@
+/* ============================================================
+ * App shell — Chronicle dark theme
+ * Uses tokens consistent with LandingPage.css for visual cohesion.
+ * ============================================================ */
+
+:root {
+  --c-bg: #0b1220;
+  --c-bg-elev: rgba(255, 255, 255, 0.03);
+  --c-bg-elev-hi: rgba(255, 255, 255, 0.05);
+  --c-border: rgba(255, 255, 255, 0.06);
+  --c-border-hi: rgba(255, 255, 255, 0.12);
+  --c-text: #e2e8f0;
+  --c-text-muted: #94a3b8;
+  --c-text-dim: #64748b;
+  --c-text-strong: #f8fafc;
+  --c-accent: #818cf8;
+  --c-accent-2: #38bdf8;
+  --c-error: #fca5a5;
+  --c-success: #86efac;
+}
+
 .app-container {
   width: 100%;
   min-height: 100vh;
@@ -5,6 +26,8 @@
   flex-direction: column;
   position: relative;
   padding-left: 0;
+  background: var(--c-bg);
+  color: var(--c-text);
   transition: padding-left 0.3s ease;
 }
 
@@ -18,40 +41,36 @@
   }
 }
 
-.app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 2rem;
-  text-align: center;
-}
-
-.app-header h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-}
-
-.app-header p {
-  margin: 0;
-  font-size: 1.1rem;
-  opacity: 0.9;
-}
-
 .app-main {
   flex: 1;
-  max-width: 1200px;
+  max-width: 1100px;
   width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 32px 24px 64px;
+  text-align: left;
 }
 
-.research-form {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+/* ---------- Card surfaces ---------- */
+
+.research-form,
+.loading-progress,
+.results,
+.page-container {
+  background: var(--c-bg-elev);
+  border: 1px solid var(--c-border);
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(2, 6, 23, 0.45);
+  margin-bottom: 24px;
   text-align: left;
+  color: var(--c-text);
+}
+
+.page-container {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
 }
 
 .query-input {
@@ -70,15 +89,15 @@
 .divider-line {
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--c-border);
 }
 
 .divider-text {
-  font-size: 14px;
-  color: #6b7280;
-  font-weight: 500;
+  font-size: 12px;
+  color: var(--c-text-dim);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
 }
 
 .submit-button {
@@ -86,71 +105,81 @@
   margin-top: 1rem;
 }
 
-.loading-progress {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
+/* ---------- Loading + progress ---------- */
 
 .progress-message {
   margin-top: 1rem;
-  font-size: 1.1rem;
-  color: #4a4a4a;
+  font-size: 1rem;
+  color: var(--c-text-muted);
 }
 
+/* ---------- Results header / metric cards ---------- */
+
 .results {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  text-align: left;
-  margin-bottom: 2rem;
+  padding: 32px;
 }
 
 .results-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 14px;
+  margin-bottom: 28px;
 }
 
 .summary-card {
-  background: #f5f5f5;
-  padding: 1.5rem;
-  border-radius: 8px;
-  text-align: center;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.08),
+    rgba(14, 165, 233, 0.04)
+  );
+  border: 1px solid rgba(129, 140, 248, 0.18);
+  padding: 20px;
+  border-radius: 14px;
+  text-align: left;
 }
 
 .summary-card h2 {
   margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
+  font-size: 0.92rem;
+  color: var(--c-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .summary-card .stat {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #667eea;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #818cf8 0%, #38bdf8 60%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin: 0;
+  line-height: 1;
 }
 
+/* ---------- Report ---------- */
+
 .report-section {
-  margin-top: 2rem;
+  margin-top: 32px;
 }
 
 .report-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 18px;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .report-header h2 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
+  color: var(--c-text-strong);
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .download-button {
@@ -159,96 +188,225 @@
 }
 
 .report-content {
-  background: #f9f9f9;
-  padding: 2rem;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 28px;
+  border-radius: 12px;
   text-align: left;
+  border: 1px solid var(--c-border);
 }
 
 .markdown-content {
-  line-height: 1.8;
+  line-height: 1.75;
+  color: var(--c-text);
 }
 
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3 {
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-top: 1.8rem;
+  margin-bottom: 0.8rem;
+  color: var(--c-text-strong);
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .markdown-content h1 {
-  font-size: 2rem;
-  border-bottom: 2px solid #667eea;
+  font-size: 1.8rem;
+  border-bottom: 1px solid var(--c-border);
   padding-bottom: 0.5rem;
 }
 
 .markdown-content h2 {
-  font-size: 1.5rem;
-  color: #667eea;
+  font-size: 1.3rem;
+  color: var(--c-accent);
+}
+
+.markdown-content h3 {
+  font-size: 1.1rem;
+  color: var(--c-accent-2);
+}
+
+.markdown-content p {
+  color: var(--c-text);
 }
 
 .markdown-content ul,
 .markdown-content ol {
   margin: 1rem 0;
-  padding-left: 2rem;
+  padding-left: 1.5rem;
 }
 
 .markdown-content li {
-  margin: 0.5rem 0;
+  margin: 0.4rem 0;
+  color: var(--c-text);
 }
 
 .markdown-content code {
-  background: #f0f0f0;
-  padding: 0.2rem 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e879f9;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
+    monospace;
+  font-size: 0.92em;
 }
 
 .markdown-content pre {
-  background: #f0f0f0;
-  padding: 1rem;
-  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--c-border);
+  padding: 16px;
+  border-radius: 10px;
   overflow-x: auto;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
+    monospace;
+  font-size: 0.88rem;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--c-text);
 }
 
 .markdown-content a {
-  color: #667eea;
-  text-decoration: underline;
+  color: #c7d2fe;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(199, 210, 254, 0.3);
+  transition: border-color 0.15s ease;
 }
 
-.error-box {
-  background: #ffebee;
-  border-left: 4px solid #d32f2f;
-  padding: 1.5rem;
+.markdown-content a:hover {
+  border-bottom-color: #c7d2fe;
+}
+
+.markdown-content blockquote {
+  margin: 1rem 0;
+  padding: 12px 18px;
+  border-left: 3px solid var(--c-accent);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--c-text-muted);
   border-radius: 4px;
 }
 
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--c-border);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--c-text-strong);
+  font-weight: 600;
+}
+
+/* ---------- Errors ---------- */
+
+.error-box {
+  background: rgba(239, 68, 68, 0.06);
+  border-left: 3px solid #ef4444;
+  padding: 18px 20px;
+  border-radius: 10px;
+  color: var(--c-text);
+}
+
 .error-box h2 {
-  color: #d32f2f;
+  color: var(--c-error);
   margin-top: 0;
 }
 
+/* ---------- Footer ---------- */
+
 .app-footer {
-  background: #f5f5f5;
-  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--c-border);
+  padding: 18px 24px;
   text-align: center;
-  color: #666;
+  color: var(--c-text-dim);
   margin-top: auto;
+  font-size: 0.88rem;
+}
+
+.app-footer a {
+  color: var(--c-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.app-footer a:hover {
+  color: var(--c-text-strong);
+}
+
+/* ---------- Inputs (global) ---------- */
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: var(--c-text);
+}
+
+input[type="text"],
+input[type="search"],
+textarea {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--c-border-hi);
+  color: var(--c-text);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="text"]::placeholder,
+input[type="search"]::placeholder,
+textarea::placeholder {
+  color: var(--c-text-dim);
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------- Loading helper text used by Suspense fallbacks ---------- */
+
+.loading {
+  padding: 32px;
+  color: var(--c-text-muted);
+  text-align: center;
 }
 
 @media (max-width: 768px) {
-  .app-header h1 {
-    font-size: 1.8rem;
-  }
-
   .app-main {
-    padding: 1rem;
+    padding: 24px 16px 48px;
   }
 
   .research-form,
   .results {
-    padding: 1.5rem;
+    padding: 20px;
   }
 
   .results-summary {
@@ -265,3 +423,14 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .app-container,
+  .submit-button,
+  .summary-card,
+  .download-button,
+  input[type="text"],
+  input[type="search"],
+  textarea {
+    transition: none !important;
+  }
+}

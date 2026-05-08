@@ -1,329 +1,164 @@
-# Deployment Guide: Vercel + Railway
+# Deployment Guide
 
-This guide walks you through deploying the Multi-Agent AI Deep Researcher to production using **Vercel** (frontend) and **Railway** (backend).
+This guide covers deploying the Multi-Agent AI Deep Researcher to production.
 
-## 🎯 Quick Overview
+- **Frontend (React + Vite)** → **Vercel**
+- **Backend (FastAPI)** → any container host (Fly.io, Render, Cloud Run, ECS, etc.)
 
-- **Frontend (React + Vite)**: Deploy to Vercel
-- **Backend (FastAPI)**: Deploy to Railway
-- **Time**: ~15 minutes
-- **Cost**: Free tier (both platforms)
+The backend has no platform-specific coupling. Anything that can run a Python ASGI app on a configurable `$PORT` will work.
 
 ---
 
-## 📋 Prerequisites
+## Architecture
 
-1. **GitHub Account**: Your code should be in a GitHub repository
-2. **Vercel Account**: Sign up at https://vercel.com (free)
-3. **Railway Account**: Sign up at https://railway.app (free)
-4. **API Keys Ready**:
-   - OpenRouter API key
-   - Tavily API key (optional)
+```
+┌──────────────────────┐        HTTPS         ┌────────────────────────┐
+│  Vercel (frontend)   │ ───────────────────▶ │  Container backend     │
+│  React + Vite        │                      │  FastAPI / uvicorn     │
+│  VITE_API_URL ──────▶│                      │  PORT, ALLOWED_ORIGINS │
+└──────────────────────┘                      └────────────────────────┘
+```
 
 ---
 
-## 🚀 Phase 1: Deploy Backend to Railway
+## Prerequisites
 
-### Step 1: Prepare Your Repository
-
-Ensure your code is pushed to GitHub:
-
-```bash
-git add .
-git commit -m "Prepare for deployment"
-git push origin main
-```
-
-### Step 2: Connect Railway to GitHub
-
-1. Go to https://railway.app
-2. Sign up/login (GitHub login recommended)
-3. Click **"New Project"** → **"Deploy from GitHub repo"**
-4. Select your repository
-5. Railway will auto-detect it's a Python project
-
-### Step 3: Configure Railway Service
-
-1. Railway will create a service automatically
-2. Click on the service to configure it
-
-**Set Root Directory:**
-- In the service settings, set **Root Directory** to: `backend`
-
-**Configure Start Command:**
-- Railway should auto-detect, but verify it's: `python main.py`
-
-### Step 4: Set Environment Variables
-
-In Railway dashboard → **Variables** tab, add:
-
-```bash
-OPEN_ROUTER_KEY=sk-or-your-key-here
-TAVILY_API_KEY=your-tavily-key-here
-ENVIRONMENT=production
-PORT=8000
-ALLOWED_ORIGINS=https://your-app.vercel.app,http://localhost:5173
-```
-
-**Important**: Replace `your-app.vercel.app` with your actual Vercel URL (you'll get this after deploying frontend).
-
-### Step 5: Deploy
-
-Railway will automatically deploy when you:
-1. Push to GitHub (if connected)
-2. Or click **"Deploy"** in the dashboard
-
-**Wait for deployment** - Railway will give you a URL like:
-```
-https://multi-agent-researcher-production.up.railway.app
-```
-
-### Step 6: Test Backend
-
-```bash
-# Health check
-curl https://your-railway-url.up.railway.app/api/health
-
-# Should return: {"status": "ok", "message": "API is running"}
-```
-
-**Save this Railway URL** - you'll need it for the frontend!
+1. Code pushed to GitHub
+2. Vercel account (https://vercel.com)
+3. A backend host of your choice (Fly.io setup is tracked separately)
+4. API keys: `OPEN_ROUTER_KEY`, `TAVILY_API_KEY` (optional)
 
 ---
 
-## 🎨 Phase 2: Deploy Frontend to Vercel
+## Phase 1: Backend (container-based host)
 
-### Step 1: Connect Vercel to GitHub
-
-1. Go to https://vercel.com
-2. Sign up/login (GitHub login recommended)
-3. Click **"Add New Project"**
-4. Select your GitHub repository
-5. Vercel will auto-detect it's a Vite project
-
-### Step 2: Configure Build Settings
-
-In the project configuration:
-
-**Framework Preset**: Vite
-
-**Root Directory**: `frontend`
-
-**Build Command**: `npm run build`
-
-**Output Directory**: `dist`
-
-**Install Command**: `npm install`
-
-### Step 3: Set Environment Variables
-
-In **Environment Variables** section, add:
+### 1. Local container build (sanity check)
 
 ```bash
-VITE_API_URL=https://your-railway-url.up.railway.app
+docker compose up --build backend
+curl http://localhost:8000/api/health
+# → {"status":"ok","message":"API is running"}
 ```
 
-**Important**: Replace `your-railway-url.up.railway.app` with your actual Railway URL from Phase 1!
+### 2. Required environment variables
 
-### Step 4: Deploy
+| Variable          | Purpose                                  | Example                                    |
+| ----------------- | ---------------------------------------- | ------------------------------------------ |
+| `OPEN_ROUTER_KEY` | LLM access via OpenRouter                | `sk-or-...`                                |
+| `TAVILY_API_KEY`  | Web search (optional)                    | `tvly-...`                                 |
+| `PORT`            | Server port (host usually injects)       | `8000`                                     |
+| `ALLOWED_ORIGINS` | Comma-separated CORS allowlist           | `https://your-app.vercel.app`              |
+| `ENVIRONMENT`     | Free-form environment label              | `production`                               |
 
-Click **"Deploy"**
+`backend/main.py` already accepts `ALLOWED_ORIGINS`, automatically appends any `https://*.vercel.app` previews via regex, and binds to whatever `$PORT` the host provides.
 
-Vercel will:
-1. Install dependencies
-2. Build your app
-3. Deploy to production
+### 3. Start command
 
-**Wait for deployment** - Vercel will give you a URL like:
 ```
-https://multi-agent-researcher.vercel.app
+uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
 ```
 
-### Step 5: Update Railway CORS
+(Working directory: `backend/`. Most hosts derive this from a `Dockerfile` or build config.)
 
-Go back to Railway and update the `ALLOWED_ORIGINS` variable:
+### 4. Health check
 
 ```bash
-ALLOWED_ORIGINS=https://multi-agent-researcher.vercel.app,http://localhost:5173
+curl https://<your-backend-host>/api/health
 ```
 
-Railway will automatically redeploy with the new CORS settings.
+Save the resulting URL — the frontend needs it.
 
 ---
 
-## ✅ Phase 3: Verify Deployment
+## Phase 2: Frontend → Vercel
 
-### Test Frontend
+### 1. Import the project
 
-1. Visit your Vercel URL: `https://your-app.vercel.app`
-2. The app should load without errors
-3. Open browser DevTools (F12) → Network tab
-4. Enter a research query
-5. Check that API calls go to your Railway backend
+1. https://vercel.com → **Add New Project**
+2. Select your GitHub repo
+3. Vercel auto-detects Vite
 
-### Test Backend
+### 2. Build configuration
+
+| Setting          | Value           |
+| ---------------- | --------------- |
+| Framework Preset | Vite            |
+| Root Directory   | `frontend`      |
+| Build Command    | `npm run build` |
+| Output Directory | `dist`          |
+| Install Command  | `npm install`   |
+
+### 3. Environment variables
+
+```
+VITE_API_URL=https://<your-backend-host>
+```
+
+### 4. Deploy
+
+Vercel will build and deploy. Note the production URL (e.g. `https://your-app.vercel.app`).
+
+### 5. Tighten backend CORS
+
+Update `ALLOWED_ORIGINS` on the backend host to include your real Vercel URL:
+
+```
+ALLOWED_ORIGINS=https://your-app.vercel.app
+```
+
+(`*.vercel.app` previews are already allowed via regex in `main.py`.)
+
+---
+
+## End-to-end verification
 
 ```bash
-# Health check
-curl https://your-railway-url.up.railway.app/api/health
+# Backend is up
+curl https://<backend-host>/api/health
 
-# Test research endpoint
-curl -X POST https://your-railway-url.up.railway.app/api/research \
+# Backend accepts requests
+curl -X POST https://<backend-host>/api/research \
   -H "Content-Type: application/json" \
   -d '{"query": "test query"}'
 ```
 
-### End-to-End Test
-
-1. Open your Vercel frontend
-2. Enter a demo query (e.g., "Latest developments in quantum computing 2024")
-3. Click "Start Research"
-4. Should see progress indicators
-5. Should receive results from backend
+Then open the Vercel URL, run a demo query, and watch the network tab to confirm the frontend hits the backend host.
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
-### Backend Issues
+**CORS errors**
+- Confirm `ALLOWED_ORIGINS` on the backend includes the exact Vercel URL (no trailing slash).
+- Preview deployments use `*.vercel.app` and are matched by the regex in `main.py`.
 
-**Problem**: Backend not starting
-- Check Railway logs: Dashboard → Service → Logs
-- Verify `Procfile` exists in root: `web: cd backend && python main.py`
-- Check environment variables are set correctly
+**Backend can't bind**
+- Some hosts inject `PORT`. Don't hardcode 8000 in the start command — the snippet above respects `$PORT`.
 
-**Problem**: CORS errors
-- Verify `ALLOWED_ORIGINS` includes your Vercel URL
-- Check Railway logs for CORS-related errors
-- Ensure `VERCEL_URL` environment variable is set (if using)
+**API key errors**
+- `OPEN_ROUTER_KEY` must start with `sk-or-`.
+- Verify locally before pushing to the host.
 
-**Problem**: API key errors
-- Verify `OPEN_ROUTER_KEY` is set in Railway
-- Check key format (should start with `sk-or-`)
-- Test API key locally first
-
-### Frontend Issues
-
-**Problem**: Frontend can't connect to backend
-- Verify `VITE_API_URL` is set in Vercel environment variables
-- Check that Railway backend URL is correct
-- Open browser DevTools → Network tab to see actual API calls
-
-**Problem**: Build fails
-- Check Vercel build logs
-- Verify `package.json` has all dependencies
-- Ensure TypeScript compiles without errors
-
-**Problem**: 404 errors on routes
-- Verify `vercel.json` exists with proper rewrites
-- Check that `outputDirectory` is set to `frontend/dist`
+**Frontend builds but can't reach backend**
+- `VITE_API_URL` must be set at build time on Vercel (Vite inlines env vars during build).
+- After changing it, trigger a redeploy.
 
 ---
 
-## 📝 Environment Variables Reference
+## Local fallback
 
-### Railway (Backend)
+If the production stack is down during a demo:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `OPEN_ROUTER_KEY` | OpenRouter API key | `sk-or-...` |
-| `TAVILY_API_KEY` | Tavily search API key | `tvly-...` |
-| `ENVIRONMENT` | Environment name | `production` |
-| `PORT` | Server port | `8000` |
-| `ALLOWED_ORIGINS` | CORS allowed origins | `https://app.vercel.app` |
+```bash
+# Terminal 1
+./run_backend.sh        # or run_backend.bat on Windows
 
-### Vercel (Frontend)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL | `https://app.up.railway.app` |
-
----
-
-## 🔄 Updating Deployments
-
-### Update Backend
-
-1. Make changes to backend code
-2. Commit and push to GitHub
-3. Railway automatically redeploys
-
-### Update Frontend
-
-1. Make changes to frontend code
-2. Commit and push to GitHub
-3. Vercel automatically redeploys
-
----
-
-## 🎯 Production URLs
-
-After deployment, you'll have:
-
-```
-Frontend:  https://your-app.vercel.app
-Backend:   https://your-app.up.railway.app
-
-API Endpoints:
-  /api/health          → Health check
-  /api/research        → Main research endpoint
-  /api/research-stream → Streaming research endpoint
-  /api/demo-queries    → Demo queries list
+# Terminal 2
+cd frontend && npm run dev
 ```
 
----
+Or run the full stack with Docker:
 
-## 📊 Monitoring
-
-### Railway Dashboard
-
-- View logs in real-time
-- Monitor CPU/memory usage
-- See request metrics
-
-### Vercel Dashboard
-
-- View deployment history
-- See build logs
-- Monitor performance
-- View analytics
-
----
-
-## 🚨 Fallback Strategy
-
-If cloud deployment fails during demo:
-
-1. **Local Fallback**: Run `./run_backend.sh` and `cd frontend && npm run dev`
-2. **Docker Fallback**: Use `docker-compose up` (if configured)
-3. **Screenshots**: Have screenshots ready as backup
-
----
-
-## ✅ Deployment Checklist
-
-Before presenting:
-
-- [ ] Backend deployed to Railway
-- [ ] Backend health check returns 200
-- [ ] Frontend deployed to Vercel
-- [ ] Frontend loads without errors
-- [ ] Environment variables set correctly
-- [ ] CORS configured properly
-- [ ] End-to-end test passes
-- [ ] Demo queries work
-- [ ] Local fallback ready (just in case)
-
----
-
-## 🎉 You're Done!
-
-Your Multi-Agent AI Deep Researcher is now live in production!
-
-**Next Steps:**
-- Share your Vercel URL with judges
-- Monitor both dashboards during demo
-- Have Railway/Vercel dashboards open to show deployment
-
-**Pro Tip**: Keep both dashboards open during presentation to show real-time monitoring!
-
+```bash
+docker compose up
+```

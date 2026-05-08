@@ -1,4 +1,4 @@
-# FastAPI Backend Setup 
+# Chronicle Backend (FastAPI)
 
 ## Quick Start
 

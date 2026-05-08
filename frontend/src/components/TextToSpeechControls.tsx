@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react'
 import { useTextToSpeech } from '../hooks/useTextToSpeech'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'

@@ -1,5 +1,6 @@
 """
-Demo caching utilities for hackathon presentation
+Cache utilities for pre-computed demo responses (used for offline previews
+and deterministic UX when upstream LLM/search providers are slow).
 """
 
 import json

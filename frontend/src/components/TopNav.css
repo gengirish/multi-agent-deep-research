@@ -1,0 +1,129 @@
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.topnav--landing {
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.topnav__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.topnav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.topnav--landing .topnav__brand {
+  color: #f8fafc;
+}
+
+.topnav__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topnav__brandname {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.topnav__nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topnav__link {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #475569;
+  text-decoration: none;
+  font-size: 0.93rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topnav--landing .topnav__link {
+  color: #cbd5e1;
+}
+
+.topnav__link:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+.topnav--landing .topnav__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.topnav__link.active {
+  color: #4f46e5;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.topnav--landing .topnav__link.active {
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.topnav__cta {
+  margin-left: 8px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  color: white !important;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.topnav__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+}
+
+.topnav__cta:active {
+  transform: scale(0.97);
+}
+
+.topnav__brandname {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topnav__link,
+  .topnav__cta {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .topnav__nav .topnav__link:not(:last-child):not(.topnav__cta) {
+    display: none;
+  }
+}

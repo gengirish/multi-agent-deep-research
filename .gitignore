@@ -41,3 +41,11 @@ frontend/.DS_Store
 .DS_Store
 Thumbs.db
 
+# Deploy CLI metadata
+.vercel/
+.fly/
+fly.toml.bak
+
+
+.vercel
+.env*.local
