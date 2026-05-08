@@ -46,6 +46,10 @@ Thumbs.db
 .fly/
 fly.toml.bak
 
+# Local commit-message scratch
+.git-commit-msg.tmp
+*.commit-msg.tmp
+
 
 .vercel
 .env*.local
