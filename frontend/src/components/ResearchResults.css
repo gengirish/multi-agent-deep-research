@@ -782,7 +782,7 @@
 
 
 /* ============================================================
- * Dark theme overrides — Chronicle palette
+ * Dark theme overrides â€” Chronicle palette
  * Appended in design pass; overrides earlier light-theme defaults.
  * ============================================================ */
 
@@ -962,4 +962,229 @@
   .tab-button {
     transition: none !important;
   }
+}
+/* ============================================================
+ * Dark theme — comprehensive override (v2)
+ * Adds the classes the v1 override missed: card-header,
+ * card-icon, source/analysis/insight items, report block,
+ * download menu, action bar.
+ * ============================================================ */
+
+.result-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.result-card:hover {
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.55) !important;
+}
+
+.result-card.blue {
+  border-top: 3px solid #38bdf8 !important;
+}
+.result-card.green {
+  border-top: 3px solid #22c55e !important;
+}
+.result-card.purple {
+  border-top: 3px solid #818cf8 !important;
+}
+
+.card-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.card-header:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.card-header h3 {
+  color: #f8fafc !important;
+}
+
+.card-icon {
+  background: rgba(129, 140, 248, 0.12) !important;
+  color: #c7d2fe !important;
+}
+
+.card-count {
+  color: #94a3b8 !important;
+}
+
+.expand-icon {
+  color: #64748b !important;
+}
+
+/* --- Source items --- */
+.source-item {
+  background: rgba(56, 189, 248, 0.04) !important;
+  border-left: 3px solid #38bdf8 !important;
+  border-radius: 8px;
+}
+
+.source-item:hover {
+  background: rgba(56, 189, 248, 0.08) !important;
+}
+
+.source-badge {
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8) !important;
+  color: white !important;
+}
+
+.source-title {
+  color: #f1f5f9 !important;
+}
+
+.source-link {
+  color: #7dd3fc !important;
+}
+
+.source-link:hover {
+  color: #bae6fd !important;
+}
+
+.source-snippet {
+  color: #94a3b8 !important;
+}
+
+/* --- Analysis items --- */
+.analysis-item {
+  background: rgba(34, 197, 94, 0.05) !important;
+  border-left: 3px solid #22c55e !important;
+}
+
+.analysis-label {
+  color: #86efac !important;
+}
+
+.analysis-content {
+  color: #e2e8f0 !important;
+}
+
+/* --- Insight items --- */
+.insight-item {
+  background: rgba(129, 140, 248, 0.06) !important;
+  border-left: 3px solid #818cf8 !important;
+}
+
+.insight-number {
+  background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+  color: white !important;
+}
+
+.insight-text {
+  color: #e2e8f0 !important;
+}
+
+.no-content {
+  color: #64748b !important;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+/* --- Report block --- */
+.report-section {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 12px 40px rgba(2, 6, 23, 0.45) !important;
+}
+
+.report-header {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.12),
+    rgba(14, 165, 233, 0.06)
+  ) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(8px);
+}
+
+.report-header h2 {
+  color: #f8fafc !important;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+.report-subtitle {
+  color: #94a3b8 !important;
+}
+
+.report-tts-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.report-content {
+  color: var(--c-text, #e2e8f0) !important;
+}
+
+.report-content h1,
+.report-content h2,
+.report-content h3 {
+  color: #f8fafc !important;
+}
+
+.report-content a {
+  color: #c7d2fe !important;
+  border-bottom: 1px solid rgba(199, 210, 254, 0.3) !important;
+}
+
+.report-content a:hover {
+  color: #e0e7ff !important;
+  border-bottom-color: #c7d2fe !important;
+}
+
+.report-content a:visited {
+  color: #c4b5fd !important;
+}
+
+.report-content code {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #e879f9 !important;
+}
+
+.report-content pre {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.report-content pre code {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+/* --- Download buttons + dropdown --- */
+.download-button,
+.action-button.primary {
+  background: linear-gradient(135deg, #6366f1, #0ea5e9) !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.32) !important;
+}
+
+.download-button:hover,
+.action-button.primary:hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.42) !important;
+}
+
+.download-menu {
+  background: #0f172a !important;
+  border: 1px solid rgba(129, 140, 248, 0.25) !important;
+  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.7) !important;
+}
+
+.download-option {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.download-option:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #f8fafc !important;
+}
+
+.download-option:active {
+  background: rgba(99, 102, 241, 0.12) !important;
 }
