@@ -22,7 +22,9 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // 1 retry locally, 2 in CI — these are live-URL tests and occasional
+  // network contention is expected against a real Vercel deployment.
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
 
@@ -33,6 +35,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
     actionTimeout: 10_000,
     navigationTimeout: 20_000,
+    // Block service worker registration so the SW install/activate cycle
+    // can't keep the browser context busy past test end (which would surface
+    // as a misleading "context teardown timeout"). The SW is a production
+    // user feature, not a test fixture — we have a separate pwa.spec.ts
+    // suite that hits /sw.js as plain HTTP for header + cache-name asserts.
+    serviceWorkers: "block",
   },
 
   projects: [

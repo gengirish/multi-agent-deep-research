@@ -23,8 +23,10 @@ test.describe("Landing page", () => {
   test("starter query chips deep-link to /research with ?q=", async ({
     page,
   }) => {
-    await page.waitForSelector(".chip", { timeout: 15_000 });
+    await page.waitForLoadState("domcontentloaded");
     const chips = page.locator(".chip");
+    await expect(chips.first()).toBeVisible({ timeout: 15_000 });
+
     const count = await chips.count();
     expect(count).toBeGreaterThanOrEqual(3);
 

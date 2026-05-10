@@ -4,19 +4,52 @@
  * ============================================================ */
 
 :root {
+  /* Surfaces */
   --c-bg: #0b1220;
   --c-bg-elev: rgba(255, 255, 255, 0.03);
   --c-bg-elev-hi: rgba(255, 255, 255, 0.05);
+  --c-bg-input: rgba(15, 23, 42, 0.6);
+  --c-bg-card: rgba(255, 255, 255, 0.03);
+
+  /* Borders */
   --c-border: rgba(255, 255, 255, 0.06);
   --c-border-hi: rgba(255, 255, 255, 0.12);
+  --c-border-focus: rgba(129, 140, 248, 0.5);
+
+  /* Text */
   --c-text: #e2e8f0;
   --c-text-muted: #94a3b8;
   --c-text-dim: #64748b;
   --c-text-strong: #f8fafc;
+
+  /* Brand accents (indigo → sky gradient) */
   --c-accent: #818cf8;
   --c-accent-2: #38bdf8;
-  --c-error: #fca5a5;
-  --c-success: #86efac;
+  --c-accent-strong: #6366f1;
+  --c-gradient-brand: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+  --c-gradient-brand-text: linear-gradient(120deg, #818cf8 0%, #38bdf8 60%, #22d3ee 100%);
+  --c-glow-brand: 0 8px 24px rgba(99, 102, 241, 0.32);
+
+  /* Semantic — used to differentiate state (not just brand) */
+  --c-success: #22c55e;
+  --c-success-text: #86efac;
+  --c-success-bg: rgba(34, 197, 94, 0.08);
+  --c-success-border: rgba(34, 197, 94, 0.25);
+
+  --c-warning: #f59e0b;
+  --c-warning-text: #fcd34d;
+  --c-warning-bg: rgba(245, 158, 11, 0.08);
+  --c-warning-border: rgba(245, 158, 11, 0.25);
+
+  --c-error: #ef4444;
+  --c-error-text: #fca5a5;
+  --c-error-bg: rgba(239, 68, 68, 0.06);
+  --c-error-border: rgba(239, 68, 68, 0.25);
+
+  --c-info: #38bdf8;
+  --c-info-text: #7dd3fc;
+  --c-info-bg: rgba(56, 189, 248, 0.08);
+  --c-info-border: rgba(56, 189, 248, 0.25);
 }
 
 .app-container {
@@ -358,13 +391,15 @@ input[type="text"],
 input[type="search"],
 textarea {
   width: 100%;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--c-bg-input);
   border: 1px solid var(--c-border-hi);
   color: var(--c-text);
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-size: 1rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
 input[type="text"]::placeholder,
@@ -373,12 +408,28 @@ textarea::placeholder {
   color: var(--c-text-dim);
 }
 
+input[type="text"]:hover:not(:disabled):not(:focus),
+input[type="search"]:hover:not(:disabled):not(:focus),
+textarea:hover:not(:disabled):not(:focus) {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(15, 23, 42, 0.75);
+}
+
 input[type="text"]:focus,
 input[type="search"]:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--c-accent);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+  border-color: var(--c-border-focus);
+  background: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
+}
+
+input[type="text"][disabled],
+input[type="search"][disabled],
+textarea[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(15, 23, 42, 0.4);
 }
 
 button {
@@ -389,6 +440,89 @@ button {
 button[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* ---------- Form labels + hints ---------- */
+
+.form-label {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--c-text-strong);
+  margin-bottom: 12px;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
+    Inter, sans-serif;
+}
+
+.form-hint {
+  margin: 8px 2px 0;
+  font-size: 0.82rem;
+  color: var(--c-text-dim);
+}
+
+/* ---------- Submit / primary action button ---------- */
+
+.submit-button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--c-gradient-brand);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: var(--c-glow-brand);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.submit-button:hover:not([disabled]) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.42);
+}
+
+.submit-button:active:not([disabled]) {
+  transform: scale(0.98);
+}
+
+.submit-button[disabled] {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--c-border-hi);
+  color: var(--c-text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Inline spinner for loading state */
+.submit-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  animation: submit-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit-button {
+    transition: none !important;
+  }
+  .submit-spinner {
+    animation: none !important;
+  }
 }
 
 /* ---------- Loading helper text used by Suspense fallbacks ---------- */
