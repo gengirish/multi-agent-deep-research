@@ -1,5 +1,12 @@
-# fly.toml — Chronicle backend (FastAPI web + ARQ worker)
+# fly.toml — Chronicle backend (single FastAPI web process, inline pipeline)
 # Docs: https://fly.io/docs/reference/configuration/
+#
+# Architecture note: we previously ran a separate `worker` process group
+# (ARQ on Upstash Redis). After a cost audit we moved to inline execution
+# via FastAPI's asyncio.create_task — the worker idle cost (~$5.70/mo
+# always-on) wasn't justified at single-user scale. The ARQ shim is still
+# in backend/queue/tasks.py so we can flip back to a separate worker by
+# adding a `worker` process group back here and scaling it >= 1.
 
 app = "multi-agent-deep-research-api"
 # Singapore — co-located with Neon's ap-southeast-1 region for low DB
@@ -14,21 +21,15 @@ primary_region = "sin"
   PORT = "8080"
   PYTHONPATH = "/app"
 
-# Two process groups share the same image but run different commands.
-# `web`    serves FastAPI on PORT 8080.
-# `worker` runs the ARQ worker that pops research jobs off Upstash Redis.
-[processes]
-  web    = "uvicorn backend.main:app --host 0.0.0.0 --port 8080"
-  worker = "python -m arq backend.queue.worker_settings.WorkerSettings"
-
-# Only the web process serves HTTP.
 [http_service]
   internal_port = 8080
   force_https = true
+  # Web scales to zero when idle. Inline research runs as part of the
+  # request lifecycle, so the machine stays alive long enough to finish
+  # any in-flight pipeline before stopping.
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["web"]
 
   [http_service.concurrency]
     type = "requests"
@@ -42,18 +43,7 @@ primary_region = "sin"
     timeout = "5s"
     path = "/api/health"
 
-# Web machines — sized for FastAPI + small in-memory caches.
 [[vm]]
-  processes = ["web"]
-  size = "shared-cpu-1x"
-  memory = "1gb"
-  cpus = 1
-  cpu_kind = "shared"
-
-# Worker machines — sized for the LangGraph pipeline (LangChain imports
-# and tokenizer load are the memory drivers).
-[[vm]]
-  processes = ["worker"]
   size = "shared-cpu-1x"
   memory = "1gb"
   cpus = 1

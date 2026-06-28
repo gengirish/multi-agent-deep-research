@@ -49,12 +49,14 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 #   *             → OpenRouter (langchain-openai with custom base_url)
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "anthropic/claude-3-5-sonnet")
-RETRIEVER_MODEL = os.getenv(
-    "RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile"
-)  # Fast metadata + sentiment on retrieved sources
+# Retrieval-stage metadata + sentiment — Groq Llama 3.3 70B for sub-second.
+RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile")
 ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-3-5-sonnet")
 INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "openai/gpt-4o")
-REPORT_MODEL = os.getenv("REPORT_MODEL", "anthropic/claude-3-5-haiku")
+# Report compilation is formatting-heavy / low cognitive load — switch to
+# Groq Llama 3.3 70B for ~10x cost reduction vs Claude 3.5 Haiku and
+# faster perceived completion. Override via REPORT_MODEL env to revert.
+REPORT_MODEL = os.getenv("REPORT_MODEL", "groq/llama-3.3-70b-versatile")
 
 TEMPERATURES = {
     "retriever": float(os.getenv("RETRIEVER_TEMPERATURE", "0.1")),
