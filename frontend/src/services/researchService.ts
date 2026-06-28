@@ -8,15 +8,17 @@ import { getApiUrl } from "./http";
 
 interface StreamEvent {
   stage: string;
-  message: string;
+  message?: string;
   progress?: number;
   data?: ResearchData;
+  job_id?: string;
 }
 
 interface StreamCallbacks {
   onStageUpdate?: (stage: string, message: string, progress?: number) => void;
   onComplete?: (data: ResearchData) => void;
   onError?: (error: Error) => void;
+  onJobId?: (jobId: string) => void;
 }
 
 interface RetryConfig {
@@ -116,7 +118,7 @@ export async function streamResearch(
                 ) {
                   callbacks.onStageUpdate?.(
                     data.stage,
-                    data.message,
+                    data.message ?? "",
                     data.progress
                   );
                 }
@@ -129,7 +131,7 @@ export async function streamResearch(
 
                 // Handle errors
                 if (data.stage === "error") {
-                  throw new Error(data.message || "Unknown error");
+                  throw new Error(data.message ?? "Unknown error");
                 }
               } catch (parseError) {
                 console.error("Error parsing SSE data:", parseError);
@@ -189,4 +191,141 @@ export async function performResearch(query: string): Promise<ResearchData> {
   }
 
   return response.json();
+}
+
+/**
+ * Queue-backed research flow (production path).
+ *
+ * 1. POST /api/research/jobs       → returns job_id
+ * 2. EventSource on /api/research/jobs/{id}/stream → live worker progress
+ * 3. On disconnect or completion, fetch final row from /api/research/jobs/{id}
+ *
+ * This is the path that survives killed workers, browser-closes, and Fly
+ * machine restarts because the work happens in a separate worker process
+ * and the result is persisted to Postgres before the SSE channel closes.
+ */
+export async function streamResearchJob(
+  query: string,
+  callbacks: StreamCallbacks
+): Promise<void> {
+  const API_URL = getApiUrl();
+
+  // 1. Enqueue
+  const createRes = await fetch(`${API_URL}/api/research/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!createRes.ok) {
+    throw new Error(
+      `Failed to enqueue (HTTP ${createRes.status}): ${createRes.statusText}`
+    );
+  }
+
+  const { job_id: jobId } = (await createRes.json()) as { job_id: string };
+  callbacks.onJobId?.(jobId);
+
+  // 2. Open SSE stream. EventSource handles reconnection automatically;
+  //    we close it once we see a terminal event or hit a hard error.
+  const streamUrl = `${API_URL}/api/research/jobs/${encodeURIComponent(
+    jobId
+  )}/stream`;
+
+  return new Promise<void>((resolve, reject) => {
+    const es = new EventSource(streamUrl, { withCredentials: false });
+    let settled = false;
+    const finishOk = () => {
+      if (settled) return;
+      settled = true;
+      es.close();
+      resolve();
+    };
+    const finishErr = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      es.close();
+      callbacks.onError?.(err);
+      reject(err);
+    };
+
+    es.onmessage = async (ev) => {
+      let parsed: StreamEvent;
+      try {
+        parsed = JSON.parse(ev.data) as StreamEvent;
+      } catch (e) {
+        console.warn("Bad SSE payload:", ev.data);
+        return;
+      }
+
+      if (
+        parsed.stage &&
+        parsed.stage !== "complete" &&
+        parsed.stage !== "error"
+      ) {
+        callbacks.onStageUpdate?.(
+          parsed.stage,
+          parsed.message ?? "",
+          parsed.progress
+        );
+      }
+
+      if (parsed.stage === "complete") {
+        if (parsed.data) {
+          callbacks.onComplete?.(parsed.data);
+        } else {
+          // Server didn't inline the data — fetch the final row.
+          try {
+            const final = await fetchJobResult(jobId);
+            callbacks.onComplete?.(final);
+          } catch (e) {
+            return finishErr(e instanceof Error ? e : new Error(String(e)));
+          }
+        }
+        return finishOk();
+      }
+
+      if (parsed.stage === "error") {
+        return finishErr(new Error(parsed.message || "Worker reported error"));
+      }
+    };
+
+    es.onerror = async () => {
+      // EventSource's `error` fires for both transient blips and final close.
+      // Check readyState: if CLOSED, treat as terminal; if CONNECTING, the
+      // browser will reconnect on its own.
+      if (es.readyState === EventSource.CLOSED) {
+        // Last-chance: the worker may have already finished — poll the row.
+        try {
+          const final = await fetchJobResult(jobId);
+          callbacks.onComplete?.(final);
+          return finishOk();
+        } catch (e) {
+          return finishErr(
+            e instanceof Error ? e : new Error("Stream closed unexpectedly")
+          );
+        }
+      }
+      // CONNECTING: silent — browser will retry.
+    };
+  });
+}
+
+/**
+ * Fetch the final/current state of a job from Postgres.
+ * Used by the share route (/r/[id]) and as a fallback when the SSE
+ * stream drops before delivering a `complete` event.
+ */
+export async function fetchJobResult(jobId: string): Promise<ResearchData> {
+  const API_URL = getApiUrl();
+  const res = await fetch(
+    `${API_URL}/api/research/jobs/${encodeURIComponent(jobId)}`
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to fetch job ${jobId}: HTTP ${res.status}`);
+  }
+  // The /api/research/jobs/{id} endpoint mirrors the ConversationDetail
+  // shape used by /api/conversations/{id}, so we extract `.data`.
+  const wrapped = (await res.json()) as { data: ResearchData };
+  return wrapped.data;
 }

@@ -11,23 +11,28 @@ from typing import Dict, List, Any
 from urllib.parse import urlparse
 from datetime import datetime
 from dotenv import load_dotenv
-from utils.llm_config import create_llm
+from utils.llm_config import create_retriever_llm
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
 
 class DataEnrichmentAgent:
-    """Enriches search results with metadata and analysis."""
-    
+    """Enriches search results with metadata and analysis.
+
+    Uses the retriever-tier LLM (Groq Llama 3.3 70B by default) — sub-second
+    inference is critical here since this agent runs on every retrieved
+    source and is the slowest LLM step in the pipeline if you pick a heavy
+    model for it.
+    """
+
     def __init__(self):
-        """Initialize enrichment agent."""
-        # Initialize LLM for advanced enrichment (optional)
-        self.llm = create_llm(temperature=0.3, max_tokens=500)
+        # Falls back to OpenRouter automatically if GROQ_API_KEY isn't set.
+        self.llm = create_retriever_llm()
         if not self.llm:
             logger.warning("LLM not available. Enrichment will use heuristics only.")
-        
-        logger.info("Data Enrichment Agent initialized")
+
+        logger.info("Data Enrichment Agent initialized (retriever-tier LLM)")
     
     def enrich_sources(self, sources: Dict[str, Any]) -> Dict[str, Any]:
         """

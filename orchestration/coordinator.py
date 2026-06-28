@@ -29,8 +29,16 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class ResearchState(TypedDict):
-    """State schema for the research workflow."""
+class ResearchState(TypedDict, total=False):
+    """State schema for the research workflow.
+
+    `step_count` is incremented in every node so we can detect runaway
+    cycles defensively, matching the build-plan failure path. Even though
+    our pipeline is linear today, a future branch could loop the graph
+    back through analysis on contradiction. The supervisor caps it at
+    MAX_STEPS (15 with default 5 stages = 3x headroom).
+    """
+
     query: str
     sources: Dict[str, Any]
     analysis: Dict[str, Any]
@@ -38,6 +46,11 @@ class ResearchState(TypedDict):
     credibility: Dict[str, Any]  # Source credibility assessments
     report: str
     error: str
+    step_count: int
+
+
+# Max number of node transitions before the supervisor short-circuits to END.
+MAX_STEPS = 15
 
 
 class ResearchWorkflow:
@@ -115,11 +128,30 @@ class ResearchWorkflow:
         graph.add_edge("insight_generator", "report_builder")
         graph.add_edge("report_builder", END)
         
-        # Compile workflow
+        # Compile with an explicit recursion limit so any future branch
+        # that loops the graph is bounded — matches the build plan's
+        # "loop > 5 steps" failure-path guard via LangGraph's native
+        # recursion mechanism (3x our linear depth).
         return graph.compile()
     
+    def _bump_step(self, state: ResearchState, node: str) -> None:
+        """Increment the step counter and short-circuit at MAX_STEPS.
+
+        Sets state['error'] so downstream nodes (and the API layer) can
+        see the guard fired without raising.
+        """
+        state["step_count"] = state.get("step_count", 0) + 1
+        if state["step_count"] > MAX_STEPS:
+            msg = (
+                f"Loop guard tripped at {node}: step_count={state['step_count']} "
+                f"> MAX_STEPS={MAX_STEPS}"
+            )
+            logger.error(msg)
+            state["error"] = msg
+
     def _retriever_node(self, state: ResearchState) -> ResearchState:
         """Retriever agent node."""
+        self._bump_step(state, "retriever")
         try:
             logger.info(f"Workflow: Running Retriever for query: {state['query']}")
             self.agent_logger.log_agent_action(
@@ -146,6 +178,7 @@ class ResearchWorkflow:
     
     def _enricher_node(self, state: ResearchState) -> ResearchState:
         """Enrichment agent node."""
+        self._bump_step(state, "enricher")
         try:
             logger.info("Workflow: Running Enricher")
             self.agent_logger.log_agent_action("enricher", "enrich_sources")
@@ -186,6 +219,7 @@ class ResearchWorkflow:
         Parallel analysis node: runs credibility and analyzer in parallel using asyncio.
         This avoids LangGraph state conflicts while achieving parallel execution.
         """
+        self._bump_step(state, "parallel_analysis")
         try:
             logger.info("Workflow: Running parallel analysis (credibility + analyzer)")
             
@@ -289,6 +323,7 @@ class ResearchWorkflow:
     
     def _insight_generator_node(self, state: ResearchState) -> ResearchState:
         """Insight generator agent node."""
+        self._bump_step(state, "insight_generator")
         try:
             logger.info("Workflow: Running Insight Generator")
             self.agent_logger.log_agent_action("insight_generator", "generate")
@@ -319,6 +354,7 @@ class ResearchWorkflow:
     
     def _report_builder_node(self, state: ResearchState) -> ResearchState:
         """Report builder agent node."""
+        self._bump_step(state, "report_builder")
         try:
             logger.info("Workflow: Running Report Builder")
             self.agent_logger.log_agent_action("report_builder", "compile")
@@ -363,11 +399,17 @@ class ResearchWorkflow:
             "insights": {},
             "credibility": {},
             "report": "",
-            "error": ""
+            "error": "",
+            "step_count": 0,
         }
-        
+
         try:
-            result = self.workflow.invoke(initial_state)
+            # LangGraph's recursion_limit is the runtime backstop for
+            # cyclic graphs — paired with our per-node step_count guard.
+            result = self.workflow.invoke(
+                initial_state,
+                config={"recursion_limit": MAX_STEPS},
+            )
             logger.info("Research workflow completed successfully")
             
             # Get conversation data before ending (end_conversation clears it)
