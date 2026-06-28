@@ -519,3 +519,29 @@
     transition: none !important;
   }
 }
+
+/* === SVG icon alignment (text-to-speech) === */
+.play-icon,
+.stop-icon,
+.settings-icon,
+.tts-unavailable .warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.setting-label,
+.info-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-text {
+  flex-wrap: wrap;
+}
+
+.setting-label svg {
+  color: #6366f1;
+  flex-shrink: 0;
+}

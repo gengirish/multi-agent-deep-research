@@ -250,3 +250,18 @@
     transition: none !important;
   }
 }
+
+/* === SVG icon alignment (error banner) === */
+.error-banner .error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.error-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}

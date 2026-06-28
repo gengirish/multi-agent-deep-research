@@ -318,3 +318,12 @@
     transition: none !important;
   }
 }
+
+/* === SVG icon alignment (voice input) === */
+.voice-icon,
+.voice-error .error-icon,
+.voice-input-unavailable .warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useTextToSpeech } from '../hooks/useTextToSpeech'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import { Icon } from './icons'
 import './TextToSpeechControls.css'
 
 interface Props {
@@ -100,7 +101,9 @@ export const TextToSpeechControls: React.FC<Props> = ({
   if (!isSupported) {
     return (
       <div className="tts-unavailable" role="status">
-        <span className="warning-icon">⚠️</span>
+        <span className="warning-icon">
+          <Icon name="alert" size={18} />
+        </span>
         <p>Text-to-Speech is not supported in your browser</p>
       </div>
     )
@@ -117,7 +120,7 @@ export const TextToSpeechControls: React.FC<Props> = ({
           title={isPlaying ? 'Pause' : 'Play'}
         >
           <span className="play-icon">
-            {isPlaying && !isPaused ? '⏸' : '▶'}
+            <Icon name={isPlaying && !isPaused ? "pause" : "play"} size={16} />
           </span>
           <span className="play-text">
             {isPlaying && !isPaused ? 'Pause' : isPlaying && isPaused ? 'Resume' : 'Listen'}
@@ -131,7 +134,9 @@ export const TextToSpeechControls: React.FC<Props> = ({
             aria-label="Stop audio"
             title="Stop"
           >
-            <span className="stop-icon">⏹</span>
+            <span className="stop-icon">
+              <Icon name="stop" size={16} />
+            </span>
           </button>
         )}
 
@@ -141,7 +146,9 @@ export const TextToSpeechControls: React.FC<Props> = ({
           aria-label="Show audio settings"
           title="Settings"
         >
-          <span className="settings-icon">⚙️</span>
+          <span className="settings-icon">
+            <Icon name="settings" size={16} />
+          </span>
         </button>
       </div>
 
@@ -169,7 +176,8 @@ export const TextToSpeechControls: React.FC<Props> = ({
           {voices.length > 0 && (
             <div className="setting-group">
               <label htmlFor="voice-select" className="setting-label">
-                🎤 Voice
+                <Icon name="mic" size={15} />
+                Voice
               </label>
               <select
                 id="voice-select"
@@ -190,7 +198,8 @@ export const TextToSpeechControls: React.FC<Props> = ({
           {/* Speed Control */}
           <div className="setting-group">
             <label htmlFor="speed-slider" className="setting-label">
-              🚀 Speed: {rate}x
+              <Icon name="speed" size={15} />
+              Speed: {rate}x
             </label>
             <input
               id="speed-slider"
@@ -219,7 +228,8 @@ export const TextToSpeechControls: React.FC<Props> = ({
           {/* Info */}
           <div className="setting-info">
             <p className="info-text">
-              💡 <strong>Tip:</strong> Use your keyboard:
+              <Icon name="insight" size={15} /> <strong>Tip:</strong> Use your
+              keyboard:
             </p>
             <ul className="keyboard-shortcuts">
               <li><code>Space</code> - Play/Pause</li>

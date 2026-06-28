@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react'
+import { Icon } from './icons'
 import './VoiceInput.css'
 
 // TypeScript declarations for Web Speech API
@@ -176,7 +177,9 @@ export const VoiceInput: React.FC<Props> = ({ onVoiceCapture, disabled = false }
   if (!isSupported) {
     return (
       <div className="voice-input-unavailable" role="status">
-        <span className="warning-icon">⚠️</span>
+        <span className="warning-icon">
+          <Icon name="alert" size={18} />
+        </span>
         <p>Voice input is not supported in your browser</p>
         <p className="hint">Please use Chrome, Edge, or Safari for voice input</p>
       </div>
@@ -193,7 +196,7 @@ export const VoiceInput: React.FC<Props> = ({ onVoiceCapture, disabled = false }
         aria-pressed={isListening}
       >
         <span className="voice-icon">
-          {isListening ? '🛑' : '🎤'}
+          <Icon name={isListening ? "stop" : "mic"} size={18} />
         </span>
         <span className="voice-text">
           {isListening ? 'Stop Listening' : 'Speak Your Research Query'}
@@ -216,7 +219,9 @@ export const VoiceInput: React.FC<Props> = ({ onVoiceCapture, disabled = false }
       
       {error && (
         <div className="voice-error" role="alert">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon">
+            <Icon name="alert" size={16} />
+          </span>
           <p>{error}</p>
         </div>
       )}

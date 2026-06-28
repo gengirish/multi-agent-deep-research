@@ -446,3 +446,26 @@
     transition: none !important;
   }
 }
+
+/* === SVG icon alignment (research metrics) === */
+.metrics-title,
+.research-metrics .section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.research-metrics .section-title svg,
+.metrics-title svg {
+  color: var(--c-accent, #818cf8);
+  flex-shrink: 0;
+}
+
+.metric-icon {
+  font-size: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  color: #fff;
+}
