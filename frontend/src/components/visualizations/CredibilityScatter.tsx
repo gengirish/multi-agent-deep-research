@@ -2,7 +2,8 @@
 
 import React from 'react'
 import * as d3 from 'd3'
-import { useD3 } from '../../hooks/useD3'
+import { useD3, useResponsiveWidth } from '../../hooks/useD3'
+import { CHART, colorForType, createTooltip, styleAxis } from './chartTheme'
 import './CredibilityScatter.css'
 
 interface ScatterDataPoint {
@@ -15,17 +16,13 @@ interface ScatterDataPoint {
 
 interface Props {
   data: ScatterDataPoint[]
-  width?: number
   height?: number
 }
 
-export const CredibilityScatter: React.FC<Props> = ({ 
-  data, 
-  width = 600, 
-  height = 400 
-}) => {
+export const CredibilityScatter: React.FC<Props> = ({ data, height = 360 }) => {
+  const [containerRef, width] = useResponsiveWidth(600)
+
   const ref = useD3((svg) => {
-    // Clear previous render
     svg.selectAll('*').remove()
 
     if (data.length === 0) {
@@ -33,187 +30,117 @@ export const CredibilityScatter: React.FC<Props> = ({
         .attr('x', width / 2)
         .attr('y', height / 2)
         .attr('text-anchor', 'middle')
-        .attr('fill', '#666')
+        .attr('fill', CHART.muted)
+        .style('font-size', '13px')
         .text('No data available')
       return
     }
 
-    // Set up margins
-    const margin = { top: 20, right: 30, bottom: 60, left: 60 }
+    const margin = { top: 16, right: 24, bottom: 52, left: 52 }
     const innerWidth = width - margin.left - margin.right
     const innerHeight = height - margin.top - margin.bottom
 
-    // Create scales
-    const xScale = d3.scaleLinear()
-      .domain([0, 1])
-      .range([0, innerWidth])
-      .nice()
+    const xScale = d3.scaleLinear().domain([0, 1]).range([0, innerWidth]).nice()
+    const yScale = d3.scaleLinear().domain([0, 1]).range([innerHeight, 0]).nice()
 
-    const yScale = d3.scaleLinear()
-      .domain([0, 1])
-      .range([innerHeight, 0])
-      .nice()
-
-    // Create color scale by source type
-    const colorScale = d3.scaleOrdinal<string>()
-      .domain(['web', 'papers', 'news'])
-      .range(['#3b82f6', '#10b981', '#f59e0b'])
-
-    // Create size scale (based on relevance or count)
-    const sizeScale = d3.scaleSqrt()
-      .domain([0, 1])
-      .range([4, 10])
-
-    // Create group for chart
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`)
 
-    // Create tooltip
-    const tooltip = d3.select('body')
-      .append('div')
-      .attr('class', 'd3-tooltip')
-      .style('opacity', 0)
-      .style('position', 'absolute')
-      .style('background', 'rgba(0, 0, 0, 0.8)')
-      .style('color', 'white')
-      .style('padding', '8px')
-      .style('border-radius', '4px')
-      .style('pointer-events', 'none')
-      .style('font-size', '12px')
-      .style('z-index', '1000')
-      .style('max-width', '250px')
+    const tooltip = createTooltip()
 
-    // Add grid lines
+    // Grid
     g.append('g')
-      .attr('class', 'grid')
       .attr('transform', `translate(0,${innerHeight})`)
-      .call(
-        d3.axisBottom(xScale)
-          .ticks(10)
-          .tickSize(-innerHeight)
-          .tickFormat(() => '')
-      )
-      .selectAll('line')
-      .attr('stroke', '#e5e7eb')
-      .attr('stroke-dasharray', '2,2')
+      .call(d3.axisBottom(xScale).ticks(8).tickSize(-innerHeight).tickFormat(() => ''))
+      .call((sel) => sel.selectAll('line').attr('stroke', CHART.grid))
+      .call((sel) => sel.select('.domain').remove())
 
     g.append('g')
-      .attr('class', 'grid')
-      .call(
-        d3.axisLeft(yScale)
-          .ticks(10)
-          .tickSize(-innerWidth)
-          .tickFormat(() => '')
-      )
-      .selectAll('line')
-      .attr('stroke', '#e5e7eb')
-      .attr('stroke-dasharray', '2,2')
+      .call(d3.axisLeft(yScale).ticks(8).tickSize(-innerWidth).tickFormat(() => ''))
+      .call((sel) => sel.selectAll('line').attr('stroke', CHART.grid))
+      .call((sel) => sel.select('.domain').remove())
 
-    // Add data points
     g.selectAll('circle')
       .data(data)
       .enter()
       .append('circle')
       .attr('cx', d => xScale(d.domainScore))
       .attr('cy', d => yScale(d.credibility))
-      .attr('r', () => sizeScale(1))
-      .attr('fill', d => colorScale(d.type) || '#999')
-      .attr('opacity', 0.7)
-      .attr('stroke', 'white')
+      .attr('r', 6)
+      .attr('fill', d => colorForType(d.type))
+      .attr('opacity', 0.8)
+      .attr('stroke', 'rgba(15, 23, 42, 0.8)')
       .attr('stroke-width', 1.5)
-      .on('mouseover', function(event, d) {
-        d3.select(this)
-          .attr('opacity', 1)
-          .attr('r', sizeScale(1) + 2)
-        
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0.9)
+      .style('cursor', d => (d.url ? 'pointer' : 'default'))
+      .on('mouseover', function (event, d) {
+        d3.select(this).attr('opacity', 1).attr('r', 8)
+        tooltip.transition().duration(150).style('opacity', '1')
         tooltip.html(`
           <div><strong>${d.title}</strong></div>
-          <div>Type: ${d.type}</div>
-          <div>Credibility: ${d.credibility.toFixed(2)}</div>
-          <div>Domain Score: ${d.domainScore.toFixed(2)}</div>
-          ${d.url ? `<div style="margin-top: 4px; font-size: 10px; color: #93c5fd;">${d.url}</div>` : ''}
+          <div style="color:#94a3b8;margin-top:2px;text-transform:capitalize;">${d.type}</div>
+          <div style="margin-top:4px;">Credibility: ${d.credibility.toFixed(2)}</div>
+          <div>Domain score: ${d.domainScore.toFixed(2)}</div>
+          ${d.url ? `<div style="margin-top:4px;font-size:10px;color:#7dd3fc;">${d.url}</div>` : ''}
         `)
-          .style('left', (event.pageX + 10) + 'px')
+          .style('left', (event.pageX + 12) + 'px')
           .style('top', (event.pageY - 10) + 'px')
       })
-      .on('mousemove', function(event) {
-        tooltip
-          .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY - 10) + 'px')
-        // event is used in the tooltip positioning above
+      .on('mousemove', function (event) {
+        tooltip.style('left', (event.pageX + 12) + 'px').style('top', (event.pageY - 10) + 'px')
       })
-      .on('mouseout', function() {
-        d3.select(this)
-          .attr('opacity', 0.7)
-          .attr('r', sizeScale(1))
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0)
+      .on('mouseout', function () {
+        d3.select(this).attr('opacity', 0.8).attr('r', 6)
+        tooltip.transition().duration(150).style('opacity', '0')
       })
-      .on('click', function(_event, d) {
-        if (d.url) {
-          window.open(d.url, '_blank')
-        }
+      .on('click', function (_event, d) {
+        if (d.url) window.open(d.url, '_blank')
       })
-      .style('cursor', d => d.url ? 'pointer' : 'default')
 
-    // Add x-axis
     const xAxis = g.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale).ticks(10))
+      .call(d3.axisBottom(xScale).ticks(8))
+    styleAxis(xAxis)
 
     xAxis.append('text')
       .attr('x', innerWidth / 2)
-      .attr('y', 45)
-      .attr('fill', 'currentColor')
+      .attr('y', 42)
+      .attr('fill', CHART.axisStrong)
       .style('text-anchor', 'middle')
       .style('font-size', '12px')
-      .text('Domain Score')
+      .text('Domain score')
 
-    // Add y-axis
-    const yAxis = g.append('g')
-      .call(d3.axisLeft(yScale).ticks(10))
+    const yAxis = g.append('g').call(d3.axisLeft(yScale).ticks(8))
+    styleAxis(yAxis, { hideDomain: true })
 
     yAxis.append('text')
       .attr('transform', 'rotate(-90)')
-      .attr('y', -45)
+      .attr('y', -40)
       .attr('x', -innerHeight / 2)
-      .attr('fill', 'currentColor')
+      .attr('fill', CHART.axisStrong)
       .style('text-anchor', 'middle')
       .style('font-size', '12px')
-      .text('Credibility Score')
+      .text('Credibility score')
 
-    // Add legend
-    const legend = g.append('g')
-      .attr('transform', `translate(${innerWidth - 100}, 20)`)
-
-    const types = ['web', 'papers', 'news']
+    // Legend
+    const types = Array.from(new Set(data.map(d => d.type)))
+    const legend = g.append('g').attr('transform', `translate(${innerWidth - 96}, 4)`)
     types.forEach((type, i) => {
-      const legendRow = legend.append('g')
-        .attr('transform', `translate(0, ${i * 20})`)
-
-      legendRow.append('circle')
-        .attr('r', 5)
-        .attr('fill', colorScale(type))
-
-      legendRow.append('text')
-        .attr('x', 12)
-        .attr('y', 5)
-        .attr('fill', '#374151')
+      const row = legend.append('g').attr('transform', `translate(0, ${i * 18})`)
+      row.append('circle').attr('r', 5).attr('cx', 5).attr('fill', colorForType(type))
+      row.append('text')
+        .attr('x', 16)
+        .attr('y', 4)
+        .attr('fill', CHART.axis)
         .style('font-size', '11px')
-        .text(type.charAt(0).toUpperCase() + type.slice(1))
+        .style('text-transform', 'capitalize')
+        .text(type)
     })
-
   }, [data, width, height])
 
   return (
-    <div className="credibility-scatter">
+    <div className="credibility-scatter" ref={containerRef}>
       <h3 className="chart-title">Credibility vs Domain Score</h3>
       <svg ref={ref} width={width} height={height} className="d3-chart" />
     </div>
   )
 }
-

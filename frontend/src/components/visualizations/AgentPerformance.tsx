@@ -2,7 +2,8 @@
 
 import React from 'react'
 import * as d3 from 'd3'
-import { useD3 } from '../../hooks/useD3'
+import { useD3, useResponsiveWidth } from '../../hooks/useD3'
+import { CHART, createTooltip, styleAxis } from './chartTheme'
 import './AgentPerformance.css'
 
 interface ConversationEntry {
@@ -17,7 +18,6 @@ interface ConversationEntry {
 
 interface Props {
   conversation: ConversationEntry[]
-  width?: number
   height?: number
 }
 
@@ -30,35 +30,37 @@ interface AgentStats {
   outputMetrics: Record<string, number>
 }
 
-export const AgentPerformance: React.FC<Props> = ({ 
-  conversation, 
-  width = 700, 
-  height = 400 
-}) => {
+export const AgentPerformance: React.FC<Props> = ({ conversation, height = 360 }) => {
+  const [containerRef, width] = useResponsiveWidth(700)
+
   const ref = useD3((svg) => {
     svg.selectAll('*').remove()
 
-    if (!conversation || conversation.length === 0) {
+    const empty = (msg: string) => {
       svg.append('text')
         .attr('x', width / 2)
         .attr('y', height / 2)
         .attr('text-anchor', 'middle')
-        .attr('fill', '#666')
-        .text('No conversation data available')
+        .attr('fill', CHART.muted)
+        .style('font-size', '13px')
+        .text(msg)
+    }
+
+    if (!conversation || conversation.length === 0) {
+      empty('No conversation data available')
       return
     }
 
-    // Process conversation data
     const agentEntries = conversation.filter(entry => entry.agent && entry.timestamp)
     const agentStatsMap = new Map<string, AgentStats>()
 
     agentEntries.forEach((entry, i) => {
       const agent = entry.agent!
       const startTime = new Date(entry.timestamp)
-      const nextEntry = conversation.find((e, idx) => 
+      const nextEntry = conversation.find((e, idx) =>
         idx > i && e.timestamp && new Date(e.timestamp) > startTime
       )
-      const endTime = nextEntry 
+      const endTime = nextEntry
         ? new Date(nextEntry.timestamp)
         : new Date(startTime.getTime() + 1000)
       const duration = endTime.getTime() - startTime.getTime()
@@ -70,19 +72,15 @@ export const AgentPerformance: React.FC<Props> = ({
           totalDuration: 0,
           avgDuration: 0,
           hasErrors: false,
-          outputMetrics: {}
+          outputMetrics: {},
         })
       }
 
       const stats = agentStatsMap.get(agent)!
       stats.actionCount++
       stats.totalDuration += duration
-      
-      if (entry.type === 'error') {
-        stats.hasErrors = true
-      }
+      if (entry.type === 'error') stats.hasErrors = true
 
-      // Extract output metrics
       if (entry.output) {
         Object.entries(entry.output).forEach(([key, value]) => {
           if (typeof value === 'number') {
@@ -92,152 +90,112 @@ export const AgentPerformance: React.FC<Props> = ({
       }
     })
 
-    // Calculate averages
     agentStatsMap.forEach(stats => {
       stats.avgDuration = stats.totalDuration / stats.actionCount
     })
 
     const agentStats = Array.from(agentStatsMap.values())
-
     if (agentStats.length === 0) {
-      svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', height / 2)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#666')
-        .text('No agent statistics available')
+      empty('No agent statistics available')
       return
     }
 
-    // Set up margins
-    const margin = { top: 20, right: 30, bottom: 80, left: 100 }
+    const margin = { top: 16, right: 56, bottom: 52, left: 100 }
     const innerWidth = width - margin.left - margin.right
     const innerHeight = height - margin.top - margin.bottom
 
-    // Create scales
     const maxDuration = d3.max(agentStats, d => d.avgDuration) || 0
-    const xScale = d3.scaleLinear()
-      .domain([0, maxDuration])
-      .range([0, innerWidth])
-      .nice()
+    const xScale = d3.scaleLinear().domain([0, maxDuration]).range([0, innerWidth]).nice()
+    const yScale = d3.scaleBand().domain(agentStats.map(d => d.agent)).range([0, innerHeight]).padding(0.25)
 
-    const yScale = d3.scaleBand()
-      .domain(agentStats.map(d => d.agent))
-      .range([0, innerHeight])
-      .padding(0.2)
-
-    // Color scale
     const colorScale = d3.scaleOrdinal<string>()
       .domain(agentStats.map(d => d.agent))
-      .range(['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'])
+      .range(CHART.categorical)
 
-    // Create group
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
+    const tooltip = createTooltip()
 
-    // Create tooltip
-    const tooltip = d3.select('body')
-      .append('div')
-      .attr('class', 'd3-tooltip')
-      .style('opacity', 0)
-      .style('position', 'absolute')
-      .style('background', 'rgba(0, 0, 0, 0.9)')
-      .style('color', 'white')
-      .style('padding', '10px')
-      .style('border-radius', '6px')
-      .style('pointer-events', 'none')
-      .style('font-size', '12px')
-      .style('z-index', '1000')
+    // Vertical grid
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(xScale).ticks(6).tickSize(-innerHeight).tickFormat(() => ''))
+      .call((sel) => sel.selectAll('line').attr('stroke', CHART.grid))
+      .call((sel) => sel.select('.domain').remove())
 
-    // Add bars
-    g.selectAll('rect')
+    g.selectAll('rect.bar')
       .data(agentStats)
       .enter()
       .append('rect')
+      .attr('class', 'bar')
       .attr('x', 0)
       .attr('y', d => yScale(d.agent)!)
       .attr('width', d => xScale(d.avgDuration))
       .attr('height', yScale.bandwidth())
-      .attr('fill', d => d.hasErrors ? '#ef4444' : colorScale(d.agent))
-      .attr('opacity', 0.7)
-      .attr('rx', 4)
-      .on('mouseover', function(event, d) {
+      .attr('rx', 5)
+      .attr('fill', d => (d.hasErrors ? CHART.error : colorScale(d.agent)))
+      .attr('opacity', 0.85)
+      .on('mouseover', function (event, d) {
         d3.select(this).attr('opacity', 1)
-        
         const avgDuration = (d.avgDuration / 1000).toFixed(2)
         const totalDuration = (d.totalDuration / 1000).toFixed(2)
-        
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0.95)
-        
-        let tooltipContent = `
-          <div><strong>${d.agent}</strong></div>
-          <div style="margin-top: 6px; font-size: 11px; color: #ccc;">
+        const status = d.hasErrors
+          ? '<span style="color:#fca5a5;">Has errors</span>'
+          : '<span style="color:#86efac;">Success</span>'
+        tooltip.transition().duration(150).style('opacity', '1')
+        tooltip.html(`
+          <div style="text-transform:capitalize;"><strong>${d.agent}</strong></div>
+          <div style="margin-top:6px;font-size:11px;color:#94a3b8;">
             Actions: ${d.actionCount}<br/>
-            Avg Duration: ${avgDuration}s<br/>
-            Total Duration: ${totalDuration}s<br/>
-            Status: ${d.hasErrors ? '<span style="color: #ef4444;">Has Errors</span>' : '<span style="color: #10b981;">Success</span>'}
+            Avg duration: ${avgDuration}s<br/>
+            Total duration: ${totalDuration}s<br/>
+            Status: ${status}
           </div>
-        `
-        
-        if (Object.keys(d.outputMetrics).length > 0) {
-          tooltipContent += `<div style="margin-top: 6px; font-size: 10px; color: #93c5fd;">Metrics: ${JSON.stringify(d.outputMetrics)}</div>`
-        }
-        
-        tooltip.html(tooltipContent)
-          .style('left', (event.pageX + 10) + 'px')
+        `)
+          .style('left', (event.pageX + 12) + 'px')
           .style('top', (event.pageY - 10) + 'px')
       })
-      .on('mousemove', function(event) {
-        tooltip
-          .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY - 10) + 'px')
+      .on('mousemove', function (event) {
+        tooltip.style('left', (event.pageX + 12) + 'px').style('top', (event.pageY - 10) + 'px')
       })
-      .on('mouseout', function() {
-        d3.select(this).attr('opacity', 0.7)
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0)
+      .on('mouseout', function () {
+        d3.select(this).attr('opacity', 0.85)
+        tooltip.transition().duration(150).style('opacity', '0')
       })
 
-    // Add value labels
     g.selectAll('text.value-label')
       .data(agentStats)
       .enter()
       .append('text')
       .attr('class', 'value-label')
-      .attr('x', d => xScale(d.avgDuration) + 5)
+      .attr('x', d => xScale(d.avgDuration) + 8)
       .attr('y', d => yScale(d.agent)! + yScale.bandwidth() / 2)
       .attr('dy', '0.35em')
-      .attr('fill', '#374151')
+      .attr('fill', CHART.axisStrong)
       .style('font-size', '11px')
       .text(d => `${(d.avgDuration / 1000).toFixed(1)}s`)
 
-    // Add x-axis
     const xAxis = g.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale).ticks(8).tickFormat(d => `${(d as number / 1000).toFixed(1)}s`))
+      .call(d3.axisBottom(xScale).ticks(6).tickFormat(d => `${((d as number) / 1000).toFixed(1)}s`))
+    styleAxis(xAxis)
 
     xAxis.append('text')
       .attr('x', innerWidth / 2)
-      .attr('y', 45)
-      .attr('fill', 'currentColor')
+      .attr('y', 40)
+      .attr('fill', CHART.axisStrong)
       .style('text-anchor', 'middle')
       .style('font-size', '12px')
-      .text('Average Duration (seconds)')
+      .text('Average duration')
 
-    // Add y-axis
-    g.append('g')
-      .call(d3.axisLeft(yScale))
-
+    const yAxis = g.append('g').call(d3.axisLeft(yScale))
+    styleAxis(yAxis, { hideDomain: true })
+    yAxis.selectAll('text').style('text-transform', 'capitalize')
   }, [conversation, width, height])
 
   return (
-    <div className="agent-performance">
+    <div className="agent-performance" ref={containerRef}>
       <h3 className="chart-title">Agent Performance Metrics</h3>
       <svg ref={ref} width={width} height={height} className="d3-chart" />
     </div>
   )
 }
-

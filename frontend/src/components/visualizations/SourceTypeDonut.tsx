@@ -2,7 +2,8 @@
 
 import React from 'react'
 import * as d3 from 'd3'
-import { useD3 } from '../../hooks/useD3'
+import { useD3, useResponsiveWidth } from '../../hooks/useD3'
+import { CHART, colorForType, createTooltip } from './chartTheme'
 import './SourceTypeDonut.css'
 
 interface SourceTypeData {
@@ -12,17 +13,13 @@ interface SourceTypeData {
 
 interface Props {
   data: SourceTypeData[]
-  width?: number
   height?: number
 }
 
-export const SourceTypeDonut: React.FC<Props> = ({ 
-  data, 
-  width = 400, 
-  height = 400 
-}) => {
+export const SourceTypeDonut: React.FC<Props> = ({ data, height = 360 }) => {
+  const [containerRef, width] = useResponsiveWidth(400)
+
   const ref = useD3((svg) => {
-    // Clear previous render
     svg.selectAll('*').remove()
 
     if (data.length === 0) {
@@ -30,140 +27,94 @@ export const SourceTypeDonut: React.FC<Props> = ({
         .attr('x', width / 2)
         .attr('y', height / 2)
         .attr('text-anchor', 'middle')
-        .attr('fill', '#666')
+        .attr('fill', CHART.muted)
+        .style('font-size', '13px')
         .text('No source data available')
       return
     }
 
-    const radius = Math.min(width, height) / 2 - 40
-    const innerRadius = radius * 0.6
+    const radius = Math.min(width, height) / 2 - 56
+    const innerRadius = radius * 0.62
 
-    // Create color scale
-    const colorScale = d3.scaleOrdinal<string>()
-      .domain(['web', 'papers', 'news'])
-      .range(['#3b82f6', '#10b981', '#f59e0b'])
-
-    // Create pie generator
-    const pie = d3.pie<SourceTypeData>()
-      .value(d => d.count)
-      .sort(null)
-
-    // Create arc generator
+    const pie = d3.pie<SourceTypeData>().value(d => d.count).sort(null)
     const arc = d3.arc<d3.PieArcDatum<SourceTypeData>>()
       .innerRadius(innerRadius)
       .outerRadius(radius)
+      .cornerRadius(4)
+      .padAngle(0.02)
 
-    // Create label arc
-    const labelArc = d3.arc<d3.PieArcDatum<SourceTypeData>>()
-      .innerRadius(radius + 20)
-      .outerRadius(radius + 20)
-
-    // Center the chart
-    const g = svg.append('g')
-      .attr('transform', `translate(${width / 2},${height / 2})`)
-
-    // Create tooltip
-    const tooltip = d3.select('body')
-      .append('div')
-      .attr('class', 'd3-tooltip')
-      .style('opacity', 0)
-      .style('position', 'absolute')
-      .style('background', 'rgba(0, 0, 0, 0.8)')
-      .style('color', 'white')
-      .style('padding', '8px')
-      .style('border-radius', '4px')
-      .style('pointer-events', 'none')
-      .style('font-size', '12px')
-      .style('z-index', '1000')
-
-    // Calculate total
+    const g = svg.append('g').attr('transform', `translate(${width / 2},${height / 2})`)
+    const tooltip = createTooltip()
     const total = d3.sum(data, d => d.count)
 
-    // Create arcs
     const arcs = g.selectAll('.arc')
       .data(pie(data))
       .enter()
       .append('g')
       .attr('class', 'arc')
 
-    // Add paths
     arcs.append('path')
       .attr('d', arc)
-      .attr('fill', d => colorScale(d.data.type) || '#999')
-      .attr('stroke', 'white')
+      .attr('fill', d => colorForType(d.data.type, d.index))
+      .attr('stroke', 'rgba(11, 18, 32, 0.9)')
       .attr('stroke-width', 2)
-      .on('mouseover', function(event, d) {
-        d3.select(this)
-          .attr('opacity', 0.8)
-          .attr('transform', 'scale(1.05)')
-        
+      .attr('opacity', 0.9)
+      .on('mouseover', function (event, d) {
+        d3.select(this).attr('opacity', 1)
         const percentage = ((d.data.count / total) * 100).toFixed(1)
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0.9)
+        tooltip.transition().duration(150).style('opacity', '1')
         tooltip.html(`
-          <div><strong>${d.data.type.toUpperCase()}</strong></div>
-          <div>Count: ${d.data.count}</div>
-          <div>Percentage: ${percentage}%</div>
+          <div style="text-transform:capitalize;"><strong>${d.data.type}</strong></div>
+          <div style="color:#94a3b8;margin-top:2px;">${d.data.count} sources · ${percentage}%</div>
         `)
-          .style('left', (event.pageX + 10) + 'px')
+          .style('left', (event.pageX + 12) + 'px')
           .style('top', (event.pageY - 10) + 'px')
       })
-      .on('mousemove', function(event) {
-        tooltip
-          .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY - 10) + 'px')
+      .on('mousemove', function (event) {
+        tooltip.style('left', (event.pageX + 12) + 'px').style('top', (event.pageY - 10) + 'px')
       })
-      .on('mouseout', function() {
-        d3.select(this)
-          .attr('opacity', 1)
-          .attr('transform', 'scale(1)')
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0)
+      .on('mouseout', function () {
+        d3.select(this).attr('opacity', 0.9)
+        tooltip.transition().duration(150).style('opacity', '0')
       })
 
-    // Add labels
-    arcs.append('text')
-      .attr('transform', d => {
-        const [x, y] = labelArc.centroid(d)
-        return `translate(${x},${y})`
-      })
-      .attr('text-anchor', d => {
-        const centroid = labelArc.centroid(d)
-        return centroid[0] > 0 ? 'start' : 'end'
-      })
-      .attr('fill', '#374151')
-      .style('font-size', '12px')
-      .style('font-weight', '500')
-      .text(d => {
-        const percentage = ((d.data.count / total) * 100).toFixed(0)
-        return `${d.data.type}: ${percentage}%`
-      })
-
-    // Add center text
+    // Center total
     g.append('text')
       .attr('text-anchor', 'middle')
-      .attr('dy', '-10')
-      .attr('fill', '#1f2937')
-      .style('font-size', '24px')
-      .style('font-weight', 'bold')
+      .attr('dy', '-2')
+      .attr('fill', CHART.label)
+      .style('font-size', '28px')
+      .style('font-weight', '800')
       .text(total.toString())
 
     g.append('text')
       .attr('text-anchor', 'middle')
-      .attr('dy', '15')
-      .attr('fill', '#6b7280')
-      .style('font-size', '14px')
-      .text('Total Sources')
+      .attr('dy', '20')
+      .attr('fill', CHART.axis)
+      .style('font-size', '12px')
+      .style('letter-spacing', '0.04em')
+      .text('Total sources')
 
+    // Legend below the donut
+    const legend = svg.append('g')
+      .attr('transform', `translate(${width / 2 - (data.length * 80) / 2}, ${height - 16})`)
+    data.forEach((d, i) => {
+      const row = legend.append('g').attr('transform', `translate(${i * 80}, 0)`)
+      row.append('circle').attr('r', 5).attr('cx', 5).attr('fill', colorForType(d.type, i))
+      row.append('text')
+        .attr('x', 16)
+        .attr('y', 4)
+        .attr('fill', CHART.axis)
+        .style('font-size', '11px')
+        .style('text-transform', 'capitalize')
+        .text(d.type)
+    })
   }, [data, width, height])
 
   return (
-    <div className="source-type-donut">
+    <div className="source-type-donut" ref={containerRef}>
       <h3 className="chart-title">Source Type Distribution</h3>
       <svg ref={ref} width={width} height={height} className="d3-chart" />
     </div>
   )
 }
-
