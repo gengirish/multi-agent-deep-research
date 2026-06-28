@@ -1,25 +1,22 @@
 .agent-performance {
-  margin: 20px 0;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  width: 100%;
 }
 
 .agent-performance .chart-title {
-  margin: 0 0 15px 0;
-  font-size: 18px;
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--c-text-strong, #f8fafc);
 }
 
 .agent-performance .d3-chart {
   display: block;
-  margin: 0 auto;
+  max-width: 100%;
+  overflow: visible;
 }
 
-.agent-performance rect {
-  transition: opacity 0.2s;
+.agent-performance rect.bar {
+  transition: opacity 0.15s ease;
   cursor: pointer;
 }
-
