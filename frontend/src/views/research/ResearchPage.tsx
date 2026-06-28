@@ -8,7 +8,7 @@ import { ResearchForm } from "../../components/ResearchForm";
 import { ResearchProgress } from "../../components/ResearchProgress";
 import { ResultsSkeleton } from "../../components/Skeleton";
 import { useResearchProgress } from "../../hooks/useResearchProgress";
-import { streamResearch } from "../../services/researchService";
+import { streamResearchJob } from "../../services/researchService";
 import { ResearchData } from "../../types/dto";
 
 // Heavy: pulls in D3, react-markdown, remark-gfm. Code-split it.
@@ -62,7 +62,13 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
     startedStages.clear();
 
     try {
-      await streamResearch(q, {
+      await streamResearchJob(q, {
+        onJobId: (jobId) => {
+          // Future: stash jobId in state so the user can resume / share.
+          // For now, the server's `complete` event includes job_id in data
+          // and the share route /r/[id] consumes it that way.
+          void jobId;
+        },
         onStageUpdate: (stage, message, progress) => {
           const stageIndex = stageMap[stage];
 

@@ -1,8 +1,10 @@
-# fly.toml — Multi-Agent Deep Researcher (FastAPI backend)
+# fly.toml — Chronicle backend (FastAPI web + ARQ worker)
 # Docs: https://fly.io/docs/reference/configuration/
 
 app = "multi-agent-deep-research-api"
-primary_region = "bom"
+# Singapore — co-located with Neon's ap-southeast-1 region for low DB
+# latency. Fall back to hkg or nrt if sin runs out of capacity.
+primary_region = "sin"
 
 [build]
   dockerfile = "Dockerfile"
@@ -10,14 +12,23 @@ primary_region = "bom"
 [env]
   ENVIRONMENT = "production"
   PORT = "8080"
+  PYTHONPATH = "/app"
 
+# Two process groups share the same image but run different commands.
+# `web`    serves FastAPI on PORT 8080.
+# `worker` runs the ARQ worker that pops research jobs off Upstash Redis.
+[processes]
+  web    = "uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+  worker = "python -m arq backend.queue.worker_settings.WorkerSettings"
+
+# Only the web process serves HTTP.
 [http_service]
   internal_port = 8080
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ["web"]
 
   [http_service.concurrency]
     type = "requests"
@@ -31,7 +42,18 @@ primary_region = "bom"
     timeout = "5s"
     path = "/api/health"
 
+# Web machines — sized for FastAPI + small in-memory caches.
 [[vm]]
+  processes = ["web"]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpus = 1
+  cpu_kind = "shared"
+
+# Worker machines — sized for the LangGraph pipeline (LangChain imports
+# and tokenizer load are the memory drivers).
+[[vm]]
+  processes = ["worker"]
   size = "shared-cpu-1x"
   memory = "1gb"
   cpus = 1
