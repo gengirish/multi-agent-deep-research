@@ -140,7 +140,22 @@ async def init_db() -> None:
                 "ON research_results (query_hash)"
             )
         )
-    logger.info("DB schema verified / migrated (research_results + query_hash)")
+        await conn.execute(
+            text(
+                "ALTER TABLE research_results "
+                "ADD COLUMN IF NOT EXISTS user_id VARCHAR(64)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_research_results_user_id "
+                "ON research_results (user_id)"
+            )
+        )
+    logger.info(
+        "DB schema verified / migrated "
+        "(research_results + query_hash + user_id)"
+    )
 
 
 async def dispose_engine() -> None:

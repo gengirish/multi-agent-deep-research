@@ -326,6 +326,54 @@
   font-size: 0.82rem;
 }
 
+/* Session chip — bottom-of-sidebar identity pill */
+.appsb__session {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(129, 140, 248, 0.18);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  max-width: 100%;
+  align-self: flex-start;
+  overflow: hidden;
+}
+
+.appsb--collapsed .appsb__session {
+  padding: 4px;
+  align-self: center;
+  border-radius: 999px;
+}
+
+.appsb__session-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.72rem;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans",
+    var(--font-inter), Inter, sans-serif;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.32);
+}
+
+.appsb__session-email {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 /* Mobile: hidden by default, drawer when open */
 @media (max-width: 900px) {
   .appsb {

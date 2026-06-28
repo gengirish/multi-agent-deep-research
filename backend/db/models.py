@@ -55,6 +55,9 @@ class ResearchResult(Base):
     query_hash: Mapped[Optional[str]] = mapped_column(
         String(64), nullable=True
     )
+    # Owning user (Next.js JWT `sub`). Nullable so anonymous rows keep
+    # working and a signed-in user can later claim them.
+    user_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     status: Mapped[str] = mapped_column(
         String(16),
         nullable=False,
@@ -82,6 +85,8 @@ class ResearchResult(Base):
         Index("ix_research_results_status", "status"),
         # Cache lookup: find a recent successful row for the same query
         Index("ix_research_results_query_hash", "query_hash"),
+        # Per-user history / ownership lookup
+        Index("ix_research_results_user_id", "user_id"),
     )
 
     def to_log_row(self) -> dict[str, Any]:

@@ -3,7 +3,7 @@ FastAPI Backend Server
 Multi-Agent AI Deep Researcher API
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -22,6 +22,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from orchestration.coordinator import ResearchWorkflow
 from utils.agent_logger import get_agent_logger
+from backend.auth.jwt_dependency import optional_session, SessionUser
 from backend.db import (
     dispose_engine,
     get_by_id,
@@ -30,6 +31,7 @@ from backend.db import (
     session_scope,
     upsert_result,
 )
+from backend.db.models import ResearchResult
 from backend.queue.redis_client import (
     dispose_redis,
     get_redis,
@@ -194,6 +196,7 @@ async def _persist_result(
     result_payload: Optional[Dict[str, Any]] = None,
     conversation_payload: Optional[Dict[str, Any]] = None,
     error: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> None:
     """Idempotent upsert into research_results. Never raises on caller path.
 
@@ -210,27 +213,58 @@ async def _persist_result(
                 result=result_payload,
                 conversation=conversation_payload,
                 error=error,
+                user_id=user_id,
             )
-        logger.info(f"Persisted research_results row job_id={job_id} status={status}")
+        logger.info(
+            f"Persisted research_results row job_id={job_id} "
+            f"status={status} user_id={user_id}"
+        )
     except Exception as exc:
         logger.exception(f"Failed to persist research_results row job_id={job_id}: {exc}")
 
 
+def _is_row_visible(
+    row: ResearchResult, session: Optional[SessionUser]
+) -> bool:
+    """Ownership rule for /api/research/jobs/{id} & friends.
+
+    - Anonymous rows (row.user_id IS NULL)            -> visible to anyone.
+      Keeps shareable /r/{id} URLs working for the public + the original
+      anonymous author.
+    - Owned rows                                      -> visible only to
+      the owning user. Anonymous viewers and other signed-in users get
+      404 (NOT 403 — we don't want to leak existence of someone else's
+      row by status-code differentiation).
+    """
+    if row.user_id is None:
+        return True
+    if session is None:
+        return False
+    return row.user_id == session.user_id
+
+
 # Main research endpoint
 @app.post("/api/research", response_model=ResearchResponse)
-async def research(req: ResearchRequest):
+async def research(
+    req: ResearchRequest,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """
     Main research endpoint - processes query through multi-agent workflow.
     Persists result to Postgres (research_results) with idempotent upsert
-    keyed by job_id.
+    keyed by job_id. Tagged with `user_id` when the caller is signed in.
     """
     job_id = _new_job_id()
-    logger.info(f"Research request received: query={req.query!r} job_id={job_id}")
+    user_id = session.user_id if session else None
+    logger.info(
+        f"Research request received: query={req.query!r} "
+        f"job_id={job_id} user_id={user_id}"
+    )
 
     # Mark queued/running immediately so the row exists even if the workflow
     # explodes. updated_at lets us order properly in /api/conversations.
     await _persist_result(
-        job_id=job_id, query=req.query, status="running"
+        job_id=job_id, query=req.query, status="running", user_id=user_id
     )
 
     try:
@@ -249,6 +283,7 @@ async def research(req: ResearchRequest):
             },
             conversation_payload=result.get("conversation"),
             error=result.get("error") or None,
+            user_id=user_id,
         )
 
         return ResearchResponse(
@@ -265,7 +300,11 @@ async def research(req: ResearchRequest):
     except Exception as e:
         logger.error(f"Research failed (job_id={job_id}): {e}")
         await _persist_result(
-            job_id=job_id, query=req.query, status="error", error=str(e)
+            job_id=job_id,
+            query=req.query,
+            status="error",
+            error=str(e),
+            user_id=user_id,
         )
         return ResearchResponse(
             sources={},
@@ -279,15 +318,23 @@ async def research(req: ResearchRequest):
 
 # Streaming endpoint for real-time progress
 @app.post("/api/research-stream")
-async def research_stream(req: ResearchRequest):
+async def research_stream(
+    req: ResearchRequest,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """
     Streaming endpoint for real-time progress updates
-    Uses Server-Sent Events (SSE)
+    Uses Server-Sent Events (SSE). Tags the row with `user_id` when the
+    caller is signed in so ownership matches the queue-based path.
     """
     job_id = _new_job_id()
-    logger.info(f"Streaming research request: query={req.query!r} job_id={job_id}")
+    user_id = session.user_id if session else None
+    logger.info(
+        f"Streaming research request: query={req.query!r} "
+        f"job_id={job_id} user_id={user_id}"
+    )
     await _persist_result(
-        job_id=job_id, query=req.query, status="running"
+        job_id=job_id, query=req.query, status="running", user_id=user_id
     )
 
     async def event_generator():
@@ -343,6 +390,7 @@ async def research_stream(req: ResearchRequest):
                     "report": report_result,
                 },
                 conversation_payload=full_result.get("conversation"),
+                user_id=user_id,
             )
 
             yield f"data: {json.dumps({'stage': 'complete', 'message': '✅ Research complete!', 'progress': 100, 'data': final_result})}\n\n"
@@ -350,7 +398,11 @@ async def research_stream(req: ResearchRequest):
         except Exception as e:
             logger.error(f"Streaming error (job_id={job_id}): {e}")
             await _persist_result(
-                job_id=job_id, query=req.query, status="error", error=str(e)
+                job_id=job_id,
+                query=req.query,
+                status="error",
+                error=str(e),
+                user_id=user_id,
             )
             yield f"data: {json.dumps({'stage': 'error', 'message': f'Error: {str(e)}', 'progress': 0, 'job_id': job_id})}\n\n"
     
@@ -385,20 +437,26 @@ class JobCreatedResponse(BaseModel):
 
 
 @app.post("/api/research/jobs", response_model=JobCreatedResponse, status_code=202)
-async def create_research_job(req: ResearchRequest):
+async def create_research_job(
+    req: ResearchRequest,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """Dispatch a research job. Returns the job_id immediately.
 
-    If an identical query produced a successful row in the last 24h, the
-    existing row's job_id is returned (cache_hit=True, status="success")
-    — the frontend's SSE subscription will get an immediate completion
-    event replayed from Postgres. Saves ~$0.46 in LLM cost per hit.
+    If an identical query produced a successful row in the last 24h *for
+    this caller* (anonymous or this signed-in user), the existing row's
+    job_id is returned (cache_hit=True, status="success") — the frontend's
+    SSE subscription will get an immediate completion event replayed from
+    Postgres. Saves ~$0.46 in LLM cost per hit.
 
     Otherwise a new job_id is generated, the work is dispatched
     in-process via asyncio.create_task, and the SSE channel will carry
     live progress.
     """
     try:
-        job_id, cache_hit = await enqueue_research(req.query)
+        job_id, cache_hit = await enqueue_research(
+            req.query, user_id=session.user_id if session else None
+        )
     except Exception as e:
         logger.exception(f"Failed to dispatch research job: {e}")
         raise HTTPException(status_code=503, detail="Backend unavailable")
@@ -410,25 +468,47 @@ async def create_research_job(req: ResearchRequest):
 
 
 @app.get("/api/research/jobs/{job_id}/stream")
-async def stream_research_job(job_id: str):
+async def stream_research_job(
+    job_id: str,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """SSE stream of worker progress for a single job.
 
     Subscribes to Redis pub/sub channel `chronicle:job:{job_id}` and
     forwards each message to the browser as a `data:` SSE event. Closes
     when a `complete` or `error` event is received.
 
+    Ownership: the row is fetched once up front. If it's owned by a
+    different user (i.e. not visible per `_is_row_visible`), we 404 BEFORE
+    subscribing — leaking pub/sub events to another user would defeat
+    per-row privacy.
+
     If a stale subscriber rejoins after the worker is already done, we
     immediately replay a single synthetic completion event built from
     the Postgres row so the client doesn't hang forever.
     """
+    # Up-front ownership gate. We do the lookup before opening the SSE
+    # response so a 404 is a real HTTP status, not an SSE error event.
+    try:
+        async with session_scope() as db_session:
+            row = await get_by_id(db_session, job_id)
+    except Exception as exc:
+        logger.warning(f"ownership-precheck DB error (job_id={job_id}): {exc}")
+        row = None  # fall through; pub/sub may still have a live job
+
+    if row is not None and not _is_row_visible(row, session):
+        # 404 (not 403) — don't leak existence of someone else's row.
+        raise HTTPException(status_code=404, detail="Job not found")
+
     channel = progress_channel(job_id)
 
     async def event_generator():
         # If the job is already finished, replay completion from Postgres
-        # and exit. (Prevents reconnect hangs.)
+        # and exit. (Prevents reconnect hangs.) Ownership was already
+        # validated above; we don't re-check here.
         try:
-            async with session_scope() as session:
-                row = await get_by_id(session, job_id)
+            async with session_scope() as db_session2:
+                row = await get_by_id(db_session2, job_id)
             if row is not None and row.status in ("success", "error"):
                 payload = {
                     "stage": "complete" if row.status == "success" else "error",
@@ -505,12 +585,23 @@ async def stream_research_job(job_id: str):
 
 
 @app.get("/api/research/jobs/{job_id}", response_model=ConversationDetail)
-async def get_research_job(job_id: str):
-    """Fetch the final result for a finished job (or its current status)."""
+async def get_research_job(
+    job_id: str,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
+    """Fetch the final result for a finished job (or its current status).
+
+    Ownership: anonymous rows are public (so /r/{id} shares keep working);
+    owned rows are only returned to the owner. Anyone else gets 404
+    (NOT 403 — we don't leak existence).
+    """
     try:
-        async with session_scope() as session:
-            row = await get_by_id(session, job_id)
+        async with session_scope() as db_session:
+            row = await get_by_id(db_session, job_id)
         if row is None:
+            raise HTTPException(status_code=404, detail="Job not found")
+        if not _is_row_visible(row, session):
+            # Mirrors a not-found response on purpose.
             raise HTTPException(status_code=404, detail="Job not found")
         return ConversationDetail(id=row.job_id, data=row.to_detail())
     except HTTPException:
@@ -522,21 +613,34 @@ async def get_research_job(job_id: str):
 
 # Conversation history endpoints
 @app.get("/api/conversations", response_model=List[ConversationListItem])
-async def list_conversations(limit: int = 50, offset: int = 0):
+async def list_conversations(
+    limit: int = 50,
+    offset: int = 0,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """
     List saved research conversations.
 
-    Reads from Postgres `research_results` (newest first). Replaces the
-    previous file-based implementation which lost data on Fly machine
-    restarts because Fly's local fs is ephemeral.
+    Reads from Postgres `research_results` (newest first). Scoped by
+    caller: anonymous viewers see only anonymous rows (user_id IS NULL),
+    signed-in viewers see only their own rows. This is what keeps an
+    anonymous /history view from leaking a signed-in user's research.
     """
     try:
-        async with session_scope() as session:
-            rows = await list_recent(session, limit=limit, offset=offset)
+        async with session_scope() as db_session:
+            rows = await list_recent(
+                db_session,
+                limit=limit,
+                offset=offset,
+                user_id=session.user_id if session else None,
+            )
         items = [
             ConversationListItem(**row.to_log_row()) for row in rows
         ]
-        logger.info(f"Retrieved {len(items)} conversation(s) from Postgres")
+        logger.info(
+            f"Retrieved {len(items)} conversation(s) from Postgres "
+            f"(user_id={session.user_id if session else None})"
+        )
         return items
     except Exception as e:
         logger.error(f"Failed to list conversations: {e}")
@@ -544,16 +648,26 @@ async def list_conversations(limit: int = 50, offset: int = 0):
 
 
 @app.get("/api/conversations/{conversation_id}", response_model=ConversationDetail)
-async def get_conversation(conversation_id: str):
+async def get_conversation(
+    conversation_id: str,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """
     Get the full conversation by id (UUID4 hex, the job_id PK).
+
+    Ownership: anonymous rows are public; owned rows are only visible to
+    their owner. Anyone else gets 404 (NOT 403 — don't leak existence).
     """
     try:
-        async with session_scope() as session:
-            row = await get_by_id(session, conversation_id)
+        async with session_scope() as db_session:
+            row = await get_by_id(db_session, conversation_id)
 
         if row is None:
             logger.warning(f"Conversation not found: {conversation_id}")
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        if not _is_row_visible(row, session):
+            # Mirrors a not-found response on purpose.
             raise HTTPException(status_code=404, detail="Conversation not found")
 
         detail = row.to_detail()
@@ -569,16 +683,25 @@ async def get_conversation(conversation_id: str):
 
 # Export endpoint
 @app.get("/api/export/{conversation_id}/markdown")
-async def export_markdown(conversation_id: str):
+async def export_markdown(
+    conversation_id: str,
+    session: Optional[SessionUser] = Depends(optional_session),
+):
     """
     Export the report for a given conversation_id as a Markdown file.
     Reads from Postgres `research_results`.
+
+    Same ownership rule as the detail endpoint: anonymous rows are public,
+    owned rows only export to their owner, everyone else gets 404.
     """
     try:
-        async with session_scope() as session:
-            row = await get_by_id(session, conversation_id)
+        async with session_scope() as db_session:
+            row = await get_by_id(db_session, conversation_id)
 
         if row is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        if not _is_row_visible(row, session):
             raise HTTPException(status_code=404, detail="Conversation not found")
 
         report_content = (row.result or {}).get("report") or "No report available"

@@ -1,0 +1,114 @@
+// Chronicle auth + multi-tenant schema.
+//
+// Coexists with the FastAPI-managed `research_results` table on the
+// same Neon database. SQLAlchemy owns `research_results`; Prisma owns
+// everything declared here. Neither side migrates the other's tables.
+//
+// Pattern mirrors hrms-intelliforge (custom JWT, not Auth.js) but
+// simplified to a single User role (no admin/intern split).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String              @id @default(cuid())
+  email           String              @unique
+  name            String
+  passwordHash    String
+  emailVerified   Boolean             @default(false)
+  // Bumped on password change / explicit revocation to invalidate live JWTs.
+  tokenVersion    Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  memberships     OrganizationMember[]
+
+  @@map("users")
+  @@index([email])
+}
+
+model Organization {
+  id          String              @id @default(cuid())
+  name        String
+  slug        String              @unique
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  members     OrganizationMember[]
+
+  @@map("organizations")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrgRole      @default(MEMBER)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+  MAGIC_LINK
+}
+
+model VerificationToken {
+  id         String                @id @default(cuid())
+  identifier String                // typically the email
+  token      String                // SHA-256 hex of the raw token
+  type       VerificationTokenType
+  expires    DateTime
+
+  createdAt  DateTime              @default(now())
+
+  @@unique([identifier, token])
+  @@index([identifier])
+  @@map("verification_tokens")
+}
+
+// IMPORTANT: This table is OWNED BY SQLALCHEMY (backend/db/models.py).
+// Prisma only declares it here so `prisma db push` doesn't try to drop
+// it as schema drift. The FastAPI side runs all DDL for this table via
+// `init_db()` — never run `prisma migrate` against it.
+//
+// If you add a column to ResearchResult in SQLAlchemy, mirror it here
+// in the same commit, then run `prisma db push` to refresh the
+// Prisma Client typings. Do NOT modify this table via the Prisma client.
+model ResearchResult {
+  jobId        String   @id @map("job_id") @db.VarChar(64)
+  query        String
+  queryHash    String?  @map("query_hash") @db.VarChar(64)
+  status       String   @default("queued") @db.VarChar(16)
+  result       Json?    @db.JsonB
+  conversation Json?    @db.JsonB
+  error        String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  userId       String?  @map("user_id") @db.VarChar(64)
+
+  @@index([createdAt], map: "ix_research_results_created_at")
+  @@index([status], map: "ix_research_results_status")
+  @@index([queryHash], map: "ix_research_results_query_hash")
+  @@index([userId], map: "ix_research_results_user_id")
+  @@map("research_results")
+}
