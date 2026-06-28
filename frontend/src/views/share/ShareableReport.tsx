@@ -104,7 +104,7 @@ export const ShareableReport: React.FC<Props> = ({ id }) => {
             </div>
           )}
           {!loading && !error && session && (
-            <ResearchResults data={session.data} />
+            <ResearchResults data={session.data} shareId={id} />
           )}
         </div>
 

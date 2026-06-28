@@ -7,8 +7,10 @@ import { ResearchData } from "../types/dto";
 import { Icon, IconName } from "./icons";
 import { ResearchMetrics } from "./ResearchMetrics";
 import "./ResearchResults.css";
+import { SendReportDialog } from "./SendReportDialog";
 import { TextToSpeechControls } from "./TextToSpeechControls";
 import { TrustPanel } from "./TrustPanel";
+import { useSession } from "../hooks/useSession";
 import { AgentPerformance, AgentTimeline } from "./visualizations";
 
 interface Props {
@@ -302,7 +304,12 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
   });
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const headerDropdownRef = useRef<HTMLDivElement>(null);
+  const { user } = useSession();
+  // Email-this-report is gated to signed-in users with a real jobId. shareId
+  // doubles as the jobId for any persisted research row.
+  const canEmail = Boolean(user && shareId);
 
   const handleCopyShareLink = async () => {
     if (!shareId || typeof window === "undefined") return;
@@ -631,6 +638,19 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
             </div>
           </div>
           <div className="download-options">
+            {canEmail && (
+              <button
+                type="button"
+                className="download-button secondary"
+                onClick={() => setEmailOpen(true)}
+                aria-label="Email this report"
+              >
+                <span className="download-icon">
+                  <Icon name="mail" size={16} />
+                </span>
+                <span className="download-text">Email report</span>
+              </button>
+            )}
             <div className="download-dropdown" ref={headerDropdownRef}>
               <button
                 className="download-button primary"
@@ -724,6 +744,16 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
             {copied ? "Link copied" : "Share report"}
           </button>
         )}
+        {canEmail && (
+          <button
+            type="button"
+            onClick={() => setEmailOpen(true)}
+            className="action-button secondary"
+          >
+            <Icon name="mail" size={16} />
+            Email report
+          </button>
+        )}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="action-button secondary"
@@ -732,6 +762,14 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
           New Research
         </button>
       </div>
+
+      {shareId && (
+        <SendReportDialog
+          jobId={shareId}
+          open={emailOpen}
+          onClose={() => setEmailOpen(false)}
+        />
+      )}
     </section>
   );
 };
