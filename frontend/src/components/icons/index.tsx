@@ -37,6 +37,10 @@ export type IconName =
   | "pause"
   | "settings"
   | "speed"
+  | "shield"
+  | "link"
+  | "copy"
+  | "share"
   // pipeline stages
   | "retriever"
   | "enricher"
@@ -195,6 +199,33 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 20a8 8 0 1 1 8-8" />
       <path d="m12 12 4-2" />
       <line x1="12" y1="20" x2="12" y2="20" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+      <line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
     </>
   ),
   // pipeline stages
