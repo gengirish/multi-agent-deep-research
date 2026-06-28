@@ -30,6 +30,7 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ResearchData | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -58,16 +59,16 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
     setLoading(true);
     setResults(null);
     setError(null);
+    setShareId(null);
     resetStages();
     startedStages.clear();
 
     try {
       await streamResearchJob(q, {
         onJobId: (jobId) => {
-          // Future: stash jobId in state so the user can resume / share.
-          // For now, the server's `complete` event includes job_id in data
-          // and the share route /r/[id] consumes it that way.
-          void jobId;
+          // Stash the job id so the results view can offer a shareable
+          // /r/[id] link. The same id backs the persisted Postgres row.
+          setShareId(jobId);
         },
         onStageUpdate: (stage, message, progress) => {
           const stageIndex = stageMap[stage];
@@ -162,7 +163,9 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
 
       {loading && <ResearchProgress stages={stages} />}
 
-      {results && !loading && <ResearchResults data={results} />}
+      {results && !loading && (
+        <ResearchResults data={results} shareId={shareId ?? undefined} />
+      )}
     </>
   );
 };

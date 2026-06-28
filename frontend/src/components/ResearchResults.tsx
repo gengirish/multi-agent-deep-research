@@ -8,10 +8,13 @@ import { Icon, IconName } from "./icons";
 import { ResearchMetrics } from "./ResearchMetrics";
 import "./ResearchResults.css";
 import { TextToSpeechControls } from "./TextToSpeechControls";
+import { TrustPanel } from "./TrustPanel";
 import { AgentPerformance, AgentTimeline } from "./visualizations";
 
 interface Props {
   data: ResearchData;
+  /** When present, enables the "Share / copy link" action -> /r/[shareId]. */
+  shareId?: string;
 }
 
 // Result Card Component
@@ -288,7 +291,7 @@ const downloadReportPDF = (content: string) => {
   }
 };
 
-export const ResearchResults: React.FC<Props> = ({ data }) => {
+export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({
@@ -298,7 +301,20 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
     report: true,
   });
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const headerDropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyShareLink = async () => {
+    if (!shareId || typeof window === "undefined") return;
+    const url = `${window.location.origin}/r/${shareId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("Copy this shareable link:", url);
+    }
+  };
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -407,6 +423,26 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
       role="region"
       aria-label="Research results"
     >
+      {shareId && (
+        <div className="share-banner">
+          <span className="share-banner__text">
+            <Icon name="shield" size={16} />
+            This report is shareable — send the link to your team or investors.
+          </span>
+          <button
+            type="button"
+            className="share-banner__btn"
+            onClick={handleCopyShareLink}
+          >
+            <Icon name={copied ? "check" : "link"} size={15} />
+            {copied ? "Link copied" : "Copy link"}
+          </button>
+        </div>
+      )}
+
+      {/* Trust & verifiability — the differentiator, up top */}
+      <TrustPanel data={data} />
+
       {/* Research Metrics */}
       <ResearchMetrics data={data} />
 
@@ -679,6 +715,15 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
 
       {/* Action Bar */}
       <div className="action-bar">
+        {shareId && (
+          <button
+            onClick={handleCopyShareLink}
+            className="action-button primary"
+          >
+            <Icon name={copied ? "check" : "share"} size={16} />
+            {copied ? "Link copied" : "Share report"}
+          </button>
+        )}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="action-button secondary"
