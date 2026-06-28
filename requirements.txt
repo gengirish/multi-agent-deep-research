@@ -25,6 +25,9 @@ greenlet>=3.0.0
 arq>=0.26.0
 redis[hiredis]>=5.0.0
 
+# Auth (optional HS256 JWT validation — shared secret with the Next.js layer)
+python-jose[cryptography]>=3.3.0
+
 # Token counting / context truncation
 tiktoken>=0.7.0
 

@@ -4,7 +4,19 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRecentSessions } from "../../hooks/useRecentSessions";
+import { useSession, type SessionUser } from "../../hooks/useSession";
 import "./AppSidebar.css";
+
+function sessionInitial(user: SessionUser): string {
+  const source = (user.name && user.name.trim()) || user.email || "?";
+  const first = source.trim().charAt(0);
+  return first ? first.toUpperCase() : "?";
+}
+
+function sessionLabel(user: SessionUser): string {
+  if (user.name && user.name.trim()) return user.name.trim();
+  return user.email;
+}
 
 interface Props {
   collapsed: boolean;
@@ -143,6 +155,7 @@ export const AppSidebar: React.FC<Props> = ({
 }) => {
   const pathname = usePathname() ?? "";
   const { sessions, loading } = useRecentSessions(5);
+  const { user: sessionUser } = useSession();
 
   const renderItem = (item: NavItem) => {
     const isActive =
@@ -267,6 +280,22 @@ export const AppSidebar: React.FC<Props> = ({
               <span className="appsb__collapse-label">Collapse</span>
             )}
           </button>
+
+          {sessionUser && (
+            <div
+              className="appsb__session"
+              title={collapsed ? sessionLabel(sessionUser) : undefined}
+            >
+              <span className="appsb__session-avatar" aria-hidden="true">
+                {sessionInitial(sessionUser)}
+              </span>
+              {!collapsed && (
+                <span className="appsb__session-email">
+                  {sessionLabel(sessionUser)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </aside>
     </>

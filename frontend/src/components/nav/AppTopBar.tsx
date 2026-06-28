@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { UserMenu } from "../auth/UserMenu";
 import "./AppTopBar.css";
 
 interface Props {
@@ -112,6 +113,8 @@ export const AppTopBar: React.FC<Props> = ({
             />
           </svg>
         </button>
+
+        <UserMenu />
       </div>
     </header>
   );

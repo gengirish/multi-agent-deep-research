@@ -23,7 +23,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from backend.db import get_by_id, session_scope, upsert_result
 from backend.queue.redis_client import get_redis, progress_channel
@@ -39,28 +39,38 @@ RESULT_CACHE_TTL_HOURS = 24
 # ---------------------------------------------------------------------------
 
 
-async def enqueue_research(query: str) -> tuple[str, bool]:
+async def enqueue_research(
+    query: str, user_id: Optional[str] = None
+) -> tuple[str, bool]:
     """Spawn an inline research task and return (job_id, cache_hit).
 
-    If an identical query produced a successful row in the last 24h,
-    returns that row's job_id without running the LangGraph again —
-    saves ~$0.46 in LLM cost per cache hit.
+    If an identical query produced a successful row in the last 24h
+    *for the same caller* (anonymous or this user), return that row's
+    job_id without running the LangGraph again — saves ~$0.46 in LLM
+    cost per cache hit. The cache is scoped per-user so different
+    users don't share rows (privacy + each /history tab stays
+    attributable to its owner).
 
-    Otherwise generates a new job_id, inserts a `running` row, and
-    spawns the LangGraph pipeline via asyncio.create_task. The task
-    keeps running even if the request completes — its result is
-    persisted to Postgres so SSE clients can replay it on reconnect.
+    Otherwise generates a new job_id, inserts a `running` row tagged
+    with `user_id`, and spawns the LangGraph pipeline via
+    asyncio.create_task. The task keeps running even if the request
+    completes — its result is persisted to Postgres so SSE clients can
+    replay it on reconnect.
     """
     from backend.db.repository import find_recent_successful  # local import to avoid cycle
 
-    # 1) Cache lookup
+    # 1) Cache lookup (scoped to this caller)
     async with session_scope() as session:
         cached = await find_recent_successful(
-            session, query=query, within_hours=RESULT_CACHE_TTL_HOURS
+            session,
+            query=query,
+            within_hours=RESULT_CACHE_TTL_HOURS,
+            user_id=user_id,
         )
     if cached is not None:
         logger.info(
-            f"CACHE HIT for query={query!r} -> job_id={cached.job_id} "
+            f"CACHE HIT for query={query!r} user_id={user_id} "
+            f"-> job_id={cached.job_id} "
             f"(age={cached.created_at}, saved ~$0.46 in LLM cost)"
         )
         return cached.job_id, True
@@ -73,12 +83,16 @@ async def enqueue_research(query: str) -> tuple[str, bool]:
             job_id=job_id,
             query=query,
             status="queued",
+            user_id=user_id,
         )
 
     # Spawn the pipeline. We deliberately don't await — the goal is
     # "return jobId immediately, let the work run in the background".
-    asyncio.create_task(_run_research_pipeline(job_id, query))
-    logger.info(f"Inline research dispatched job_id={job_id} query={query!r}")
+    asyncio.create_task(_run_research_pipeline(job_id, query, user_id))
+    logger.info(
+        f"Inline research dispatched job_id={job_id} query={query!r} "
+        f"user_id={user_id}"
+    )
     return job_id, False
 
 
@@ -109,18 +123,29 @@ def _run_workflow_blocking(query: str) -> Dict[str, Any]:
     return workflow.run(query)
 
 
-async def _run_research_pipeline(job_id: str, query: str) -> Dict[str, Any]:
+async def _run_research_pipeline(
+    job_id: str, query: str, user_id: Optional[str] = None
+) -> Dict[str, Any]:
     """Core pipeline shared by the inline + (future) queued execution paths.
 
     Publishes per-stage events to the Redis pub/sub channel that SSE
     subscribers listen on; persists the final state to Postgres via the
-    idempotent upsert.
+    idempotent upsert. Every upsert carries `user_id` so the row's
+    ownership is preserved across the running → success/error transitions
+    (the repo COALESCEs so we can't accidentally clobber an existing
+    owner with None).
     """
-    logger.info(f"Pipeline start job_id={job_id} query={query!r}")
+    logger.info(
+        f"Pipeline start job_id={job_id} query={query!r} user_id={user_id}"
+    )
 
     async with session_scope() as session:
         await upsert_result(
-            session, job_id=job_id, query=query, status="running"
+            session,
+            job_id=job_id,
+            query=query,
+            status="running",
+            user_id=user_id,
         )
 
     await _publish(job_id, {"stage": "queued", "job_id": job_id, "progress": 5})
@@ -145,6 +170,7 @@ async def _run_research_pipeline(job_id: str, query: str) -> Dict[str, Any]:
                 query=query,
                 status="error",
                 error=str(e),
+                user_id=user_id,
             )
         await _publish(
             job_id,
@@ -177,6 +203,7 @@ async def _run_research_pipeline(job_id: str, query: str) -> Dict[str, Any]:
             result=result_payload,
             conversation=conversation,
             error=result.get("error") or None,
+            user_id=user_id,
         )
 
     await _publish(

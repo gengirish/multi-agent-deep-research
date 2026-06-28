@@ -34,11 +34,18 @@ async def upsert_result(
     result: Optional[dict[str, Any]] = None,
     conversation: Optional[dict[str, Any]] = None,
     error: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> ResearchResult:
     """Idempotent upsert keyed on job_id.
 
     Multiple worker attempts on the same job_id collapse to a single row;
     the most recent attempt wins for result/conversation/status/error.
+
+    `user_id` is the owning user (JWT `sub`) or None for anonymous rows.
+    On conflict we COALESCE the existing value with the incoming one so
+    an anonymous row can be CLAIMED by a signed-in user on a later
+    update, but a row already owned by user A can never be silently
+    re-assigned to user B (or back to anonymous).
     """
     query_hash = hash_query(query)
 
@@ -46,6 +53,7 @@ async def upsert_result(
         job_id=job_id,
         query=query,
         query_hash=query_hash,
+        user_id=user_id,
         status=status,
         result=result,
         conversation=conversation,
@@ -57,6 +65,11 @@ async def upsert_result(
         "query_hash": stmt.excluded.query_hash,
         "status": stmt.excluded.status,
         "updated_at": func.now(),
+        # COALESCE preserves an already-set owner. NULL ⊕ NULL = NULL,
+        # NULL ⊕ uid = uid (anonymous → claimed), uid ⊕ x  = uid (locked).
+        "user_id": func.coalesce(
+            ResearchResult.user_id, stmt.excluded.user_id
+        ),
     }
     if result is not None:
         update_columns["result"] = stmt.excluded.result
@@ -81,11 +94,29 @@ async def get_by_id(
 
 
 async def list_recent(
-    session: AsyncSession, *, limit: int = 50, offset: int = 0
+    session: AsyncSession,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: Optional[str] = None,
 ) -> Sequence[ResearchResult]:
+    """List recent rows, newest first.
+
+    Scoping:
+      - `user_id` is None  -> return ONLY anonymous rows (user_id IS NULL).
+        This prevents an unauthenticated /api/conversations call from
+        leaking a signed-in user's research.
+      - `user_id` is set   -> return ONLY that user's rows. (Anonymous
+        history stays private to the anonymous bucket so a user's
+        "history" tab feels coherent.)
+    """
+    stmt = select(ResearchResult)
+    if user_id is None:
+        stmt = stmt.where(ResearchResult.user_id.is_(None))
+    else:
+        stmt = stmt.where(ResearchResult.user_id == user_id)
     stmt = (
-        select(ResearchResult)
-        .order_by(desc(ResearchResult.created_at))
+        stmt.order_by(desc(ResearchResult.created_at))
         .limit(limit)
         .offset(offset)
     )
@@ -98,9 +129,18 @@ async def find_recent_successful(
     *,
     query: str,
     within_hours: int = 24,
+    user_id: Optional[str] = None,
 ) -> Optional[ResearchResult]:
     """Return the most recent successful row for the same normalised query
     if it was created within the TTL window. Used by the cache layer.
+
+    Cache scoping (privacy + history attribution):
+      - user_id is None  -> match only anonymous rows  (user_id IS NULL)
+      - user_id is set   -> match only that user's rows (user_id = :uid)
+
+    Two users with the same query don't share a cached row — each user's
+    /history tab gets a row attributable to them, and signed-in research
+    never leaks into the anonymous cache.
 
     Lookups are O(log n) on the (query_hash) index.
     """
@@ -109,6 +149,11 @@ async def find_recent_successful(
     # SQLAlchemy DateTime default). Compare with a naive UTC datetime
     # so asyncpg doesn't reject the tz-aware/tz-naive mix.
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=within_hours)).replace(tzinfo=None)
+    user_filter = (
+        ResearchResult.user_id.is_(None)
+        if user_id is None
+        else ResearchResult.user_id == user_id
+    )
     stmt = (
         select(ResearchResult)
         .where(
@@ -116,6 +161,7 @@ async def find_recent_successful(
                 ResearchResult.query_hash == qhash,
                 ResearchResult.status == "success",
                 ResearchResult.created_at >= cutoff,
+                user_filter,
             )
         )
         .order_by(desc(ResearchResult.created_at))
