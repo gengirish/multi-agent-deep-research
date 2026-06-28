@@ -10,7 +10,7 @@ test.describe("Landing page", () => {
       "Chronicle"
     );
     await expect(page.locator(".hero__title")).toContainText(
-      /Founder-grade research/i
+      /Market sizing you can|defend in the room/i
     );
     await expect(page.locator(".hero__eyebrow")).toContainText(/Live demo/i);
   });
