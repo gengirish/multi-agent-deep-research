@@ -17,12 +17,18 @@ from backend.db.database import (
     session_scope,
 )
 from backend.db.models import Base, ResearchResult
-from backend.db.repository import get_by_id, list_recent, upsert_result
+from backend.db.repository import (
+    find_recent_successful,
+    get_by_id,
+    list_recent,
+    upsert_result,
+)
 
 __all__ = [
     "Base",
     "ResearchResult",
     "dispose_engine",
+    "find_recent_successful",
     "get_by_id",
     "get_engine",
     "get_sessionmaker",

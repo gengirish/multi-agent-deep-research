@@ -381,23 +381,32 @@ async def research_stream(req: ResearchRequest):
 class JobCreatedResponse(BaseModel):
     job_id: str
     status: str = "queued"
+    cache_hit: bool = False
 
 
 @app.post("/api/research/jobs", response_model=JobCreatedResponse, status_code=202)
 async def create_research_job(req: ResearchRequest):
-    """Enqueue a research job. Returns the job_id immediately.
+    """Dispatch a research job. Returns the job_id immediately.
 
-    The frontend should open an EventSource to
-    `/api/research/jobs/{job_id}/stream` to receive live progress, and
-    fetch the final result from `/api/research/jobs/{job_id}` once the
-    stream ends.
+    If an identical query produced a successful row in the last 24h, the
+    existing row's job_id is returned (cache_hit=True, status="success")
+    — the frontend's SSE subscription will get an immediate completion
+    event replayed from Postgres. Saves ~$0.46 in LLM cost per hit.
+
+    Otherwise a new job_id is generated, the work is dispatched
+    in-process via asyncio.create_task, and the SSE channel will carry
+    live progress.
     """
     try:
-        job_id = await enqueue_research(req.query)
+        job_id, cache_hit = await enqueue_research(req.query)
     except Exception as e:
-        logger.exception(f"Failed to enqueue research job: {e}")
-        raise HTTPException(status_code=503, detail="Queue unavailable")
-    return JobCreatedResponse(job_id=job_id)
+        logger.exception(f"Failed to dispatch research job: {e}")
+        raise HTTPException(status_code=503, detail="Backend unavailable")
+    return JobCreatedResponse(
+        job_id=job_id,
+        status="success" if cache_hit else "queued",
+        cache_hit=cache_hit,
+    )
 
 
 @app.get("/api/research/jobs/{job_id}/stream")

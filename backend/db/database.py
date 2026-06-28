@@ -76,7 +76,9 @@ def get_engine() -> AsyncEngine:
         pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
         max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "10")),
         pool_pre_ping=True,
-        pool_recycle=300,
+        # 1h vs the previous 5m — Neon connections are stable, and the
+        # shorter recycle was just churning unnecessary compute time.
+        pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "3600")),
         connect_args=connect_args,
         echo=os.getenv("DB_ECHO", "").lower() in ("1", "true", "yes"),
     )
@@ -113,11 +115,32 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 
 async def init_db() -> None:
-    """Run `create_all()` against the configured DB. Safe to call repeatedly."""
+    """Run `create_all()` against the configured DB. Safe to call repeatedly.
+
+    Also runs explicit ALTER TABLE / CREATE INDEX statements for additive
+    schema changes that `create_all()` won't apply to existing tables
+    (it only creates missing tables/indexes, not columns on existing ones).
+    """
+    from sqlalchemy import text
+
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.info("DB schema verified / created (research_results)")
+
+        # Additive migrations (safe to run repeatedly thanks to IF NOT EXISTS)
+        await conn.execute(
+            text(
+                "ALTER TABLE research_results "
+                "ADD COLUMN IF NOT EXISTS query_hash VARCHAR(64)"
+            )
+        )
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_research_results_query_hash "
+                "ON research_results (query_hash)"
+            )
+        )
+    logger.info("DB schema verified / migrated (research_results + query_hash)")
 
 
 async def dispose_engine() -> None:

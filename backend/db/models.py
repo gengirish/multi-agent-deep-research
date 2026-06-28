@@ -19,6 +19,7 @@ what queries we actually run against them.
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import Any, Optional
 
@@ -34,11 +35,26 @@ class Base(DeclarativeBase):
     pass
 
 
+def hash_query(query: str) -> str:
+    """Normalise + hash a query for result caching.
+
+    Normalisation: lowercase + collapse whitespace + strip. This means
+    "Market size  for X" and "MARKET SIZE FOR X" map to the same hash,
+    which is the right cache behaviour at our scale (no false negatives
+    from formatting differences). Returns a hex SHA-256 (64 chars).
+    """
+    norm = " ".join(query.lower().split())
+    return hashlib.sha256(norm.encode("utf-8")).hexdigest()
+
+
 class ResearchResult(Base):
     __tablename__ = "research_results"
 
     job_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     query: Mapped[str] = mapped_column(Text, nullable=False)
+    query_hash: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(16),
         nullable=False,
@@ -64,6 +80,8 @@ class ResearchResult(Base):
     __table_args__ = (
         Index("ix_research_results_created_at", "created_at"),
         Index("ix_research_results_status", "status"),
+        # Cache lookup: find a recent successful row for the same query
+        Index("ix_research_results_query_hash", "query_hash"),
     )
 
     def to_log_row(self) -> dict[str, Any]:
