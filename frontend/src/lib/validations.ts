@@ -28,7 +28,19 @@ export const resetPasswordSchema = z.object({
   password: strongPasswordSchema,
 });
 
+export const sendReportSchema = z.object({
+  to: z.email(),
+  // Optional note from the sender. Capped so a hostile payload can't blow
+  // past Gmail's 102KB clip threshold on its own.
+  note: z
+    .string()
+    .trim()
+    .max(2000, "Note must be at most 2000 characters")
+    .optional(),
+});
+
 export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type SendReportInput = z.infer<typeof sendReportSchema>;
