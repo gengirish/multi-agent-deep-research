@@ -1188,3 +1188,100 @@
 .download-option:active {
   background: rgba(99, 102, 241, 0.12) !important;
 }
+
+/* ============================================================
+ * SVG icon alignment (v3)
+ * The research flow now uses a single inline-SVG icon set
+ * (src/components/icons). These rules make every icon slot a
+ * flex box so SVGs center and inherit color via currentColor.
+ * ============================================================ */
+
+.card-icon {
+  font-size: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.stat-label svg {
+  opacity: 0.9;
+}
+
+.agent-conversation-visualizations .section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-conversation-visualizations .section-title svg {
+  color: var(--c-accent, #818cf8);
+}
+
+.report-header-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.report-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: rgba(129, 140, 248, 0.12);
+  color: #c7d2fe;
+}
+
+.download-icon,
+.option-icon,
+.dropdown-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.option-icon {
+  color: var(--c-accent, #818cf8);
+}
+
+.dropdown-arrow {
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-error, #ef4444);
+}
+
+.action-button {
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropdown-arrow {
+    transition: none !important;
+  }
+}

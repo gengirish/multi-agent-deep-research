@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import type { IconName } from '../components/icons'
 
 export interface ProgressStage {
   name: string
-  icon: string
+  icon: IconName
   status: 'pending' | 'active' | 'complete' | 'error'
   message: string
   progress: number  // 0-100
@@ -10,49 +11,54 @@ export interface ProgressStage {
   endTime?: number
 }
 
+const INITIAL_STAGES: ProgressStage[] = [
+  {
+    name: 'Retriever',
+    icon: 'retriever',
+    status: 'pending',
+    message: 'Preparing to fetch sources...',
+    progress: 0,
+    startTime: 0,
+  },
+  {
+    name: 'Enricher',
+    icon: 'enricher',
+    status: 'pending',
+    message: 'Waiting for sources...',
+    progress: 0,
+    startTime: 0,
+  },
+  {
+    name: 'Analyzer',
+    icon: 'analyzer',
+    status: 'pending',
+    message: 'Waiting for enrichment...',
+    progress: 0,
+    startTime: 0,
+  },
+  {
+    name: 'Insight',
+    icon: 'insight',
+    status: 'pending',
+    message: 'Waiting for analysis...',
+    progress: 0,
+    startTime: 0,
+  },
+  {
+    name: 'Reporter',
+    icon: 'reporter',
+    status: 'pending',
+    message: 'Waiting for insights...',
+    progress: 0,
+    startTime: 0,
+  },
+]
+
+const cloneInitialStages = (): ProgressStage[] =>
+  INITIAL_STAGES.map((stage) => ({ ...stage }))
+
 export const useResearchProgress = () => {
-  const [stages, setStages] = useState<ProgressStage[]>([
-    {
-      name: 'Retriever',
-      icon: '🔍',
-      status: 'pending',
-      message: 'Preparing to fetch sources...',
-      progress: 0,
-      startTime: 0,
-    },
-    {
-      name: 'Enricher',
-      icon: '📊',
-      status: 'pending',
-      message: 'Waiting for sources...',
-      progress: 0,
-      startTime: 0,
-    },
-    {
-      name: 'Analyzer',
-      icon: '🔬',
-      status: 'pending',
-      message: 'Waiting for enrichment...',
-      progress: 0,
-      startTime: 0,
-    },
-    {
-      name: 'Insight',
-      icon: '💡',
-      status: 'pending',
-      message: 'Waiting for analysis...',
-      progress: 0,
-      startTime: 0,
-    },
-    {
-      name: 'Reporter',
-      icon: '📄',
-      status: 'pending',
-      message: 'Waiting for insights...',
-      progress: 0,
-      startTime: 0,
-    },
-  ])
+  const [stages, setStages] = useState<ProgressStage[]>(cloneInitialStages)
 
   const updateStage = (
     stageIndex: number,
@@ -91,48 +97,7 @@ export const useResearchProgress = () => {
   }
 
   const resetStages = () => {
-    setStages([
-      {
-        name: 'Retriever',
-        icon: '🔍',
-        status: 'pending',
-        message: 'Preparing to fetch sources...',
-        progress: 0,
-        startTime: 0,
-      },
-      {
-        name: 'Enricher',
-        icon: '📊',
-        status: 'pending',
-        message: 'Waiting for sources...',
-        progress: 0,
-        startTime: 0,
-      },
-      {
-        name: 'Analyzer',
-        icon: '🔬',
-        status: 'pending',
-        message: 'Waiting for enrichment...',
-        progress: 0,
-        startTime: 0,
-      },
-      {
-        name: 'Insight',
-        icon: '💡',
-        status: 'pending',
-        message: 'Waiting for analysis...',
-        progress: 0,
-        startTime: 0,
-      },
-      {
-        name: 'Reporter',
-        icon: '📄',
-        status: 'pending',
-        message: 'Waiting for insights...',
-        progress: 0,
-        startTime: 0,
-      },
-    ])
+    setStages(cloneInitialStages())
   }
 
   return {

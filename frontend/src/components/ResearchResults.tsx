@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ResearchData } from "../types/dto";
+import { Icon, IconName } from "./icons";
 import { ResearchMetrics } from "./ResearchMetrics";
 import "./ResearchResults.css";
 import { TextToSpeechControls } from "./TextToSpeechControls";
@@ -16,7 +17,7 @@ interface Props {
 // Result Card Component
 interface ResultCardProps {
   title: string;
-  icon: string;
+  icon: IconName;
   count: number;
   isExpanded: boolean;
   onToggle: () => void;
@@ -49,13 +50,17 @@ const ResultCard: React.FC<ResultCardProps> = ({
         aria-expanded={isExpanded}
       >
         <div className="card-title-section">
-          <span className="card-icon">{icon}</span>
+          <span className="card-icon">
+            <Icon name={icon} size={20} />
+          </span>
           <div>
             <h3>{title}</h3>
             <span className="card-count">{count} item(s)</span>
           </div>
         </div>
-        <span className={`expand-icon ${isExpanded ? "expanded" : ""}`}>▼</span>
+        <span className={`expand-icon ${isExpanded ? "expanded" : ""}`}>
+          <Icon name="chevron-down" size={16} />
+        </span>
       </div>
 
       {isExpanded && <div className="card-content">{children}</div>}
@@ -292,6 +297,7 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
     insights: true,
     report: true,
   });
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const headerDropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleSection = (section: string) => {
@@ -301,29 +307,38 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
     }));
   };
 
-  // Close dropdown when clicking outside
+  // Close the download menu on outside click or Escape.
   useEffect(() => {
+    if (!downloadOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (
         headerDropdownRef.current &&
         !headerDropdownRef.current.contains(target)
       ) {
-        const menus = document.querySelectorAll(".download-menu");
-        menus.forEach((menu) => menu.classList.remove("show"));
+        setDownloadOpen(false);
       }
     };
 
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDownloadOpen(false);
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKey);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKey);
     };
-  }, []);
+  }, [downloadOpen]);
 
   if (data.status === "error") {
     return (
       <section className="results-error" role="alert">
-        <div className="error-icon">⚠️</div>
+        <div className="error-icon">
+          <Icon name="alert" size={40} />
+        </div>
         <h2>Research Failed</h2>
         <p className="error-message">
           {data.report || data.error || "An unknown error occurred"}
@@ -404,10 +419,13 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
           // Show placeholder if no conversation data
           return (
             <div className="agent-conversation-visualizations">
-              <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
+              <h2 className="section-title">
+                <Icon name="agent" size={22} />
+                Agent Conversation Analysis
+              </h2>
               <div className="conversation-placeholder">
                 <p>
-                  📊 Conversation data will appear here after running a research
+                  Conversation data will appear here after running a research
                   query.
                 </p>
                 <p className="hint">
@@ -421,7 +439,10 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
 
         return (
           <div className="agent-conversation-visualizations">
-            <h2 className="section-title">🤖 Agent Conversation Analysis</h2>
+            <h2 className="section-title">
+              <Icon name="agent" size={22} />
+              Agent Conversation Analysis
+            </h2>
             {data.conversation && (
               <div className="conversation-info">
                 <p className="conversation-meta">
@@ -447,17 +468,26 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
       >
         <div className="stat-item">
           <div className="stat-number">{sourcesCount}</div>
-          <div className="stat-label">📚 Sources</div>
+          <div className="stat-label">
+            <Icon name="sources" size={14} />
+            Sources
+          </div>
         </div>
         <div className="stat-divider"></div>
         <div className="stat-item">
           <div className="stat-number">{analysisCount}</div>
-          <div className="stat-label">🔍 Findings</div>
+          <div className="stat-label">
+            <Icon name="analysis" size={14} />
+            Findings
+          </div>
         </div>
         <div className="stat-divider"></div>
         <div className="stat-item">
           <div className="stat-number">{insightCount}</div>
-          <div className="stat-label">💡 Insights</div>
+          <div className="stat-label">
+            <Icon name="insight" size={14} />
+            Insights
+          </div>
         </div>
       </div>
 
@@ -465,8 +495,8 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
       <div className="results-grid">
         {/* Sources Card */}
         <ResultCard
-          title="📚 Sources Retrieved"
-          icon="📚"
+          title="Sources Retrieved"
+          icon="sources"
           count={sourcesCount}
           isExpanded={expandedSections.sources}
           onToggle={() => toggleSection("sources")}
@@ -505,8 +535,8 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
 
         {/* Analysis Card */}
         <ResultCard
-          title="📊 Analysis Findings"
-          icon="📊"
+          title="Analysis Findings"
+          icon="analysis"
           count={analysisCount}
           isExpanded={expandedSections.analysis}
           onToggle={() => toggleSection("analysis")}
@@ -528,8 +558,8 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
 
         {/* Insights Card */}
         <ResultCard
-          title="💡 Emerging Trends"
-          icon="💡"
+          title="Emerging Trends"
+          icon="insight"
           count={insightCount}
           isExpanded={expandedSections.insights}
           onToggle={() => toggleSection("insights")}
@@ -553,55 +583,69 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
       {/* Full Report Section */}
       <div className="report-section">
         <div className="report-header">
-          <div>
-            <h2>📄 Full Research Report</h2>
-            <p className="report-subtitle">
-              Comprehensive analysis compiled by AI agents
-            </p>
+          <div className="report-header-title">
+            <span className="report-header-icon">
+              <Icon name="report" size={22} />
+            </span>
+            <div>
+              <h2>Full Research Report</h2>
+              <p className="report-subtitle">
+                Comprehensive analysis compiled by AI agents
+              </p>
+            </div>
           </div>
           <div className="download-options">
             <div className="download-dropdown" ref={headerDropdownRef}>
               <button
                 className="download-button primary"
+                aria-haspopup="menu"
+                aria-expanded={downloadOpen}
                 aria-label="Download options"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const dropdown = e.currentTarget
-                    .nextElementSibling as HTMLElement;
-                  dropdown?.classList.toggle("show");
+                  setDownloadOpen((open) => !open);
                 }}
               >
-                <span className="download-icon">📥</span>
+                <span className="download-icon">
+                  <Icon name="download" size={16} />
+                </span>
                 <span className="download-text">Download</span>
-                <span className="dropdown-arrow">▼</span>
+                <span
+                  className={`dropdown-arrow ${downloadOpen ? "open" : ""}`}
+                >
+                  <Icon name="chevron-down" size={14} />
+                </span>
               </button>
-              <div className="download-menu">
+              <div
+                className={`download-menu ${downloadOpen ? "show" : ""}`}
+                role="menu"
+              >
                 <button
                   onClick={() => {
                     downloadReportMD(data.report || "");
-                    const menu = document.querySelector(
-                      ".download-menu"
-                    ) as HTMLElement;
-                    menu?.classList.remove("show");
+                    setDownloadOpen(false);
                   }}
                   className="download-option"
+                  role="menuitem"
                   aria-label="Download as Markdown"
                 >
-                  <span className="option-icon">📄</span>
+                  <span className="option-icon">
+                    <Icon name="markdown" size={18} />
+                  </span>
                   <span>Download as Markdown (.md)</span>
                 </button>
                 <button
                   onClick={() => {
                     downloadReportPDF(data.report || "");
-                    const menu = document.querySelector(
-                      ".download-menu"
-                    ) as HTMLElement;
-                    menu?.classList.remove("show");
+                    setDownloadOpen(false);
                   }}
                   className="download-option"
+                  role="menuitem"
                   aria-label="Download as PDF"
                 >
-                  <span className="option-icon">📑</span>
+                  <span className="option-icon">
+                    <Icon name="report" size={18} />
+                  </span>
                   <span>Download as PDF (.pdf)</span>
                 </button>
               </div>
@@ -639,7 +683,8 @@ export const ResearchResults: React.FC<Props> = ({ data }) => {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="action-button secondary"
         >
-          ↑ New Research
+          <Icon name="arrow-up" size={16} />
+          New Research
         </button>
       </div>
     </section>

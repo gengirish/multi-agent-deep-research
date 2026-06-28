@@ -94,10 +94,11 @@
 }
 
 .stage-icon {
-  font-size: 16px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 22px;
-  text-align: center;
+  height: 22px;
   color: #94a3b8;
 }
 
@@ -258,6 +259,23 @@
   gap: 8px;
 }
 
+.status-text--complete {
+  color: var(--c-success-text, #86efac);
+}
+
+.status-text--error {
+  color: var(--c-error-text, #fca5a5);
+}
+
+.status-text--active {
+  color: #c7d2fe;
+}
+
+.status-text__spinner {
+  display: inline-flex;
+  animation: spin 1s linear infinite;
+}
+
 @media (max-width: 768px) {
   .research-progress {
     padding: 18px;
@@ -283,7 +301,8 @@
 @media (prefers-reduced-motion: reduce) {
   .status-badge.active,
   .progress-bar.active,
-  .shimmer {
+  .shimmer,
+  .status-text__spinner {
     animation: none !important;
   }
   .stage,

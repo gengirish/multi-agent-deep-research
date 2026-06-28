@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Icon } from "./icons";
 import "./ErrorBanner.css";
 
 interface ErrorBannerProps {
@@ -20,7 +21,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
     <div className="error-banner" role="alert" aria-live="assertive">
       <div className="error-banner-content">
         <span className="error-icon" aria-hidden="true">
-          ⚠️
+          <Icon name="alert" size={20} />
         </span>
         <div className="error-message">
           <strong>Error</strong>
@@ -33,7 +34,8 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
               className="error-button retry-button"
               aria-label="Retry operation"
             >
-              🔄 Retry
+              <Icon name="refresh" size={15} />
+              Retry
             </button>
           )}
           {onDismiss && (
@@ -42,7 +44,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
               className="error-button dismiss-button"
               aria-label="Dismiss error"
             >
-              ✕
+              <Icon name="close" size={16} />
             </button>
           )}
         </div>

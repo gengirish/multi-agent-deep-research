@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { ProgressStage } from '../hooks/useResearchProgress'
+import { Icon } from './icons'
 import './ResearchProgress.css'
 
 interface Props {
@@ -12,28 +13,30 @@ export const ResearchProgress: React.FC<Props> = ({ stages }) => {
   const getStatusColor = (status: ProgressStage['status']) => {
     switch (status) {
       case 'complete':
-        return '#10b981'  // Green
+        return 'var(--c-success, #22c55e)'
       case 'active':
-        return '#3b82f6'  // Blue
+        return 'var(--c-accent, #818cf8)'
       case 'error':
-        return '#ef4444'  // Red
+        return 'var(--c-error, #ef4444)'
       case 'pending':
       default:
-        return '#d1d5db'  // Gray
+        return 'rgba(148, 163, 184, 0.4)'
     }
   }
 
-  const getStatusIcon = (status: ProgressStage['status']) => {
+  const StatusIcon: React.FC<{ status: ProgressStage['status'] }> = ({
+    status,
+  }) => {
     switch (status) {
       case 'complete':
-        return '✓'
+        return <Icon name="check" size={13} />
       case 'active':
-        return '⟳'  // Spinning
+        return <Icon name="loader" size={13} />
       case 'error':
-        return '✕'
+        return <Icon name="close" size={13} />
       case 'pending':
       default:
-        return '○'
+        return <Icon name="circle" size={11} />
     }
   }
 
@@ -79,7 +82,9 @@ export const ResearchProgress: React.FC<Props> = ({ stages }) => {
               {/* Stage header */}
               <div className="stage-header">
                 <div className="stage-title">
-                  <span className="stage-icon">{stage.icon}</span>
+                  <span className="stage-icon">
+                    <Icon name={stage.icon} size={18} />
+                  </span>
                   <span className="stage-name">{stage.name}</span>
                 </div>
 
@@ -88,7 +93,7 @@ export const ResearchProgress: React.FC<Props> = ({ stages }) => {
                     className={`status-badge ${stage.status}`}
                     aria-hidden="true"
                   >
-                    {getStatusIcon(stage.status)}
+                    <StatusIcon status={stage.status} />
                   </span>
                   {duration && (
                     <span className="stage-time" aria-label={`Duration: ${duration}`}>
@@ -133,13 +138,24 @@ export const ResearchProgress: React.FC<Props> = ({ stages }) => {
 
       {/* Overall status */}
       <div className="progress-footer" role="status">
-        <span className="status-text">
-          {stages.every((s) => s.status === 'complete')
-            ? '✓ Research complete!'
-            : stages.some((s) => s.status === 'error')
-              ? '✕ Research encountered an error'
-              : '⟳ Researching...'}
-        </span>
+        {stages.every((s) => s.status === 'complete') ? (
+          <span className="status-text status-text--complete">
+            <Icon name="check" size={16} />
+            Research complete
+          </span>
+        ) : stages.some((s) => s.status === 'error') ? (
+          <span className="status-text status-text--error">
+            <Icon name="alert" size={16} />
+            Research encountered an error
+          </span>
+        ) : (
+          <span className="status-text status-text--active">
+            <span className="status-text__spinner">
+              <Icon name="loader" size={16} />
+            </span>
+            Researching…
+          </span>
+        )}
       </div>
     </section>
   )

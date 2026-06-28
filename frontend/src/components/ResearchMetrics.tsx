@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { ResearchData } from "../types/dto";
+import { Icon } from "./icons";
 import "./ResearchMetrics.css";
 import {
   CredibilityHistogram,
@@ -193,7 +194,7 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
     return (
       <div className="research-metrics">
         <div className="metrics-placeholder">
-          <p>📊 Enrichment metrics will appear here after research completes</p>
+          <p>Enrichment metrics will appear here after research completes</p>
           <p className="hint">
             Source enrichment adds metadata, sentiment, and quality scores
           </p>
@@ -209,7 +210,10 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
       aria-label="Research metrics"
     >
       <div className="metrics-header">
-        <h2 className="metrics-title">📈 Research Metrics</h2>
+        <h2 className="metrics-title">
+          <Icon name="trending-up" size={20} />
+          Research Metrics
+        </h2>
         <div className="visualization-toggle">
           <label className="toggle-label">
             <input
@@ -225,19 +229,25 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
       {/* Summary Cards */}
       <div className="metrics-summary">
         <div className="metric-card">
-          <div className="metric-icon">📚</div>
+          <div className="metric-icon">
+            <Icon name="sources" size={20} />
+          </div>
           <div className="metric-value">{totalSources}</div>
           <div className="metric-label">Total Sources</div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-icon">⭐</div>
+          <div className="metric-icon">
+            <Icon name="star" size={20} />
+          </div>
           <div className="metric-value">{avgDomainScore.toFixed(2)}</div>
           <div className="metric-label">Avg Domain Score</div>
         </div>
 
         <div className="metric-card">
-          <div className="metric-icon">✅</div>
+          <div className="metric-icon">
+            <Icon name="check-circle" size={20} />
+          </div>
           <div className="metric-value">{enrichmentApplied ? "Yes" : "No"}</div>
           <div className="metric-label">Enrichment Applied</div>
         </div>
@@ -264,7 +274,10 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
         sentimentCounts.neutral >
         0 && (
         <div className="metrics-section">
-          <h3 className="section-title">📊 Sentiment Analysis</h3>
+          <h3 className="section-title">
+            <Icon name="analysis" size={18} />
+            Sentiment Analysis
+          </h3>
           <div className="sentiment-chart">
             <div className="sentiment-bar">
               <div
@@ -310,7 +323,10 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
       {/* Category Distribution */}
       {Object.keys(categoryCounts).length > 0 && (
         <div className="metrics-section">
-          <h3 className="section-title">🏷️ Category Distribution</h3>
+          <h3 className="section-title">
+            <Icon name="tag" size={18} />
+            Category Distribution
+          </h3>
           <div className="category-list">
             {Object.entries(categoryCounts)
               .sort(([, a], [, b]) => b - a)
@@ -333,7 +349,10 @@ export const ResearchMetrics: React.FC<Props> = ({ data }) => {
       {/* Source Quality Breakdown */}
       {domainScores.length > 0 && (
         <div className="metrics-section">
-          <h3 className="section-title">⭐ Source Quality Breakdown</h3>
+          <h3 className="section-title">
+            <Icon name="star" size={18} />
+            Source Quality Breakdown
+          </h3>
           <div className="quality-breakdown">
             <div className="quality-item">
               <span className="quality-label">High Quality (≥0.8)</span>
