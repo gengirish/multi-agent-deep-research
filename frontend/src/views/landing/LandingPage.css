@@ -372,6 +372,69 @@
   color: #e2e8f0;
 }
 
+/* ---------- Trust pillars ---------- */
+
+.pillars {
+  padding: 72px 0 24px;
+}
+
+.pillars__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.pillar {
+  padding: 26px 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.pillar:hover {
+  border-color: rgba(129, 140, 248, 0.3);
+  transform: translateY(-2px);
+}
+
+.pillar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  margin-bottom: 16px;
+  background: rgba(129, 140, 248, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  color: #818cf8;
+}
+
+.pillar__title {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.pillar__body {
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pillar {
+    transition: none !important;
+  }
+  .pillar:hover {
+    transform: none !important;
+  }
+}
+
 /* ---------- Bento Grid (agents) ---------- */
 
 .bento {

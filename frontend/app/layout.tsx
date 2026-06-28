@@ -29,11 +29,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://multi-agent-deep-research-eight.vercel.app"),
   title: {
-    default: "Chronicle — Founder-grade AI research, with sources you can defend",
+    default: "Chronicle — Defensible market sizing for founders",
     template: "%s · Chronicle",
   },
   description:
-    "Chronicle is an AI research copilot for founders. Run customer discovery, market sizing, and competitive intel in minutes — with citations, contradiction detection, and a visible reasoning trail.",
+    "Chronicle sizes your market with a multi-agent AI pipeline — TAM/SAM/SOM with credibility-scored sources, contradiction detection, and a citation behind every number.",
   applicationName: "Chronicle",
   authors: [{ name: "Girish Hiremath", url: "https://girishbhiremath.vercel.app" }],
   creator: "IntelliForge AI",
@@ -50,17 +50,17 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    title: "Chronicle — AI research copilot for founders",
+    title: "Chronicle — Defensible market sizing for founders",
     description:
-      "Customer discovery, market sizing, and competitive intel in minutes. Cited. Auditable. Built for founders.",
+      "TAM/SAM/SOM in minutes, with a source behind every number. Credibility-scored, contradiction-flagged, auditable.",
     images: ["/og-image.svg"],
     siteName: "Chronicle",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chronicle — AI research copilot for founders",
+    title: "Chronicle — Defensible market sizing for founders",
     description:
-      "Customer discovery, market sizing, and competitive intel in minutes. Cited. Auditable.",
+      "TAM/SAM/SOM in minutes, with a source behind every number. Credibility-scored, contradiction-flagged, auditable.",
     images: ["/og-image.svg"],
   },
 };
@@ -96,7 +96,7 @@ export default function RootLayout({
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web",
               description:
-                "AI research copilot for founders. Customer discovery, market sizing, and competitive intel with citations and a visible reasoning trail.",
+                "Defensible market sizing for founders. TAM/SAM/SOM with credibility-scored sources, contradiction detection, and a citation behind every number.",
               offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             }),
           }}

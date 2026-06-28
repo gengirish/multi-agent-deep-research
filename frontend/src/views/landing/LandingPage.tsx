@@ -1,13 +1,35 @@
 import React from "react";
 import Link from "next/link";
 import { TopNav } from "../../components/TopNav";
+import { Icon, IconName } from "../../components/icons";
 import "./LandingPage.css";
 
 const FOUNDER_QUERIES = [
-  "Market size and key players in AI coding assistants 2025",
-  "Top pain points cited by SMB owners about accounting software",
-  "Recent Series A rounds in vertical SaaS for healthcare",
-  "Competitive landscape for AI customer support agents",
+  "Market size for AI coding assistants — TAM, SAM, SOM 2025",
+  "How big is the vertical SaaS market for healthcare?",
+  "TAM and growth rate for AI customer support automation",
+  "Market size of the creator economy and key segments",
+];
+
+const TRUST_PILLARS: Array<{ icon: IconName; title: string; body: string }> = [
+  {
+    icon: "shield",
+    title: "Every source scored",
+    body:
+      "Each source gets a credibility score before it reaches your number. You see the average confidence up front — not a black box.",
+  },
+  {
+    icon: "alert",
+    title: "Contradictions surfaced",
+    body:
+      "When sources disagree on a number, Chronicle flags it instead of silently averaging. You walk into the room knowing what's disputed.",
+  },
+  {
+    icon: "link",
+    title: "Every figure cited",
+    body:
+      "TAM/SAM/SOM with a clickable source behind each claim. When a partner asks \"where's that from?\", you have the link.",
+  },
 ];
 
 const AGENT_TILES = [
@@ -42,28 +64,28 @@ const AGENT_TILES = [
     eyebrow: "05 \u00b7 Reporter",
     title: "Compiles a cited markdown report",
     body:
-      "Claude 3.5 Haiku assembles the deck-ready output. Drop straight into Notion, a doc, or a YC application.",
+      "Claude 3.5 Haiku assembles the deck-ready output. Drop your TAM/SAM/SOM straight into a slide, Notion, or a YC application.",
   },
 ];
 
 const STEPS = [
   {
     n: "01",
-    title: "Ask one question",
+    title: "Name your market",
     body:
-      "Type a market, a competitor, or a customer segment. No prompt engineering, no API keys.",
+      "Type a market, segment, or category. No prompt engineering, no API keys, no signup.",
   },
   {
     n: "02",
     title: "Watch five agents fan out",
     body:
-      "Web, papers, and news. Sources are scored. Contradictions get flagged. The reasoning chain assembles live.",
+      "Web, papers, and news in parallel. Every source scored, every contradiction flagged, the reasoning chain assembled live.",
   },
   {
     n: "03",
-    title: "Get a cited report",
+    title: "Get a cited sizing report",
     body:
-      "Markdown export, structured insights, and a visualizable timeline. Drop straight into a deck or a doc.",
+      "TAM/SAM/SOM with sources, surfaced contradictions, and a confidence score. Markdown export — paste straight into your deck.",
   },
 ];
 
@@ -91,27 +113,28 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <h1 className="hero__title">
-            Founder-grade research,
+            Market sizing you can
             <br />
-            <span className="hero__title--accent">in minutes.</span>
+            <span className="hero__title--accent">defend in the room.</span>
           </h1>
 
           <p className="hero__sub">
-            Chronicle is an AI research copilot for founders. Customer
-            discovery, market sizing, and competitive intel &mdash; with
-            citations, contradiction detection, and a visible reasoning trail.
+            Chronicle runs your market through a multi-agent pipeline that
+            searches the web, papers, and news, scores every source for
+            credibility, flags contradictions, and hands you a cited
+            TAM/SAM/SOM report &mdash; not a paragraph you have to fact-check.
           </p>
 
           <div className="hero__cta">
             <Link href="/research" className="btn btn--primary">
-              Try a query &rarr;
+              Size your market &rarr;
             </Link>
             <a href="#how-it-works" className="btn btn--ghost">
               How it works
             </a>
           </div>
 
-          <div className="hero__queries" aria-label="Example queries founders run">
+          <div className="hero__queries" aria-label="Example market-sizing queries">
             <span className="hero__queries-label">Try one of these:</span>
             <div className="hero__chips">
               {FOUNDER_QUERIES.map((q) => (
@@ -125,6 +148,30 @@ export const LandingPage: React.FC = () => {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="pillars" aria-label="Why founders trust the numbers">
+          <div className="how__head">
+            <span className="bento__eyebrow">Numbers with receipts</span>
+            <h2 className="section__title">
+              The difference between an estimate and a defensible number.
+            </h2>
+            <p className="section__sub">
+              ChatGPT gives you a number. Chronicle gives you a number you can
+              source, stress-test, and stand behind in a partner meeting.
+            </p>
+          </div>
+          <div className="pillars__grid">
+            {TRUST_PILLARS.map((p) => (
+              <div className="pillar" key={p.title}>
+                <div className="pillar__icon">
+                  <Icon name={p.icon} size={20} />
+                </div>
+                <h3 className="pillar__title">{p.title}</h3>
+                <p className="pillar__body">{p.body}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -226,13 +273,13 @@ export const LandingPage: React.FC = () => {
 
         <section className="cta">
           <div className="cta__card">
-            <h2>Stop pasting links into ChatGPT.</h2>
+            <h2>Stop guessing your TAM.</h2>
             <p>
-              Run your next research question through Chronicle. Free,
-              open-source, and it shows its work.
+              Run your market through Chronicle. Free, open-source, and every
+              number comes with a source you can defend.
             </p>
             <Link href="/research" className="btn btn--primary btn--lg">
-              Try it now &rarr;
+              Size your market &rarr;
             </Link>
           </div>
         </section>
