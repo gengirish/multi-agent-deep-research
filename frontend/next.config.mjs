@@ -2,6 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // `agentmail` is a server-only SDK with an optional `@x402/fetch` peer
+  // pulled in by its payment wrapper. Bundling it through webpack pulls in
+  // that peer even though we never call it. Externalize so Node requires it
+  // at runtime in the serverless function — the optional peer is then a
+  // lazy resolution and never blocks the build.
+  experimental: {
+    serverComponentsExternalPackages: ["agentmail"],
+  },
   async headers() {
     return [
       {
