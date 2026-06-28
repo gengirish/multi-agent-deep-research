@@ -72,6 +72,47 @@ enum VerificationTokenType {
   MAGIC_LINK
 }
 
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+// A newsletter subscriber owned by a Chronicle user. Each user has their own
+// list (multi-tenant by ownerId). Broadcasts fan a research briefing out to
+// every ACTIVE subscriber on the owner's list.
+model Subscriber {
+  id               String           @id @default(cuid())
+  ownerId          String           @map("owner_id")
+  email            String
+  name             String?
+  status           SubscriberStatus @default(ACTIVE)
+  // Opaque per-subscriber token powering one-click unsubscribe links. No PII,
+  // safe to embed in an email URL.
+  unsubscribeToken String           @unique @map("unsubscribe_token")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  @@unique([ownerId, email])
+  @@index([ownerId])
+  @@map("subscribers")
+}
+
+// Audit row written each time an owner broadcasts a report to their list.
+model Broadcast {
+  id             String   @id @default(cuid())
+  ownerId        String   @map("owner_id")
+  jobId          String   @map("job_id")
+  subject        String
+  recipientCount Int      @default(0) @map("recipient_count")
+  sentCount      Int      @default(0) @map("sent_count")
+  status         String   @default("sent") @db.VarChar(16)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([ownerId])
+  @@index([jobId])
+  @@map("broadcasts")
+}
+
 model VerificationToken {
   id         String                @id @default(cuid())
   identifier String                // typically the email

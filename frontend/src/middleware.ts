@@ -37,12 +37,14 @@ const PUBLIC_API_PREFIXES = [
   "/api/export/",
   "/api/search",
   "/api/rag/",
+  // Recipients clicking unsubscribe are anonymous — must stay public.
+  "/api/unsubscribe",
 ];
 
 /**
  * Pages that require auth. Anonymous hits redirect to /sign-in?redirect=...
  */
-const GATED_PATHS = ["/history"];
+const GATED_PATHS = ["/history", "/audience"];
 
 /**
  * API routes that require auth. Anonymous hits return 401 JSON.

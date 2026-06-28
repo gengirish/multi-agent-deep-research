@@ -198,83 +198,148 @@ const downloadReportPDF = (content: string) => {
     return htmlLines.join("\n");
   };
 
+  const issueDate = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="UTF-8">
-        <title>Research Report</title>
+        <title>Chronicle Research Briefing</title>
         <style>
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
           @media print {
-            @page {
-              margin: 2cm;
-            }
+            @page { margin: 1.8cm; }
           }
+          :root {
+            --ink: #0f172a;
+            --body: #334155;
+            --muted: #64748b;
+            --accent: #0369a1;
+            --line: #e2e8f0;
+            --panel: #f8fafc;
+          }
+          * { box-sizing: border-box; }
           body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--body);
+            max-width: 820px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 32px 24px 48px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .masthead {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 14px;
+            margin-bottom: 6px;
+          }
+          .masthead .brand {
+            display: flex; align-items: center; gap: 12px;
+          }
+          .masthead .monogram {
+            width: 38px; height: 38px; background: var(--ink); border-radius: 9px;
+            color: #fff; font-weight: 700; font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: Georgia, 'Times New Roman', serif;
+          }
+          .masthead .wordmark {
+            font-size: 16px; font-weight: 700; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--ink);
+          }
+          .masthead .tagline { font-size: 11px; color: var(--muted); margin-top: 2px; }
+          .masthead .pub {
+            font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--accent);
+            background: #e0f2fe; padding: 6px 12px; border-radius: 999px;
+          }
+          .issue-meta {
+            font-size: 12px; color: var(--muted); margin: 0 0 28px;
+            letter-spacing: 0.02em;
           }
           h1, h2, h3, h4, h5, h6 {
-            color: #1f2937;
-            margin-top: 24px;
+            color: var(--ink);
+            margin-top: 26px;
             margin-bottom: 12px;
             page-break-after: avoid;
+            letter-spacing: -0.01em;
           }
-          h1 { font-size: 28px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
-          h2 { font-size: 24px; }
-          h3 { font-size: 20px; }
-          p { margin: 12px 0; }
-          ul, ol { margin: 12px 0; padding-left: 30px; }
+          h1 { font-size: 26px; line-height: 1.25; }
+          h2 { font-size: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+          h3 { font-size: 17px; }
+          p { margin: 12px 0; color: var(--body); }
+          a { color: var(--accent); }
+          ul, ol { margin: 12px 0; padding-left: 26px; }
           li { margin: 6px 0; page-break-inside: avoid; }
+          strong { color: var(--ink); }
           code {
-            background: #f3f4f6;
+            background: #f1f5f9;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 13px;
-            font-family: 'Courier New', monospace;
+            font-family: ui-monospace, 'Courier New', monospace;
+            color: var(--ink);
           }
           pre {
-            background: #1f2937;
-            color: #f9fafb;
+            background: var(--ink);
+            color: #e2e8f0;
             padding: 16px;
             border-radius: 8px;
             overflow-x: auto;
             margin: 16px 0;
             page-break-inside: avoid;
           }
-          pre code {
-            background: transparent;
-            padding: 0;
-          }
+          pre code { background: transparent; color: inherit; padding: 0; }
           blockquote {
-            border-left: 4px solid #3b82f6;
-            padding-left: 16px;
-            margin: 16px 0;
-            color: #6b7280;
-            font-style: italic;
+            border-left: 3px solid var(--accent);
+            background: var(--panel);
+            padding: 10px 18px;
+            margin: 18px 0;
+            color: var(--body);
+            border-radius: 0 8px 8px 0;
           }
           table {
             border-collapse: collapse;
             width: 100%;
             margin: 16px 0;
+            font-size: 13px;
           }
           th, td {
-            border: 1px solid #e5e7eb;
-            padding: 8px 12px;
+            border: 1px solid var(--line);
+            padding: 9px 12px;
             text-align: left;
           }
-          th {
-            background: #f3f4f6;
-            font-weight: 600;
+          th { background: var(--panel); color: var(--ink); font-weight: 600; }
+          .doc-footer {
+            margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line);
+            font-size: 11px; color: var(--muted); text-align: center;
           }
         </style>
       </head>
       <body>
+        <div class="masthead">
+          <div class="brand">
+            <div class="monogram">C</div>
+            <div>
+              <div class="wordmark">Chronicle</div>
+              <div class="tagline">AI research copilot for founders</div>
+            </div>
+          </div>
+          <div class="pub">Research Briefing</div>
+        </div>
+        <p class="issue-meta">${issueDate}</p>
         ${convertMarkdownToHTML(content)}
+        <div class="doc-footer">
+          Generated by Chronicle · IntelliForge AI · Hyderabad, India
+        </div>
       </body>
     </html>
   `;

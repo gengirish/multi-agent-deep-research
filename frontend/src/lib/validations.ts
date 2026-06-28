@@ -39,6 +39,27 @@ export const sendReportSchema = z.object({
     .optional(),
 });
 
+export const addSubscriberSchema = z.object({
+  email: z.email(),
+  name: z
+    .string()
+    .trim()
+    .max(100, "Name must be at most 100 characters")
+    .optional(),
+});
+
+export const broadcastReportSchema = z.object({
+  // Optional intro note prepended to the briefing as an "editor's note".
+  note: z
+    .string()
+    .trim()
+    .max(2000, "Note must be at most 2000 characters")
+    .optional(),
+});
+
+export type AddSubscriberInput = z.infer<typeof addSubscriberSchema>;
+export type BroadcastReportInput = z.infer<typeof broadcastReportSchema>;
+
 export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

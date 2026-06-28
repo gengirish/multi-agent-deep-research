@@ -17,6 +17,7 @@ dist-ssr
 next-env.d.ts
 out
 build
+tsconfig.tsbuildinfo
 
 # Playwright
 /test-results/
