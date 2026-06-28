@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
  */
 
 const ROUTES: { path: string; mustContain: RegExp | string }[] = [
-  { path: "/", mustContain: /Founder-grade research/i },
+  { path: "/", mustContain: /Market sizing you can|defend in the room/i },
   { path: "/research", mustContain: /Research/i },
   { path: "/history", mustContain: /Research History|history/i },
   { path: "/visualizations", mustContain: /Visualization|chart|dataset/i },
