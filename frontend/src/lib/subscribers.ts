@@ -12,8 +12,13 @@
  */
 
 import { randomBytes } from "crypto";
-import type { SubscriberStatus } from "@prisma/client";
 import { prisma } from "./prisma";
+
+// Mirror of the Prisma `SubscriberStatus` enum. Declared locally (rather than
+// imported from "@prisma/client") so this module type-checks even if the
+// generated client is momentarily stale during a fresh build — the generated
+// enum is the same string-literal union, so the values stay in sync.
+export type SubscriberStatus = "ACTIVE" | "UNSUBSCRIBED";
 
 const APP_URL = (
   process.env.NEXT_PUBLIC_APP_URL || "https://deep-research.intelliforge.tech"
@@ -21,6 +26,34 @@ const APP_URL = (
   .trim()
   .replace(/<[^>]*>/g, "")
   .replace(/\/$/, "");
+
+/**
+ * Sentinel ownerId for the single, public Chronicle newsletter list. Public
+ * sign-ups (landing page, shared report pages) all land here, and the
+ * owner-facing management + broadcast surfaces operate on this same list — so
+ * there's exactly one newsletter, not one per user. The column has no FK to
+ * User, so a fixed non-cuid string is safe.
+ */
+export const GLOBAL_NEWSLETTER_OWNER_ID = "newsletter__global";
+
+/**
+ * Who may view/manage the global subscriber list and broadcast to it.
+ *
+ * Configure `NEWSLETTER_ADMIN_EMAILS` (comma-separated) to lock this down once
+ * more than one person can sign in — otherwise any authenticated user could
+ * read subscriber emails (PII). When the env is unset we default to "open",
+ * which is the right behaviour for a single-operator deployment but should be
+ * tightened before opening signups to the public.
+ */
+const NEWSLETTER_ADMINS = (process.env.NEWSLETTER_ADMIN_EMAILS || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+export function isNewsletterAdmin(email?: string | null): boolean {
+  if (NEWSLETTER_ADMINS.length === 0) return true; // single-operator default
+  return !!email && NEWSLETTER_ADMINS.includes(email.toLowerCase());
+}
 
 /** Opaque token for one-click unsubscribe links. 48 hex chars. */
 export function generateUnsubscribeToken(): string {
@@ -150,6 +183,14 @@ export async function addSubscriber(
     },
   });
   return { subscriber: created, created: true };
+}
+
+/** Add an email to the single public Chronicle newsletter list (instant). */
+export async function addPublicSubscriber(
+  email: string,
+  name?: string,
+): Promise<AddSubscriberResult> {
+  return addSubscriber(GLOBAL_NEWSLETTER_OWNER_ID, email, name);
 }
 
 /** Hard-delete a subscriber the owner owns. Returns true if a row was removed. */

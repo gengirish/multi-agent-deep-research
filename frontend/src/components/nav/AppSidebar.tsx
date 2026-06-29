@@ -84,6 +84,24 @@ const Icon = {
       />
     </svg>
   ),
+  Audience: () => (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M3.5 19v-.6a5.5 5.5 0 0 1 11 0v.6"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16.5 5.2a3.2 3.2 0 0 1 0 6.1M18 13.4a5.5 5.5 0 0 1 2.5 4.6v.6"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
   Settings: () => (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
@@ -140,6 +158,7 @@ const PRIMARY: NavItem[] = [
     icon: <Icon.Visualizations />,
     shortcut: "G V",
   },
+  { href: "/audience", label: "Audience", icon: <Icon.Audience />, shortcut: "G U" },
 ];
 
 const SECONDARY: NavItem[] = [
