@@ -1,0 +1,124 @@
+.pwa-install {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: min(440px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  font-family: var(--font-jakarta), var(--font-inter), system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  animation: pwa-install-in 220ms ease;
+}
+
+@keyframes pwa-install-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install {
+    animation: none;
+  }
+}
+
+.pwa-install__icon {
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+.pwa-install__icon img {
+  border-radius: 9px;
+  display: block;
+}
+
+.pwa-install__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pwa-install__title {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pwa-install__text {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.pwa-install__text strong {
+  color: #0f172a;
+}
+
+.pwa-install__actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.pwa-install__btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #0369a1;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease;
+}
+
+.pwa-install__btn:hover {
+  background: #075a87;
+}
+
+.pwa-install__btn:focus-visible {
+  outline: 2px solid #0369a1;
+  outline-offset: 2px;
+}
+
+.pwa-install__dismiss {
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.pwa-install__dismiss:hover {
+  color: #475569;
+}
+
+@media (max-width: 480px) {
+  .pwa-install {
+    align-items: flex-start;
+  }
+  .pwa-install__actions {
+    flex-direction: row;
+    align-items: center;
+  }
+}

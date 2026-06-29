@@ -2,17 +2,36 @@
  * Patterns adapted from .cursor/skills/pwa-offline/SKILL.md.
  */
 
-const CACHE_NAME = "chronicle-v9";
+const CACHE_NAME = "chronicle-v10";
 const OFFLINE_URL = "/offline";
 
-const PRECACHE_URLS = [OFFLINE_URL, "/favicon.svg", "/icons/icon-192.svg"];
+// Precache the app shell entry + offline fallback + core icons so a cold,
+// offline launch still renders something branded.
+const PRECACHE_URLS = [
+  "/",
+  OFFLINE_URL,
+  "/favicon.svg",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/apple-touch-icon.png",
+];
 
-// --- Install: precache the offline page + a few critical assets ----------
+// --- Install: precache the shell. Do NOT skipWaiting automatically — the page
+// shows an "update available" prompt and activates the new SW on user action.
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // Tolerate individual asset failures so one 404 can't abort the install.
+      Promise.allSettled(PRECACHE_URLS.map((u) => cache.add(u)))
+    )
   );
-  self.skipWaiting();
+});
+
+// Let the page tell a waiting worker to take over immediately.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 // --- Activate: drop old caches -------------------------------------------
@@ -71,19 +90,31 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Page navigations → network-first, fall back to /offline.
+  // Page navigations → network-first; cache successful pages so previously
+  // visited routes load offline, then fall back to the cached page, then the
+  // branded /offline screen.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() =>
-        caches.match(OFFLINE_URL).then(
-          (cached) =>
-            cached ||
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cachedPage = await caches.match(request);
+          if (cachedPage) return cachedPage;
+          const offline = await caches.match(OFFLINE_URL);
+          return (
+            offline ||
             new Response("You are offline.", {
               status: 503,
               headers: { "Content-Type": "text/plain" },
             })
-        )
-      )
+          );
+        })
     );
     return;
   }

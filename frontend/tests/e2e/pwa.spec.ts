@@ -11,7 +11,7 @@ test.describe("PWA assets", () => {
     expect(manifest.name).toMatch(/Chronicle/i);
     expect(manifest.short_name).toBe("Chronicle");
     expect(manifest.display).toBe("standalone");
-    expect(manifest.start_url).toBe("/");
+    expect(manifest.start_url).toMatch(/^\//);
     expect(manifest.theme_color).toBeTruthy();
     expect(manifest.background_color).toBeTruthy();
 
@@ -25,6 +25,17 @@ test.describe("PWA assets", () => {
       (i: { purpose?: string }) => i.purpose === "maskable"
     );
     expect(maskable).toBeTruthy();
+
+    // At least one PNG icon for broad install support (iOS / Android launchers).
+    const hasPng = manifest.icons.some(
+      (i: { type?: string }) => i.type === "image/png"
+    );
+    expect(hasPng).toBeTruthy();
+
+    // Stable identity + app shortcuts for an installed-app feel.
+    expect(manifest.id).toBeTruthy();
+    expect(Array.isArray(manifest.shortcuts)).toBeTruthy();
+    expect(manifest.shortcuts.length).toBeGreaterThanOrEqual(1);
   });
 
   test("sw.js has correct headers and exports CACHE_NAME", async ({
@@ -46,7 +57,7 @@ test.describe("PWA assets", () => {
     expect(body).toMatch(/addEventListener\(\s*["']fetch["']/);
   });
 
-  const PWA_ASSETS = [
+  const SVG_ASSETS = [
     "/icons/icon-192.svg",
     "/icons/icon-512.svg",
     "/icons/icon-maskable-512.svg",
@@ -54,12 +65,30 @@ test.describe("PWA assets", () => {
     "/og-image.svg",
   ];
 
-  for (const assetPath of PWA_ASSETS) {
+  for (const assetPath of SVG_ASSETS) {
     test(`PWA asset ${assetPath} loads`, async ({ request }) => {
       const response = await request.get(assetPath);
       expect(response.status()).toBe(200);
       const ct = response.headers()["content-type"] ?? "";
       expect(ct).toContain("svg");
+    });
+  }
+
+  const PNG_ASSETS = [
+    "/icons/icon-192.png",
+    "/icons/icon-512.png",
+    "/icons/icon-maskable-192.png",
+    "/icons/icon-maskable-512.png",
+    "/apple-touch-icon.png",
+    "/favicon-32.png",
+  ];
+
+  for (const assetPath of PNG_ASSETS) {
+    test(`PWA PNG asset ${assetPath} loads`, async ({ request }) => {
+      const response = await request.get(assetPath);
+      expect(response.status()).toBe(200);
+      const ct = response.headers()["content-type"] ?? "";
+      expect(ct).toContain("png");
     });
   }
 

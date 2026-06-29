@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
+    "generate:icons": "node scripts/generate-icons.mjs",
     "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test",
@@ -40,6 +41,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.15",
     "prisma": "^6.19.3",
+    "sharp": "^0.35.2",
     "typescript": "^5.4.5"
   }
 }
