@@ -39,6 +39,8 @@ const PUBLIC_API_PREFIXES = [
   "/api/rag/",
   // Recipients clicking unsubscribe are anonymous — must stay public.
   "/api/unsubscribe",
+  // Public newsletter sign-up form (landing + shared report pages).
+  "/api/subscribe",
 ];
 
 /**

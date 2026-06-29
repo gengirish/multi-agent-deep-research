@@ -141,6 +141,10 @@
   padding-top: 32px;
 }
 
+.share__subscribe {
+  margin-bottom: 24px;
+}
+
 .share__footer-card {
   padding: 28px;
   border-radius: 16px;

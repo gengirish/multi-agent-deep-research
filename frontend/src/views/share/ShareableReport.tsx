@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { TopNav } from "../../components/TopNav";
+import { SubscribeForm } from "../../components/SubscribeForm";
 import { ResultsSkeleton } from "../../components/Skeleton";
 import { getConversation } from "../../services/conversationsService";
 import { ConversationDetail } from "../../types/dto";
@@ -109,6 +110,12 @@ export const ShareableReport: React.FC<Props> = ({ id }) => {
         </div>
 
         <footer className="share__footer">
+          <SubscribeForm
+            variant="inline"
+            title="Get briefings like this in your inbox"
+            subtitle="Subscribe to the Chronicle newsletter — cited research, no spam, unsubscribe anytime."
+            className="share__subscribe"
+          />
           <div className="share__footer-card">
             <h3>Want one of these for your market?</h3>
             <p>

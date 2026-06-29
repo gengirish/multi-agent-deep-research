@@ -67,6 +67,12 @@ export interface BuildReportEmailInput {
   senderName: string;
   senderEmail: string;
   note?: string;
+  /**
+   * Optional per-recipient unsubscribe URL. When present, a footer line +
+   * plaintext "Unsubscribe:" line are rendered (used by the broadcast route).
+   * Omitted for single-recipient sends so those emails are unchanged.
+   */
+  unsubscribeUrl?: string;
 }
 
 export interface BuildReportEmailOutput {
@@ -154,6 +160,13 @@ export function buildReportEmail(
   const preheader = input.note
     ? `${input.senderName} shared a Chronicle research briefing with you.`
     : `${minutes} min read · A Chronicle research briefing on "${queryShort}"`;
+
+  // ---- Unsubscribe footer line (broadcast recipients only) ----------------
+  const unsubscribeHtml = input.unsubscribeUrl
+    ? `<div style="font-family:${SANS};font-size:12px;color:${C.faint};line-height:1.6;margin-top:10px;">
+            You're receiving this because you subscribed to ${escapeHtml(input.senderName)}'s research briefings. <a href="${escapeHtml(input.unsubscribeUrl)}" style="color:${C.accent};text-decoration:underline;">Unsubscribe</a>.
+          </div>`
+    : "";
 
   // ---- Masthead metric chips ----------------------------------------------
   const metaRow = `${escapeHtml(issueDate)}&nbsp;&nbsp;·&nbsp;&nbsp;${minutes} min read&nbsp;&nbsp;·&nbsp;&nbsp;Ref ${escapeHtml(
@@ -327,6 +340,7 @@ export function buildReportEmail(
         <tr>
           <td class="px" style="padding:20px 36px 24px;border-top:1px solid ${C.line};font-family:${SANS};font-size:12px;color:${C.faint};line-height:1.6;">
             This briefing was generated and sent via a verified ${escapeHtml(BRAND)} account. Every send is rate-limited and tied to a real user — if this looks like spam, just reply and we'll investigate.
+            ${unsubscribeHtml}
           </td>
         </tr>
       </table>
@@ -349,7 +363,8 @@ export function buildReportEmail(
     `\nRead the full briefing (sources, charts, citations):\n${input.shareUrl}\n\n` +
     `----------------------------------------\n${md}\n----------------------------------------\n\n` +
     `Shared by ${input.senderName} <${input.senderEmail}> via ${BRAND}.\n` +
-    `${APP_URL}\n`;
+    `${APP_URL}\n` +
+    (input.unsubscribeUrl ? `\nUnsubscribe: ${input.unsubscribeUrl}\n` : "");
 
   return { subject, html, text, preheader };
 }

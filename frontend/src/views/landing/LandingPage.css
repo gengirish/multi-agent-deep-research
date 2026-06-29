@@ -684,6 +684,10 @@
 
 /* ---------- CTA ---------- */
 
+.newsletter {
+  padding: 80px 0 24px;
+}
+
 .cta {
   padding: 96px 0 24px;
 }

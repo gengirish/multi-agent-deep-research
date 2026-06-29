@@ -1,0 +1,361 @@
+.audience-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  color: #334155;
+  text-align: left;
+}
+
+.audience-header {
+  margin-bottom: 1.5rem;
+}
+
+.audience-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.audience-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+/* Add subscriber form ---------------------------------------------------- */
+.audience-add {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.1rem 1.1rem 1.2rem;
+  margin-bottom: 1.4rem;
+}
+
+.audience-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.audience-form-fields {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.audience-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.audience-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.audience-optional {
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.audience-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #0f172a;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.audience-input::placeholder {
+  color: #94a3b8;
+}
+
+.audience-input:focus {
+  outline: none;
+  border-color: #0369a1;
+  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+}
+
+.audience-input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.audience-add-btn {
+  flex: 0 0 auto;
+  padding: 0.62rem 1.1rem;
+  border: 1px solid #0369a1;
+  border-radius: 10px;
+  background: #0369a1;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms ease, transform 150ms ease, opacity 150ms ease;
+}
+
+.audience-add-btn:hover:not(:disabled) {
+  background: #075985;
+}
+
+.audience-add-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.3);
+}
+
+.audience-add-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.audience-inline-error {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 9px;
+  font-size: 0.88rem;
+}
+
+/* Stat line -------------------------------------------------------------- */
+.audience-stat {
+  font-size: 0.92rem;
+  color: #64748b;
+  margin-bottom: 0.9rem;
+  padding-left: 0.15rem;
+}
+
+.audience-stat strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* States ----------------------------------------------------------------- */
+.audience-state {
+  padding: 1.6rem 1rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 0.95rem;
+}
+
+.audience-state--loading {
+  color: #64748b;
+}
+
+.audience-state--error {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.audience-empty {
+  padding: 2.2rem 1.5rem;
+  text-align: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.audience-empty-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.audience-empty-text {
+  margin: 0 auto;
+  max-width: 420px;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* Table ------------------------------------------------------------------ */
+.audience-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.audience-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1.8fr 0.9fr 0.9fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.audience-row:last-child {
+  border-bottom: none;
+}
+
+.audience-row--head {
+  background: #f8fafc;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.audience-col {
+  min-width: 0;
+  font-size: 0.92rem;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audience-col--name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.audience-col--email {
+  color: #475569;
+  word-break: break-word;
+}
+
+.audience-row--head .audience-col {
+  font-weight: 700;
+  color: #64748b;
+}
+
+.audience-col--action {
+  text-align: right;
+}
+
+.audience-badge {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.audience-badge--active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.audience-badge--unsub {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.audience-remove-btn {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+
+.audience-remove-btn:hover:not(:disabled) {
+  border-color: #fca5a5;
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.audience-remove-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.25);
+}
+
+.audience-remove-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.audience-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Responsive ------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .audience-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .audience-form-fields {
+    flex-direction: column;
+  }
+
+  .audience-add-btn {
+    width: 100%;
+  }
+
+  .audience-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name action"
+      "email email"
+      "status date";
+    gap: 0.4rem 0.75rem;
+  }
+
+  .audience-row--head {
+    display: none;
+  }
+
+  .audience-col--name {
+    grid-area: name;
+  }
+
+  .audience-col--email {
+    grid-area: email;
+    font-size: 0.86rem;
+  }
+
+  .audience-col--status {
+    grid-area: status;
+  }
+
+  .audience-col--date {
+    grid-area: date;
+    text-align: right;
+    color: #94a3b8;
+    font-size: 0.82rem;
+  }
+
+  .audience-col--action {
+    grid-area: action;
+  }
+}

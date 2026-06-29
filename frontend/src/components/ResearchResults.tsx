@@ -11,6 +11,7 @@ import { SendReportDialog } from "./SendReportDialog";
 import { TextToSpeechControls } from "./TextToSpeechControls";
 import { TrustPanel } from "./TrustPanel";
 import { useSession } from "../hooks/useSession";
+import { broadcastReport } from "../services/subscribersService";
 import { AgentPerformance, AgentTimeline } from "./visualizations";
 
 interface Props {
@@ -370,6 +371,12 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastNote, setBroadcastNote] = useState("");
+  const [broadcastStatus, setBroadcastStatus] = useState<{
+    state: "idle" | "sending" | "success" | "error";
+    message?: string;
+  }>({ state: "idle" });
   const headerDropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useSession();
   // Email-this-report is gated to signed-in users with a real jobId. shareId
@@ -385,6 +392,34 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       window.prompt("Copy this shareable link:", url);
+    }
+  };
+
+  const openBroadcast = () => {
+    setBroadcastNote("");
+    setBroadcastStatus({ state: "idle" });
+    setBroadcastOpen(true);
+  };
+
+  const closeBroadcast = () => {
+    if (broadcastStatus.state === "sending") return;
+    setBroadcastOpen(false);
+  };
+
+  const handleBroadcast = async () => {
+    if (!shareId || broadcastStatus.state === "sending") return;
+    setBroadcastStatus({ state: "sending" });
+    try {
+      const result = await broadcastReport(shareId, broadcastNote);
+      setBroadcastStatus({ state: "success", message: result.message });
+    } catch (err) {
+      setBroadcastStatus({
+        state: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Broadcast failed. Try again in a moment.",
+      });
     }
   };
 
@@ -819,6 +854,16 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
             Email report
           </button>
         )}
+        {canEmail && (
+          <button
+            type="button"
+            onClick={openBroadcast}
+            className="action-button secondary"
+          >
+            <Icon name="sources" size={16} />
+            Send to subscribers
+          </button>
+        )}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="action-button secondary"
@@ -834,6 +879,199 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
           open={emailOpen}
           onClose={() => setEmailOpen(false)}
         />
+      )}
+
+      {broadcastOpen && shareId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="broadcast-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeBroadcast();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 460,
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              boxShadow: "0 20px 50px rgba(15, 23, 42, 0.25)",
+              padding: "1.4rem",
+            }}
+          >
+            <h2
+              id="broadcast-title"
+              style={{
+                margin: "0 0 0.35rem",
+                fontSize: "1.2rem",
+                fontWeight: 700,
+                color: "#0f172a",
+              }}
+            >
+              Send to subscribers
+            </h2>
+            <p style={{ margin: "0 0 1rem", color: "#64748b", fontSize: "0.9rem", lineHeight: 1.5 }}>
+              Broadcast this research briefing to everyone on your audience
+              list. Add an optional note to introduce it.
+            </p>
+
+            {broadcastStatus.state === "success" ? (
+              <>
+                <div
+                  role="status"
+                  style={{
+                    padding: "0.7rem 0.85rem",
+                    border: "1px solid #bbf7d0",
+                    background: "#f0fdf4",
+                    color: "#15803d",
+                    borderRadius: 9,
+                    fontSize: "0.9rem",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {broadcastStatus.message}
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.1rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastOpen(false)}
+                    style={{
+                      padding: "0.55rem 1.1rem",
+                      border: "1px solid #0369a1",
+                      borderRadius: 9,
+                      background: "#0369a1",
+                      color: "#fff",
+                      font: "inherit",
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "#334155",
+                    marginBottom: "0.35rem",
+                  }}
+                >
+                  Note <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span>
+                </label>
+                <textarea
+                  value={broadcastNote}
+                  onChange={(e) => setBroadcastNote(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  disabled={broadcastStatus.state === "sending"}
+                  placeholder="A quick line to introduce this briefing to your readers."
+                  style={{
+                    width: "100%",
+                    padding: "0.6rem 0.75rem",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 10,
+                    font: "inherit",
+                    fontSize: "0.92rem",
+                    color: "#0f172a",
+                    resize: "vertical",
+                    boxSizing: "border-box",
+                  }}
+                />
+
+                {broadcastStatus.state === "error" && (
+                  <div
+                    role="alert"
+                    style={{
+                      marginTop: "0.75rem",
+                      padding: "0.55rem 0.75rem",
+                      border: "1px solid #fecaca",
+                      background: "#fef2f2",
+                      color: "#b91c1c",
+                      borderRadius: 9,
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    {broadcastStatus.message}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "0.6rem",
+                    marginTop: "1.1rem",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={closeBroadcast}
+                    disabled={broadcastStatus.state === "sending"}
+                    style={{
+                      padding: "0.55rem 1rem",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 9,
+                      background: "#fff",
+                      color: "#334155",
+                      font: "inherit",
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      cursor:
+                        broadcastStatus.state === "sending"
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity: broadcastStatus.state === "sending" ? 0.6 : 1,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBroadcast}
+                    disabled={broadcastStatus.state === "sending"}
+                    style={{
+                      padding: "0.55rem 1.1rem",
+                      border: "1px solid #0369a1",
+                      borderRadius: 9,
+                      background: "#0369a1",
+                      color: "#fff",
+                      font: "inherit",
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      cursor:
+                        broadcastStatus.state === "sending"
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity: broadcastStatus.state === "sending" ? 0.6 : 1,
+                    }}
+                  >
+                    {broadcastStatus.state === "sending"
+                      ? "Sending…"
+                      : "Send briefing"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </section>
   );

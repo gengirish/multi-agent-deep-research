@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { TopNav } from "../../components/TopNav";
 import { Icon, IconName } from "../../components/icons";
+import { SubscribeForm } from "../../components/SubscribeForm";
 import "./LandingPage.css";
 
 const FOUNDER_QUERIES = [
@@ -269,6 +270,14 @@ export const LandingPage: React.FC = () => {
               citation a partner can click.
             </li>
           </ul>
+        </section>
+
+        <section className="newsletter" aria-label="Subscribe to the Chronicle briefing">
+          <SubscribeForm
+            variant="panel"
+            title="Get the Chronicle briefing"
+            subtitle="Founder-grade market research — cited, defensible, and delivered to your inbox. No spam, unsubscribe in one click."
+          />
         </section>
 
         <section className="cta">
