@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ServiceWorkerRegistration } from "../src/components/pwa/ServiceWorkerRegistration";
+import { InstallPrompt } from "../src/components/pwa/InstallPrompt";
 import "../src/index.css";
 import "../src/accessibility.css";
 import "../src/App.css";
@@ -45,8 +46,14 @@ export const metadata: Metadata = {
     title: "Chronicle",
   },
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icons/icon-192.svg", sizes: "192x192", type: "image/svg+xml" }],
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    // iOS only honors PNG apple-touch-icons; SVG is ignored on the home screen.
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
     type: "website",
@@ -86,6 +93,7 @@ export default function RootLayout({
       <body>
         {children}
         <ServiceWorkerRegistration />
+        <InstallPrompt />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
