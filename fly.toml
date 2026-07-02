@@ -1,15 +1,15 @@
-# fly.toml — Chronicle backend (single FastAPI web process, inline pipeline)
+# fly.toml - Chronicle backend (single FastAPI web process, inline pipeline)
 # Docs: https://fly.io/docs/reference/configuration/
 #
 # Architecture note: we previously ran a separate `worker` process group
 # (ARQ on Upstash Redis). After a cost audit we moved to inline execution
-# via FastAPI's asyncio.create_task — the worker idle cost (~$5.70/mo
+# via FastAPI's asyncio.create_task - the worker idle cost (~$5.70/mo
 # always-on) wasn't justified at single-user scale. The ARQ shim is still
 # in backend/queue/tasks.py so we can flip back to a separate worker by
 # adding a `worker` process group back here and scaling it >= 1.
 
 app = "multi-agent-deep-research-api"
-# Singapore — co-located with Neon's ap-southeast-1 region for low DB
+# Singapore - co-located with Neon's ap-southeast-1 region for low DB
 # latency. Fall back to hkg or nrt if sin runs out of capacity.
 primary_region = "sin"
 
