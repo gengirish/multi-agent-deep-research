@@ -31,6 +31,8 @@ Chronicle runs the question through a **multi-agent pipeline** that searches the
 
 It shows its work. Every step the agents take is visible, recorded, and replayable.
 
+**MCP-native:** install the Chronicle MCP server and run cited market research directly from Cursor or Claude Desktop while you write your deck or YC application. See [`mcp/README.md`](./mcp/README.md).
+
 ## Try it
 
 ```
@@ -143,8 +145,35 @@ The repo is platform-agnostic — anything that can run a Python ASGI container 
 
 `*.vercel.app` preview origins are auto-allowed via regex in `backend/main.py`.
 
+## MCP (Cursor / Claude Desktop)
+
+```bash
+pip install -e mcp/
+```
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "chronicle": {
+      "command": "python",
+      "args": ["-m", "chronicle_mcp"],
+      "env": {
+        "CHRONICLE_API_URL": "https://multi-agent-deep-research-api.fly.dev"
+      }
+    }
+  }
+}
+```
+
+Then ask Cursor: *"Use Chronicle to research TAM for AI coding assistants 2025."*
+
+Full setup: [`mcp/README.md`](./mcp/README.md).
+
 ## Roadmap
 
+- [x] MCP server for Cursor / Claude Desktop (`chronicle-mcp`)
 - [ ] Persistent project workspaces (save and revisit research threads)
 - [ ] Direct export to Notion, Google Docs, and Linear
 - [ ] Custom agent definitions (bring your own retrieval source)

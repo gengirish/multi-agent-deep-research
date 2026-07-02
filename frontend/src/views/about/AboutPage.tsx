@@ -127,6 +127,25 @@ export const AboutPage: React.FC = () => {
           umbrella.
         </p>
 
+        <h3 style={{ marginTop: "2.5rem" }}>MCP integration</h3>
+        <p>
+          Chronicle ships an official MCP server (<code>chronicle-mcp</code>) so
+          you can run cited market research from{" "}
+          <strong>Cursor</strong> or <strong>Claude Desktop</strong> while
+          drafting your deck, memo, or YC application. Five tools:
+          <code>research_market</code>, <code>get_research_job</code>,{" "}
+          <code>export_research_markdown</code>, <code>list_starter_queries</code>,
+          and <code>chronicle_health</code>. Setup instructions live in{" "}
+          <a
+            href="https://github.com/gengirish/multi-agent-deep-research/tree/main/mcp"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <code>mcp/README.md</code>
+          </a>{" "}
+          in the repo.
+        </p>
+
         <h3 style={{ marginTop: "2.5rem" }}>Status</h3>
         <p>
           Live, open-source, free to try. Frontend on Vercel (Next.js 14),

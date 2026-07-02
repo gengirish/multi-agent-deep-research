@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "chronicle": {
+      "command": "python",
+      "args": ["-m", "chronicle_mcp"],
+      "env": {
+        "CHRONICLE_API_URL": "https://multi-agent-deep-research-api.fly.dev"
+      }
+    }
+  }
+}
