@@ -7,6 +7,9 @@ const PAGES = [
   "/visualizations",
   "/about",
   "/settings",
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
 ];
 
 test.describe("SEO + a11y basics", () => {

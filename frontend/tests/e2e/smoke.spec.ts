@@ -13,6 +13,9 @@ const ROUTES: { path: string; mustContain: RegExp | string }[] = [
   { path: "/about", mustContain: /About Chronicle/i },
   { path: "/settings", mustContain: /Settings/i },
   { path: "/offline", mustContain: /You.{1,3}re offline/i },
+  { path: "/sign-in", mustContain: /Sign in to Chronicle/i },
+  { path: "/sign-up", mustContain: /Create your Chronicle account/i },
+  { path: "/forgot-password", mustContain: /Reset your password/i },
 ];
 
 for (const { path, mustContain } of ROUTES) {

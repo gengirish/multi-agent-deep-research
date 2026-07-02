@@ -14,7 +14,9 @@ function isSafeInternalPath(value: string | null): value is string {
 export const SignInForm: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawCallback = searchParams.get("callbackUrl");
+  // Middleware and UserMenu use `redirect`; keep `callbackUrl` for older links.
+  const rawCallback =
+    searchParams.get("redirect") ?? searchParams.get("callbackUrl");
   const callbackUrl = isSafeInternalPath(rawCallback)
     ? rawCallback
     : DEFAULT_CALLBACK;
