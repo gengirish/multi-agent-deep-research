@@ -110,7 +110,7 @@ export const LandingPage: React.FC = () => {
       <main className="landing__main">
         <section className="hero">
           <div className="hero__eyebrow">
-            <span className="hero__dot" /> Live demo &middot; No signup
+            <span className="hero__dot" /> Live demo &middot; MCP for Cursor &middot; No signup
           </div>
 
           <h1 className="hero__title">
@@ -267,7 +267,8 @@ export const LandingPage: React.FC = () => {
             </li>
             <li>
               <strong>YC application</strong> &mdash; back every claim with a
-              citation a partner can click.
+              citation a partner can click. Or run research from Cursor via MCP
+              while you draft.
             </li>
           </ul>
         </section>
