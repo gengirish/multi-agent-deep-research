@@ -57,6 +57,12 @@ class DataEnrichmentAgent:
                 "enrichment_timestamp": datetime.now().isoformat()
             }
         }
+
+        # Carry retrieval failures through — this dict replaces the retriever's
+        # output in workflow state, and dropping the errors here would hide a
+        # broken channel behind an empty one.
+        if sources.get("errors"):
+            enriched["errors"] = sources["errors"]
         
         logger.info(f"Enricher: Enriched {enriched['metadata']['total_sources']} sources")
         return enriched

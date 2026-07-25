@@ -547,6 +547,23 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
         </div>
       )}
 
+      {/* A run where a stage fell back says so, above everything else. A
+          partial report that looks complete is worse than an obvious gap. */}
+      {data.degraded && data.degraded.length > 0 && (
+        <div className="degraded-banner" role="status">
+          <span className="degraded-banner__title">
+            <Icon name="shield" size={16} />
+            Partial run — {data.degraded.length}{" "}
+            {data.degraded.length === 1 ? "stage" : "stages"} did not complete
+          </span>
+          <ul className="degraded-banner__list">
+            {data.degraded.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Trust & verifiability — the differentiator, up top */}
       <TrustPanel data={data} />
 

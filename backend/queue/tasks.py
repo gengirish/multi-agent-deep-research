@@ -185,14 +185,23 @@ async def _run_research_pipeline(
     await _publish(job_id, {"stage": "report", "message": "Compiling report…", "progress": 95})
 
     status = "success" if not result.get("error") else "error"
+    degraded = result.get("degraded") or []
     result_payload = {
         "sources": result.get("sources", {}),
         "analysis": result.get("analysis", {}),
         "insights": result.get("insights", {}),
         "credibility": result.get("credibility", {}),
         "report": result.get("report", ""),
+        # Stages that fell back. Persisted with the result so a degraded run
+        # stays identifiable after the fact, not just while it streams.
+        "degraded": degraded,
     }
     conversation = result.get("conversation")
+
+    if degraded:
+        logger.warning(
+            f"Job {job_id} completed degraded: " + "; ".join(degraded)
+        )
 
     async with session_scope() as session:
         await upsert_result(

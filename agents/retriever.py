@@ -7,8 +7,11 @@ Uses Tavily Search API for AI-optimized web search.
 import logging
 import os
 import asyncio
-from typing import Dict, List, Any
-from langchain_community.utilities import ArxivAPIWrapper
+from typing import Dict, List, Any, Optional, Tuple
+try:
+    import arxiv as arxiv_sdk
+except ImportError:  # pragma: no cover - surfaced at runtime as a channel error
+    arxiv_sdk = None
 from tavily import TavilyClient
 from dotenv import load_dotenv
 import requests
@@ -36,13 +39,25 @@ class ContextualRetrieverAgent:
             logger.warning("TAVILY_API_KEY not found. Web search will be limited.")
             self.tavily = None
         
-        # Initialize ArXiv wrapper
-        try:
-            self.arxiv = ArxivAPIWrapper()
-            logger.info("ArXiv wrapper initialized successfully")
-        except Exception as e:
-            logger.warning(f"Arxiv wrapper not available: {e}")
+        # ArXiv, via the SDK directly. LangChain's ArxivAPIWrapper calls
+        # Search.results(), removed in arxiv 2.2+, so the wrapper raises
+        # AttributeError against any current version — which is how the paper
+        # channel came to return nothing at all in production. The native
+        # client also gives us entry_id as a real URL, which the wrapper's
+        # formatted-string output never included, so papers can now be cited.
+        if arxiv_sdk is None:
+            logger.warning("arxiv package not installed. Paper search disabled.")
             self.arxiv = None
+        else:
+            try:
+                # delay_seconds is the SDK default of 3s between *paginated*
+                # requests; a single-page query pays it only on retry. Setting
+                # it to 0 gets the client 429'd by arXiv.
+                self.arxiv = arxiv_sdk.Client(page_size=10, num_retries=2)
+                logger.info("ArXiv client initialized successfully")
+            except Exception as e:
+                logger.warning(f"ArXiv client not available: {e}")
+                self.arxiv = None
         
         # Initialize Perplexity client (fallback search)
         perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
@@ -95,7 +110,7 @@ class ContextualRetrieverAgent:
             tasks.append(self._retrieve_web_async(query, max_results))
         else:
             async def empty_web():
-                return []
+                return [], "no web search provider configured"
             tasks.append(empty_web())
         
         # Papers search task
@@ -103,7 +118,7 @@ class ContextualRetrieverAgent:
             tasks.append(self._retrieve_papers_async(query, max_results))
         else:
             async def empty_papers():
-                return []
+                return [], "arXiv client not initialized"
             tasks.append(empty_papers())
         
         # News search task
@@ -111,49 +126,53 @@ class ContextualRetrieverAgent:
             tasks.append(self._retrieve_news_async(query, max_results))
         else:
             async def empty_news():
-                return []
+                return [], "no news search provider configured"
             tasks.append(empty_news())
         
         # Execute all tasks in parallel
         web_results, papers_results, news_results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        # Handle results (with error handling)
-        if isinstance(web_results, Exception):
-            logger.error(f"Web search failed: {web_results}")
-            results["web"] = []
-        else:
-            results["web"] = web_results
-        
-        if isinstance(papers_results, Exception):
-            logger.error(f"Papers search failed: {papers_results}")
-            results["papers"] = []
-        else:
-            results["papers"] = papers_results
-        
-        if isinstance(news_results, Exception):
-            logger.error(f"News search failed: {news_results}")
-            results["news"] = []
-        else:
-            results["news"] = news_results
+        # Handle results. A channel can fail three ways — the task raised, the
+        # channel returned an error string, or it returned nothing at all — and
+        # only the last one is legitimately "no results". Record the reason so
+        # a broken channel is distinguishable from an empty one downstream.
+        errors: Dict[str, str] = {}
+        for channel, outcome in (
+            ("web", web_results),
+            ("papers", papers_results),
+            ("news", news_results),
+        ):
+            if isinstance(outcome, Exception):
+                logger.error(f"{channel} search raised: {outcome}")
+                results[channel] = []
+                errors[channel] = f"{type(outcome).__name__}: {outcome}"
+                continue
+            items, error = outcome
+            results[channel] = items
+            if error:
+                errors[channel] = error
+
+        if errors:
+            results["errors"] = errors
         
         logger.info(f"Retriever: Parallel search complete - Web: {len(results['web'])}, Papers: {len(results['papers'])}, News: {len(results['news'])}")
         
         return results
     
-    async def _retrieve_web_async(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+    async def _retrieve_web_async(self, query: str, max_results: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
         """Retrieve web sources asynchronously."""
         return await asyncio.to_thread(self._retrieve_web_sync, query, max_results)
     
-    async def _retrieve_papers_async(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+    async def _retrieve_papers_async(self, query: str, max_results: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
         """Retrieve papers asynchronously."""
         return await asyncio.to_thread(self._retrieve_papers_sync, query, max_results)
     
-    async def _retrieve_news_async(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+    async def _retrieve_news_async(self, query: str, max_results: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
         """Retrieve news sources asynchronously."""
         return await asyncio.to_thread(self._retrieve_news_sync, query, max_results)
     
-    def _retrieve_web_sync(self, query: str, max_results: int) -> List[Dict[str, Any]]:
-        """Synchronous web search (runs in thread pool)."""
+    def _retrieve_web_sync(self, query: str, max_results: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+        """Synchronous web search (runs in thread pool). Returns (results, error)."""
         if self.tavily:
             try:
                 web_query = f"{query} recent"
@@ -166,44 +185,62 @@ class ContextualRetrieverAgent:
                 )
                 results = self._parse_tavily_results(tavily_results, max_results)
                 logger.info(f"Retriever: Found {len(results)} web sources via Tavily")
-                return results
+                return results, None
             except Exception as e:
-                logger.error(f"Tavily web search failed: {e}")
+                logger.error(f"Tavily web search failed: {type(e).__name__}: {e}")
                 # Fallback to Perplexity
                 if self.perplexity_api_key:
                     try:
                         perplexity_results = self._search_perplexity(query, max_results)
                         logger.info(f"Retriever: Fallback to Perplexity - Found {len(perplexity_results)} sources")
-                        return perplexity_results
+                        return perplexity_results, None
                     except Exception as e2:
                         logger.error(f"Perplexity fallback also failed: {e2}")
-                        return []
-                return []
+                        return [], f"Tavily: {e}; Perplexity fallback: {e2}"
+                return [], f"Tavily: {type(e).__name__}: {e}"
         elif self.perplexity_api_key:
             try:
                 perplexity_results = self._search_perplexity(query, max_results)
                 logger.info(f"Retriever: Using Perplexity - Found {len(perplexity_results)} sources")
-                return perplexity_results
+                return perplexity_results, None
             except Exception as e:
                 logger.error(f"Perplexity search failed: {e}")
-                return []
-        return []
+                return [], f"Perplexity: {type(e).__name__}: {e}"
+        return [], "no web search provider configured (TAVILY_API_KEY / PERPLEXITY_API_KEY)"
     
-    def _retrieve_papers_sync(self, query: str, max_results: int) -> List[Dict[str, Any]]:
-        """Synchronous papers search (runs in thread pool)."""
-        if self.arxiv:
-            try:
-                paper_results = self.arxiv.run(query)
-                results = self._parse_arxiv_results(paper_results, max_results)
-                logger.info(f"Retriever: Found {len(results)} papers")
-                return results
-            except Exception as e:
-                logger.error(f"ArXiv search failed: {e}")
-                return []
-        return []
+    def _retrieve_papers_sync(self, query: str, max_results: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+        """Synchronous papers search (runs in thread pool).
+
+        Returns (results, error). An empty list with no error means arXiv
+        genuinely had nothing; an empty list with an error means the channel
+        broke, which is a different thing and must not look the same.
+        """
+        if not self.arxiv:
+            return [], "arXiv client not initialized"
+        try:
+            search = arxiv_sdk.Search(
+                query=query,
+                max_results=max_results,
+                sort_by=arxiv_sdk.SortCriterion.Relevance,
+            )
+            results = [
+                {
+                    "title": paper.title,
+                    "authors": ", ".join(a.name for a in paper.authors[:5]),
+                    "summary": (paper.summary or "").replace("\n", " ").strip(),
+                    "url": paper.entry_id,
+                    "published_date": paper.published.isoformat() if paper.published else "",
+                }
+                for paper in self.arxiv.results(search)
+            ]
+            logger.info(f"Retriever: Found {len(results)} papers")
+            return results, None
+        except Exception as e:
+            logger.error(f"ArXiv search failed: {type(e).__name__}: {e}", exc_info=True)
+            return [], f"arXiv: {type(e).__name__}: {e}"
     
-    def _retrieve_news_sync(self, query: str, max_results: int) -> List[Dict[str, Any]]:
-        """Synchronous news search (runs in thread pool)."""
+    def _retrieve_news_sync(self, query: str, max_results: int) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+        """Synchronous news search (runs in thread pool). Returns (results, error)."""
         if self.tavily:
             try:
                 news_query = f"{query} news 2024"
@@ -216,30 +253,30 @@ class ContextualRetrieverAgent:
                 )
                 results = self._parse_tavily_results(tavily_news, max_results)
                 logger.info(f"Retriever: Found {len(results)} news sources via Tavily")
-                return results
+                return results, None
             except Exception as e:
-                logger.error(f"Tavily news search failed: {e}")
+                logger.error(f"Tavily news search failed: {type(e).__name__}: {e}")
                 # Fallback to Perplexity for news
                 if self.perplexity_api_key:
                     try:
                         news_query_perplexity = f"{query} news 2024"
                         perplexity_news = self._search_perplexity(news_query_perplexity, max_results)
                         logger.info(f"Retriever: Fallback to Perplexity for news - Found {len(perplexity_news)} sources")
-                        return perplexity_news
+                        return perplexity_news, None
                     except Exception as e2:
                         logger.error(f"Perplexity news fallback also failed: {e2}")
-                        return []
-                return []
+                        return [], f"Tavily news: {e}; Perplexity fallback: {e2}"
+                return [], f"Tavily news: {type(e).__name__}: {e}"
         elif self.perplexity_api_key:
             try:
                 news_query = f"{query} news 2024"
                 perplexity_news = self._search_perplexity(news_query, max_results)
                 logger.info(f"Retriever: Using Perplexity for news - Found {len(perplexity_news)} sources")
-                return perplexity_news
+                return perplexity_news, None
             except Exception as e:
                 logger.error(f"Perplexity news search failed: {e}")
-                return []
-        return []
+                return [], f"Perplexity news: {type(e).__name__}: {e}"
+        return [], "no news search provider configured (TAVILY_API_KEY / PERPLEXITY_API_KEY)"
     
     def _retrieve_sequential(self, query: str, max_results: int) -> Dict[str, Any]:
         """Fallback sequential retrieval (original implementation)."""
@@ -252,15 +289,20 @@ class ContextualRetrieverAgent:
             "query": query
         }
         
-        # Web search
-        results["web"] = self._retrieve_web_sync(query, max_results)
-        
-        # Papers search
-        results["papers"] = self._retrieve_papers_sync(query, max_results)
-        
-        # News search
-        results["news"] = self._retrieve_news_sync(query, max_results)
-        
+        errors: Dict[str, str] = {}
+        for channel, fetch in (
+            ("web", self._retrieve_web_sync),
+            ("papers", self._retrieve_papers_sync),
+            ("news", self._retrieve_news_sync),
+        ):
+            items, error = fetch(query, max_results)
+            results[channel] = items
+            if error:
+                errors[channel] = error
+
+        if errors:
+            results["errors"] = errors
+
         return results
     
     def _parse_tavily_results(self, tavily_response: Dict[str, Any], max_results: int) -> List[Dict[str, Any]]:
@@ -300,39 +342,6 @@ class ContextualRetrieverAgent:
                 "published_date": "",
                 "is_answer": True
             })
-        
-        return parsed
-    
-    def _parse_arxiv_results(self, results: str, max_results: int) -> List[Dict[str, str]]:
-        """Parse ArXiv results into structured format."""
-        parsed = []
-        if not results:
-            return parsed
-        
-        # ArXiv wrapper returns formatted string
-        entries = results.split('\n\n')[:max_results]
-        
-        for entry in entries:
-            lines = entry.split('\n')
-            paper_entry = {
-                'title': '',
-                'authors': '',
-                'summary': '',
-                'url': ''
-            }
-            
-            for line in lines:
-                if 'Title:' in line:
-                    paper_entry['title'] = line.replace('Title:', '').strip()
-                elif 'Authors:' in line:
-                    paper_entry['authors'] = line.replace('Authors:', '').strip()
-                elif 'Summary:' in line:
-                    paper_entry['summary'] = line.replace('Summary:', '').strip()
-                elif 'arxiv.org' in line:
-                    paper_entry['url'] = line.strip()
-            
-            if paper_entry['title']:
-                parsed.append(paper_entry)
         
         return parsed
     

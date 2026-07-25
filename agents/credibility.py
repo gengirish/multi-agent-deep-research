@@ -5,7 +5,7 @@ Evaluates the credibility and trustworthiness of sources.
 
 import logging
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES
 
@@ -112,12 +112,17 @@ class SourceCredibilityAgent:
         heuristic_score = self._heuristic_credibility(source, source_type, **kwargs)
         
         # LLM-based evaluation if available
+        llm_score = None
         if self.llm:
             llm_score = self._llm_credibility(source, source_type, **kwargs)
+
+        if llm_score is not None:
             # Combine heuristic and LLM scores (weighted average)
             final_score = (heuristic_score * 0.4) + (llm_score * 0.6)
         else:
-            llm_score = None
+            # No model judgement available — the heuristic stands on its own
+            # rather than being averaged against a placeholder, which used to
+            # drag every source into a narrow band around 0.5.
             final_score = heuristic_score
         
         # Determine credibility level
@@ -136,6 +141,7 @@ class SourceCredibilityAgent:
             "level": level,
             "heuristic_score": round(heuristic_score, 2),
             "llm_score": round(llm_score, 2) if llm_score is not None else None,
+            "llm_scored": llm_score is not None,
             "reasoning": self._generate_reasoning(source, source_type, final_score, level),
             "source_type": source_type
         }
@@ -190,7 +196,7 @@ class SourceCredibilityAgent:
         # Normalize to 0.0-1.0 range
         return max(0.0, min(1.0, score))
     
-    def _llm_credibility(self, source: Dict[str, Any], source_type: str, **kwargs) -> float:
+    def _llm_credibility(self, source: Dict[str, Any], source_type: str, **kwargs) -> Optional[float]:
         """Calculate credibility score using LLM.
         
         Args:
@@ -202,7 +208,7 @@ class SourceCredibilityAgent:
             Credibility score (0.0 to 1.0)
         """
         if not self.llm:
-            return 0.5
+            return None
         
         # Format source information
         source_info = f"""
@@ -251,10 +257,10 @@ Do not include any explanation, just the number.
                 return max(0.0, min(1.0, score / 10.0 if score > 1.0 else score))
             else:
                 logger.warning(f"Could not extract credibility score from LLM response: {response_text}")
-                return 0.5
+                return None
         except Exception as e:
             logger.error(f"LLM credibility evaluation failed: {e}")
-            return 0.5
+            return None
     
     def _generate_reasoning(self, source: Dict[str, Any], source_type: str, 
                            score: float, level: str) -> str:

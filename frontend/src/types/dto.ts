@@ -6,6 +6,13 @@ export interface ResearchData {
   report: string;
   status: string;
   error?: string;
+  /**
+   * Stages that fell back during the run — a failed analyzer, heuristic-only
+   * credibility, an empty retrieval channel. Empty or absent means every
+   * stage ran. Surfaced to the reader so a partial report is never mistaken
+   * for a complete one.
+   */
+  degraded?: string[];
   conversation?: {
     query_id?: string;
     conversation?: Array<{

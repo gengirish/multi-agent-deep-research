@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_insight_llm, INSIGHT_MODEL, TEMPERATURES
+from utils.degraded import unavailable
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,10 @@ class InsightGenerationAgent:
         else:
             self.llm = create_insight_llm()
         if not self.llm:
-            logger.warning("OpenRouter API key not found. Insights will use mock data.")
+            logger.warning(
+                "No insight LLM available. Insights will be reported as "
+                "unavailable rather than substituted."
+            )
     
     def generate(self, analysis: Dict[str, Any], query: str) -> Dict[str, Any]:
         """
@@ -47,7 +51,14 @@ class InsightGenerationAgent:
         logger.info("Insight Generator: Generating insights and hypotheses")
         
         if not self.llm:
-            return self._mock_insights(analysis, query)
+            return self._unavailable("insight LLM not configured")
+
+        if not any(
+            analysis.get(key)
+            for key in ("summary", "key_claims", "contradictions")
+        ):
+            logger.warning("Insight: no analysis to build on — skipping")
+            return self._unavailable("no analysis was available to reason from")
         
         # Format analysis for prompt
         analysis_text = self._format_analysis(analysis)
@@ -129,7 +140,7 @@ REASONING CHAINS:
                 logger.error("Get your API key from: https://openrouter.ai/keys")
                 logger.error("=" * 60)
             
-            return self._mock_insights(analysis, query)
+            return self._unavailable(f"{type(e).__name__}: {error_msg}")
     
     def _format_analysis(self, analysis: Dict[str, Any]) -> str:
         """Format analysis results for the LLM prompt."""
@@ -198,26 +209,18 @@ REASONING CHAINS:
         
         return parsed
     
-    def _mock_insights(self, analysis: Dict[str, Any], query: str) -> Dict[str, Any]:
-        """Return mock insights if LLM is not available."""
+    def _unavailable(self, reason: str) -> Dict[str, Any]:
+        """Return empty, attributable insights when the model can't run.
+
+        Empty rather than plausible — canned hypotheses like "the trend will
+        continue based on current evidence" read as generated insight and
+        conceal the failure that produced them.
+        """
         return {
-            "insights": [
-                "The research reveals significant developments in the field",
-                "Multiple perspectives indicate ongoing evolution",
-                "Recent trends suggest increasing importance"
-            ],
-            "hypotheses": [
-                "Hypothesis 1: The trend will continue based on current evidence",
-                "Hypothesis 2: Multiple factors are driving the observed patterns"
-            ],
-            "trends": [
-                "Trend 1: Increasing adoption and interest",
-                "Trend 2: Convergence of different approaches"
-            ],
-            "reasoning_chains": [
-                "If current evidence holds, then we can expect continued growth because of strong foundational support",
-                "If contradictions are resolved, then consensus will emerge because of converging research"
-            ],
-            "raw_insights": "Mock insights - LLM not configured"
+            "insights": [],
+            "hypotheses": [],
+            "trends": [],
+            "reasoning_chains": [],
+            "raw_insights": unavailable("insight", reason),
         }
 

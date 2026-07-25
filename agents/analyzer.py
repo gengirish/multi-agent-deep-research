@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES
+from utils.degraded import unavailable
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +16,12 @@ class CriticalAnalysisAgent:
     """Analyzes retrieved sources for contradictions, credibility, and key findings."""
     
     def __init__(self, model: str = None, temperature: float = None):
-        """Initialize the analysis agent with LLM via OpenRouter.
+        """Initialize the analysis agent.
         
-        Uses Claude 3.5 Sonnet for strong reasoning capabilities.
+        Uses Claude Sonnet 4.5 for strong reasoning capabilities.
         Default temperature: 0.5 (balanced reasoning).
         """
-        # Use optimized analyzer LLM with Claude 3.5 Sonnet
+        # Use optimized analyzer LLM
         if model or temperature is not None:
             from utils.llm_config import create_llm
             self.llm = create_llm(
@@ -31,7 +32,10 @@ class CriticalAnalysisAgent:
         else:
             self.llm = create_analyzer_llm()
         if not self.llm:
-            logger.warning("OpenRouter API key not found. Analysis will use mock data.")
+            logger.warning(
+                "No analyzer LLM available. Analysis will be reported as "
+                "unavailable rather than substituted."
+            )
     
     def analyze(self, sources: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -45,8 +49,14 @@ class CriticalAnalysisAgent:
         """
         logger.info("Analyzer: Starting analysis of sources")
         
+        if not self._has_sources(sources):
+            # With no sources the model will happily analyze its own priors and
+            # return confident-looking findings with nothing behind them. Refuse.
+            logger.warning("Analyzer: no sources retrieved — skipping analysis")
+            return self._unavailable("no sources were retrieved for this query")
+
         if not self.llm:
-            return self._mock_analysis(sources)
+            return self._unavailable("analyzer LLM not configured")
         
         # Format sources for prompt
         sources_text = self._format_sources(sources)
@@ -108,8 +118,12 @@ KEY CLAIMS:
         
         except Exception as e:
             logger.error(f"Analysis failed: {e}")
-            return self._mock_analysis(sources)
+            return self._unavailable(f"{type(e).__name__}: {e}")
     
+    @staticmethod
+    def _has_sources(sources: Dict[str, Any]) -> bool:
+        return any(sources.get(channel) for channel in ("web", "papers", "news"))
+
     def _format_sources(self, sources: Dict[str, Any]) -> str:
         """Format sources into readable text for the LLM."""
         formatted = []
@@ -178,27 +192,19 @@ KEY CLAIMS:
         
         return parsed
     
-    def _mock_analysis(self, sources: Dict[str, Any]) -> Dict[str, Any]:
-        """Return mock analysis if LLM is not available."""
+    def _unavailable(self, reason: str) -> Dict[str, Any]:
+        """Return an empty, attributable analysis when the model can't run.
+
+        Deliberately empty rather than plausible: placeholder sentences like
+        "multiple stakeholders involved" read as findings and hide the
+        failure, which is how a broken deployment served canned analysis for
+        weeks without anyone noticing.
+        """
         return {
-            "summary": [
-                "Sources provide comprehensive coverage of the topic",
-                "Multiple perspectives identified across different source types",
-                "Recent developments highlighted in news sources"
-            ],
-            "contradictions": [
-                "Some sources present conflicting viewpoints on key aspects"
-            ],
-            "credibility": [
-                "Research papers: High - Peer-reviewed sources",
-                "News sources: Medium - Recent but need verification",
-                "Web sources: Medium - Mixed credibility"
-            ],
-            "key_claims": [
-                "Topic shows significant recent development",
-                "Multiple stakeholders involved",
-                "Ongoing research and discussion"
-            ],
-            "raw_analysis": "Mock analysis - LLM not configured"
+            "summary": [],
+            "contradictions": [],
+            "credibility": [],
+            "key_claims": [],
+            "raw_analysis": unavailable("analyzer", reason),
         }
 
