@@ -1,0 +1,254 @@
+{
+ "query": "What is the TAM for AI coding assistants in 2025?",
+ "sources": {
+  "web": [
+   {
+    "title": "AI-Generated Answer",
+    "url": "",
+    "snippet": "The TAM for AI coding assistants in 2025 was estimated at $3.0\u2013$3.5 billion. The market is expected to grow significantly, reaching $97.9 billion by 2030. Adoption and trust in these tools are increasing, with 41% of code being AI-generated or assisted.",
+    "score": 1.0,
+    "published_date": "",
+    "is_answer": true,
+    "domain_score": 0.0,
+    "sentiment": {
+     "label": "positive",
+     "score": 0.24
+    },
+    "category": "general",
+    "metadata": {
+     "word_count": 41,
+     "char_count": 253,
+     "language": "en"
+    }
+   },
+   {
+    "title": "AI Code Assistants Market Report 2025",
+    "url": "https://www.marketsandmarkets.com/Market-Reports/ai-code-assistants-market-53503659.html",
+    "snippet": "The report for AI Code Assistants Market size was estimated at USD 8.14 billion in 2025 and is projected to reach USD 127.05 billion by 2032, growing at a CAGR of 48.1% from 2025 to 2032. This is due to the adoption of AI-assisted software development techniques in the enterprise space, enhancing speed and consistency. The advancements in code-oriented large language models are enabling the generation of accurate code with multi-language support and compilation error resolution. The adoption of code pilot services, repository awareness, and custom fine-tuned models for enhancing the productivity of developers and modernizing the traditional applications of enterprises is supporting the market. The usage of AI-assisted DevSecOps, code generation as per security policies, and security patch [...] November 2025 : Snyk partnered with Continue to integrate AI-powered security scanning and dependency checks into Continue\u2019s development workflow, enabling real-time vulnerability detection and context-aware fix suggestions directly in the developer\u2019s IDE, CLI, or CI pipeline.\n May 2025 : OpenAI launched an advanced version of its Codex-based coding assistant designed to deliver higher code-generation accuracy, deeper multi-language reasoning, and improved integration for developers building sophisticated AI-augmented software applications. [...] October 2025 : Anthropic and Salesforce expanded their strategic partnership to embed Anthropic\u2019s Claude models directly within Salesforce\u2019s Agentforce 360 platform, delivering trusted, enterprise-grade AI code and workflow assistance.\n November 2025 : IBM announced advancements to Watsonx Code Assistant for Z, adding AI-driven code generation and assembler-language support to help enterprises modernize mainframe applications, automate complex code translation workflows, and accelerate the transformation of mission-critical systems.",
+    "score": 0.82560414,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.04
+    },
+    "category": "news",
+    "metadata": {
+     "domain": "www.marketsandmarkets.com",
+     "path": "/Market-Reports/ai-code-assistants-market-53503659.html",
+     "word_count": 255,
+     "char_count": 1897,
+     "language": "en"
+    }
+   },
+   {
+    "title": "AI Coding Assistant Statistics & Trends [2025]",
+    "url": "https://www.secondtalent.com/resources/ai-coding-assistant-statistics",
+    "snippet": "In 2025, 41% of all code is AI generated or AI assisted, showing that AI now plays a major role in global software workflows.\n 76% of professional developers either use AI coding tools or plan to adopt them soon, with 62% already using them and 14% planning to adopt them.\n 82% of developers use AI coding assistants daily or weekly, which shows these tools are now part of developer productivity routines.\n Developers save 30 to 75% of their time on coding, debugging, and documentation tasks when they use AI assistants, which speeds up project delivery.\n GitHub Copilot users complete 126% more projects per week than manual coders, showing a strong impact on output and efficiency. [...] The AI code generation market was valued at $4.91 billion in 2024 and is expected to reach $30.1 billion by 2032, growing at a 27.1% CAGR.\n According to Microsoft\u2019s 2025 market study, AI investments return an average of 3.5 times the original amount, with 1% of companies seeing up to 8 times returns.\n Less than half (47%) of IT leaders said their AI projects were profitable in 2024, but 62% of organizations plan to increase their AI investments in 2025.\n GitHub\u2019s research shows that improved developer productivity through AI coding assistants could add over $1.5 trillion to the global GDP. [...] In GitHub\u2019s global data, United States developers report the highest support for AI tools at 88%, followed by Brazil (70%), India (61%), and Germany (59%).\n These insights show that the most trusted AI coding assistant tools combine accuracy, collaboration support, and learning capabilities to meet real developer needs.\n\n## Final words\n\nAI coding assistants have changed the way developers and companies build software. These tools now combine generative AI with business automation, helping teams write, test, and deploy code faster and at lower costs. The growth of AI coding assistants shows that automation and human skill can work together to create better results.",
+    "score": 0.81665546,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.03
+    },
+    "category": "research",
+    "metadata": {
+     "domain": "www.secondtalent.com",
+     "path": "/resources/ai-coding-assistant-statistics",
+     "word_count": 320,
+     "char_count": 1967,
+     "language": "en"
+    }
+   },
+   {
+    "title": "Generative Artificial Intelligence Coding Assistants ...",
+    "url": "https://www.businesswire.com/news/home/20250319490646/en/Generative-Artificial-Intelligence-Coding-Assistants-Strategic-Research-Report-2025-Market-to-Reach-%2497.9-Billion-by-2030-at-a-CAGR-of-24.8-Driven-by-Growing-Adoption-of-Low--and-No-Code-Platforms---ResearchAndMarkets.com",
+    "snippet": "Contact Us\n\nMar 19, 2025 1:33 PM Eastern Daylight Time\n\n# Generative Artificial Intelligence Coding Assistants Strategic Research Report 2025: Market to Reach $97.9 Billion by 2030 at a CAGR of 24.8%, Driven by Growing Adoption of Low- and No-Code Platforms - ResearchAndMarkets.com\n\nShare\n\nDUBLIN--(BUSINESS WIRE)--The \"Generative Artificial Intelligence Coding Assistants - Global Strategic Business Report\" has been added to ResearchAndMarkets.com's offering.",
+    "score": 0.8138313,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.0
+    },
+    "category": "research",
+    "metadata": {
+     "domain": "www.businesswire.com",
+     "path": "/news/home/20250319490646/en/Generative-Artificial-Intelligence-Coding-Assistants-Strategic-Research-Report-2025-Market-to-Reach-%2497.9-Billion-by-2030-at-a-CAGR-of-24.8-Driven-by-Growing-Adoption-of-Low--and-No-Code-Platforms---ResearchAndMarkets.com",
+     "word_count": 62,
+     "char_count": 462,
+     "language": "en"
+    }
+   },
+   {
+    "title": "AI Coding Assistant Statistics 2026",
+    "url": "https://uvik.net/blog/ai-coding-assistant-statistics",
+    "snippet": "### How big is the AI coding assistant market?\n\nGartner estimated the AI code assistant market at $3.0\u2013$3.5 billion in 2025. The broader AI code tools market is estimated at $7\u2013$10 billion in 2025\u20132026. Cursor alone reached $2B ARR by early 2026.\n\n### What is the difference between AI coding assistants and AI agents?\n\nAI coding assistants suggest or generate code inline as developers type (like Copilot autocomplete). AI coding agents operate with greater autonomy \u2014 planning across files, running tests, and executing multi-step tasks with minimal human intervention. As of 2025, 52% of developers don\u2019t use agents or stick to simpler tools, and 38% have no plans to adopt agents. (Stack Overflow 2025)\n\nHow useful was this post?\n\nAverage rating 5 / 5. Vote count: 2 [...] ## Developer Trust and Accuracy Statistics\n\nThe most significant finding in AI coding assistant data for 2025\u20132026 is the growing gap between adoption and trust.\n\nOnly 29% of developers trust AI outputs to be accurate, down from 40% in 2024 \u2014 an 11-point decline in a single year. (Stack Overflow 2025)\n\n46% of developers actively distrust the accuracy of AI tools. Only 3% report \u201chigh trust\u201d in the output. (Stack Overflow 2025)\n\nPositive sentiment toward AI tools dropped to 60%, down from over 70% in both 2023 and 2024. Professional developers show slightly higher favorability (61%) than those learning to code (53%). (Stack Overflow 2025)",
+    "score": 0.76490957,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.09
+    },
+    "category": "news",
+    "metadata": {
+     "domain": "uvik.net",
+     "path": "/blog/ai-coding-assistant-statistics",
+     "word_count": 233,
+     "char_count": 1422,
+     "language": "en"
+    }
+   },
+   {
+    "title": "The BEST AI Coding Assistants | July 2025",
+    "url": "https://www.youtube.com/watch?v=Lon0oRRqB6A",
+    "snippet": "Client, etc. Augment code still at the bottom. Uh GitHub Copilot's at the very bottom. What's changed is GitHub Copilot has like jumped up significantly. So very surprising uh with Claude 4 in particular. Uh but some of the other ones through code and client kind of stayed in the middle. That that's about where they were. Uh Windsurf and Cursor I think dropped slightly uh in the particular this particular month. So, let's go back to this here. And you can see Trey and Zed still relatively high performers. They do incredibly well. And then Warp.dev. I've actually becoming more and more attached to warp.dev's um uh terminal to be honest with you. It's so nice just to have that little bit of AI autocomplete and like niceness in there. Uh and its coding ability is not bad. So, I'm excited [...] is amazing. It's super fast. It's very very affordable. $50 a month. I'm grandfathered in at 30 which I'm very fortunate for. Augment co codes task list. It's just great across the board. It's really great. I have it as number three because the amount of code that I'm creating with augment code has dropped. And what has it been surpassed with? Open code. And open code I have found over the last week or so. Um I'm going be totally honest here. I have not used this the entire month of June uh going into July, but I have used it significantly and I have come to really like CLI based coding tools. Open code allows me to switch to a bunch of different models. I would love to be able to do deep dive analysis to understand how models other than claude work on it, but it works exceptionally well [...] # The BEST AI Coding Assistants | July 2025\n## GosuCoder\n27100 subscribers\n1168 likes\n\n### Description\n30512 views\nPosted: 1 Jul 2025\nThis month I add in Aider, Codex CLI, Gemini CLI, OpenCode and others to the list of AI Coding Assistants that I test. And yes Claude Code is also tested along with a total of 17 AI assistants.\n\nYou can see the results on \n\nLinks:\n\ud83e\uddd1\u200d\ud83d\udcbbMy Recommended AI Engineer course is Scrimba: \n\nMy Links \ud83d\udd17\n\ud83d\udc49\ud83c\udffb Subscribe:   \n\ud83d\udc49\ud83c\udffb Twitter/X:  \n\ud83d\udc49\ud83c\udffb LinkedIn:  \n\ud83d\udc49\ud83c\udffb Discord: \n\nMy computer specs\nGPU: RTX 5090 (sometimes a AMD 7900xtx)\nCPU: 7800x3d\nRAM: DDR5 6000Mhz\n\nMedia/Sponsorship Inquiries \u2705 \ngosucoderyt@gmail.com",
+    "score": 0.72395444,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.02
+    },
+    "category": "news",
+    "metadata": {
+     "domain": "www.youtube.com",
+     "path": "/watch",
+     "word_count": 401,
+     "char_count": 2238,
+     "language": "en"
+    }
+   }
+  ],
+  "papers": [],
+  "news": [
+   {
+    "title": "AI-Generated Answer",
+    "url": "",
+    "snippet": "The TAM for AI coding assistants in 2025 is estimated at USD 2.5-5.0 billion. The market is expected to grow rapidly, reaching USD 97.9 billion by 2030. This growth is driven by enterprise adoption and technological advancements.",
+    "score": 1.0,
+    "published_date": "",
+    "is_answer": true,
+    "domain_score": 0.0,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.0
+    },
+    "category": "technical",
+    "metadata": {
+     "word_count": 37,
+     "char_count": 229,
+     "language": "en"
+    }
+   },
+   {
+    "title": "AI Code Assistants Market Report 2025",
+    "url": "https://www.marketsandmarkets.com/Market-Reports/ai-code-assistants-market-53503659.html",
+    "snippet": "The report for AI Code Assistants Market size was estimated at USD 8.14 billion in 2025 and is projected to reach USD 127.05 billion by 2032, growing at a CAGR of 48.1% from 2025 to 2032. This is due to the adoption of AI-assisted software development techniques in the enterprise space, enhancing speed and consistency. The advancements in code-oriented large language models are enabling the generation of accurate code with multi-language support and compilation error resolution. The adoption of code pilot services, repository awareness, and custom fine-tuned models for enhancing the productivity of developers and modernizing the traditional applications of enterprises is supporting the market. The usage of AI-assisted DevSecOps, code generation as per security policies, and security patch [...] October 2025 : Anthropic and Salesforce expanded their strategic partnership to embed Anthropic\u2019s Claude models directly within Salesforce\u2019s Agentforce 360 platform, delivering trusted, enterprise-grade AI code and workflow assistance.\n November 2025 : IBM announced advancements to Watsonx Code Assistant for Z, adding AI-driven code generation and assembler-language support to help enterprises modernize mainframe applications, automate complex code translation workflows, and accelerate the transformation of mission-critical systems. [...] November 2025 : Snyk partnered with Continue to integrate AI-powered security scanning and dependency checks into Continue\u2019s development workflow, enabling real-time vulnerability detection and context-aware fix suggestions directly in the developer\u2019s IDE, CLI, or CI pipeline.\n May 2025 : OpenAI launched an advanced version of its Codex-based coding assistant designed to deliver higher code-generation accuracy, deeper multi-language reasoning, and improved integration for developers building sophisticated AI-augmented software applications.",
+    "score": 0.8080827,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.04
+    },
+    "category": "news",
+    "metadata": {
+     "domain": "www.marketsandmarkets.com",
+     "path": "/Market-Reports/ai-code-assistants-market-53503659.html",
+     "word_count": 255,
+     "char_count": 1897,
+     "language": "en"
+    }
+   },
+   {
+    "title": "Generative Artificial Intelligence Coding Assistants ...",
+    "url": "https://www.businesswire.com/news/home/20250319490646/en/Generative-Artificial-Intelligence-Coding-Assistants-Strategic-Research-Report-2025-Market-to-Reach-%2497.9-Billion-by-2030-at-a-CAGR-of-24.8-Driven-by-Growing-Adoption-of-Low--and-No-Code-Platforms---ResearchAndMarkets.com",
+    "snippet": "Contact Us\n\nMar 19, 2025 1:33 PM Eastern Daylight Time\n\n# Generative Artificial Intelligence Coding Assistants Strategic Research Report 2025: Market to Reach $97.9 Billion by 2030 at a CAGR of 24.8%, Driven by Growing Adoption of Low- and No-Code Platforms - ResearchAndMarkets.com\n\nShare\n\nDUBLIN--(BUSINESS WIRE)--The \"Generative Artificial Intelligence Coding Assistants - Global Strategic Business Report\" has been added to ResearchAndMarkets.com's offering.",
+    "score": 0.7707586,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.0
+    },
+    "category": "research",
+    "metadata": {
+     "domain": "www.businesswire.com",
+     "path": "/news/home/20250319490646/en/Generative-Artificial-Intelligence-Coding-Assistants-Strategic-Research-Report-2025-Market-to-Reach-%2497.9-Billion-by-2030-at-a-CAGR-of-24.8-Driven-by-Growing-Adoption-of-Low--and-No-Code-Platforms---ResearchAndMarkets.com",
+     "word_count": 62,
+     "char_count": 462,
+     "language": "en"
+    }
+   },
+   {
+    "title": "AI Code Assistant Market Size, Share | CAGR of 24%",
+    "url": "https://market.us/report/ai-code-assistant-market",
+    "snippet": "## US Market Size\n\n  The U.S. AI Code Assistant Market was valued at USD 1.8 Billion in 2024 and is anticipated to reach approximately USD 12.4 Billion by 2034, expanding at a compound annual growth rate (CAGR) of 21.5% during the forecast period from 2025 to 2034.\n\n  In 2024, North America held a dominant market position, capturing more than a 38% share, holding USD 2.0 billion in revenue. This leadership can be attributed to the widespread integration of AI technologies across software engineering workflows in the region. [...] Quick Navigation\n\n  + Report Overview\n  + Key Insight Summary\n  + US Market Size\n  + By Function Analysis\n  + By Deployment Analysis\n  + By Application Analysis\n  + Key Market Segments\n  + Emerging Trend\n  + Driver\n  + Restraint\n  + Market Opportunity\n  + Challenge\n  + Key Player Analysis\n  + Recent Developments\n  + Report Scope\n\n  ## Report Overview\n\n  The Global AI Code Assistant Market size is expected to be worth around USD 47.3 Billion By 2034, from USD 5.5 billion in 2024, growing at a CAGR of 24% during the forecast period from 2025 to 2034. In 2024, North America held a dominant market position, capturing more than a 38% share, holding USD 2.0 Billion revenue. [...] ### Market Scope and Forecast\n\n  | Report Features | Description |\n   --- |\n  | Market Value (2024) | USD 5.5 Bn |\n  | Forecast Revenue (2034) | USD 47.3 Bn |\n  | CAGR (2025-2034) | 24% |\n  | Largest market in 2024 | North America [38% market share] |\n\n  In terms of demand analysis, more than 60% of developers report at least a 25% increase in coding speed, with 8% indicating that their output has doubled. These efficiencies are attributed to features such as intelligent auto-completion, real-time testing support, and error detection. The benefits are being felt acutely in SMEs and startups, where resource constraints make such productivity tools vital.",
+    "score": 0.76951396,
+    "published_date": "",
+    "domain_score": 0.5,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.0
+    },
+    "category": "news",
+    "metadata": {
+     "domain": "market.us",
+     "path": "/report/ai-code-assistant-market",
+     "word_count": 311,
+     "char_count": 1880,
+     "language": "en"
+    }
+   },
+   {
+    "title": "All the funding deals in the AI code assistant market",
+    "url": "https://newmarketpitch.com/blogs/news/ai-code-assistant-list-deals",
+    "snippet": "| Cursor / Anysphere | Offers an AI code editor with completion, chat, codebase context, and coding agents. | $2,300.0M | Q4 2025 | TechCrunch |\n| Cline | Offers an open-source AI coding agent for writing, editing, and refactoring large codebases. | $32.0M | Q3 2025 | Cline |\n| Cursor / Anysphere | Offers an AI code editor with inline completion, chat, context, and agent-based coding tools. | $900.0M | Q2 2025 | Crunchbase News |\n| Tabnine | Provides enterprise AI code completion and chat with privacy and governance controls. | $8.0M | Q2 2025 | CB Insights |\n| Continue | Offers customizable open-source AI autocomplete, chat, and editing tools for popular development environments. | $3.0M | Q1 2025 | TechCrunch | [...] | Name | What they do | Amount in $ | Quarter | Source(s) |\n ---  --- \n| 8090 | Provides an AI software factory that helps enterprise teams build and update software. | $135.0M | Q2 2026 | 8090, Business Wire |\n| Niteshift | Provides cloud development environments where teams can run and manage AI coding agents. | $7.0M | Q2 2026 | Access Newswire, TechCrunch |\n| Crafting | Provides infrastructure where developers and AI agents can write, test, and ship code together. | $5.5M | Q1 2026 | TMCnet |\n| Entire | Records the prompts, context, and decisions behind code created with AI coding tools. | $60.0M | Q1 2026 | Axios |\n| Kilo Code | Offers an open-source AI coding agent for IDE, command-line, and cloud workflows. | $8.0M | Q4 2025 | Business Wire | [...] | PearAI | Offers an open-source AI code editor that combines several coding tools in one workflow. | $1.0M | Q4 2024 | TechCrunch |\n| Cursor / Anysphere | Offers an AI code editor that helps developers write, edit, and understand code. | $100.0M | Q4 2024 | TechCrunch |\n| Poolside | Builds AI models and coding assistants for enterprise software development teams. | $500.0M | Q4 2024 | PRWeb |\n| Qodo / CodiumAI | Provides AI tools for code generation, testing, reviews, documentation, and software quality. | $40.0M | Q3 2024 | PR Newswire |\n| Supermaven | Offers fast AI code completion, developer chat, and codebase navigation tools. | $12.0M | Q3 2024 | Supermaven |",
+    "score": 0.7463059,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.0
+    },
+    "category": "news",
+    "metadata": {
+     "domain": "newmarketpitch.com",
+     "path": "/blogs/news/ai-code-assistant-list-deals",
+     "word_count": 392,
+     "char_count": 2168,
+     "language": "unknown"
+    }
+   },
+   {
+    "title": "AI Coding Assistant Tools Global Market Insights 2025, Analysis and Forecast to 2030, by Market Participants, Regions, Technology, Application",
+    "url": "https://www.researchandmarkets.com/reports/6174785/ai-coding-assistant-tools-global-market",
+    "snippet": "reasoning for bug triage. The sector's dynamism stems from seamless integrations with version control and CI/CD pipelines, fostering collaborative workflows while addressing skill gaps in an industry facing 1-2 million annual vacancies. By 2025, the global AI coding assistant tools market is estimated to reach a value of USD 2.5-5.0 billion, highlighting its explosive ascent amid the broader AI software boom. The market is forecasted to surge at a compound annual growth rate (CAGR) of 30.0%-60.0% through 2030, propelled by enterprise-scale adoptions, open-source evolutions, and multimodal capabilities like voice-driven coding, though moderated by hallucination mitigations and ethical governance. [...] Anysphere's Cursor, at $100-200 million revenue projections for 2025, offers an AI-native IDE with $2.6 billion valuation, prioritizing seamless editing for SMEs.\n Cognition innovates via Cascade and Devin autonomous agents, with the July 14, 2025, Windsurf acquisition - encompassing $82 million ARR IP - enhancing agentic IDEs for end-to-end dev in large firms.\n Replit's GhostWriter embeds collaborative AI in browser-based REPLs, ideal for individual learners with real-time multiplayer coding.\n Augment's Augment Code focuses on augmentation layers for legacy migrations, targeting enterprise brownfield projects.\n Alibaba's Lingma, built on proprietary Tongyi models, streamlines e-commerce backend scaling for APAC giants.",
+    "score": 0.7213709,
+    "published_date": "",
+    "domain_score": 0.6,
+    "sentiment": {
+     "label": "neutral",
+     "score": 0.0
+    },
+    "category": "research",
+    "metadata": {
+     "domain": "www.researchandmarkets.com",
+     "path": "/reports/6174785/ai-coding-assistant-tools-global-market",
+     "word_count": 196,
+     "char_count": 1440,
+     "language": "en"
+    }
+   }
+  ],
+  "query": "What is the TAM for AI coding assistants in 2025?",
+  "metadata": {
+   "total_sources": 12,
+   "enrichment_applied": true,
+   "enrichment_timestamp": "2026-07-25T17:13:22.859193"
+  }
+ }
+}
