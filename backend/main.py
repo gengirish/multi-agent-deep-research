@@ -144,6 +144,9 @@ class ResearchResponse(BaseModel):
     status: str
     error: Optional[str] = None
     conversation: Optional[Dict[str, Any]] = None  # Agent conversation log
+    # Stages that silently fell back (mock analysis, heuristic-only
+    # credibility, an empty retrieval channel). Empty means a fully live run.
+    degraded: List[str] = []
 
 class HealthResponse(BaseModel):
     status: str
@@ -295,6 +298,7 @@ async def research(
             status="success" if not result.get("error") else "error",
             error=result.get("error", ""),
             conversation=result.get("conversation"),
+            degraded=result.get("degraded") or [],
         )
 
     except Exception as e:
@@ -371,7 +375,8 @@ async def research_stream(
                 "credibility": credibility_result,
                 "report": report_result,
                 "status": "success",
-                "conversation": full_result.get("conversation")
+                "conversation": full_result.get("conversation"),
+                "degraded": full_result.get("degraded") or [],
             }
             
             # Attach the job_id to the final event so the frontend can store

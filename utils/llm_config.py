@@ -3,10 +3,10 @@ LLM configuration — multi-provider routing.
 
 Default routing:
     Enrichment   → Groq Llama 3.3 70B (sub-second metadata extraction)
-    Analyzer     → Claude 3.5 Sonnet via OpenRouter (strong reasoning)
+    Analyzer     → Claude Sonnet 4.5, native Anthropic (strong reasoning)
     Insight      → GPT-4o via OpenRouter (creative pattern matching)
-    Reporter     → Claude 3.5 Haiku via OpenRouter (fast formatting)
-    Credibility  → Claude 3.5 Sonnet via OpenRouter (reasoning over sources)
+    Reporter     → Groq Llama 3.3 70B (formatting-heavy, low cognitive load)
+    Credibility  → Claude Sonnet 4.5, native Anthropic (reasoning over sources)
 
 Each agent stage gets its own helper so swapping a provider is a one-line
 change. Overridable via env vars (e.g. RETRIEVER_MODEL=openai/gpt-4o-mini
@@ -16,6 +16,10 @@ Providers:
     - OpenRouter (default)  → langchain-openai pointed at openrouter.ai
     - Groq                  → langchain-groq (sub-second Llama inference)
     - Google                → langchain-google-genai (Gemini, fallback)
+    - Anthropic             → langchain-anthropic (native Claude access)
+
+Every native provider falls back to OpenRouter with the same fully-qualified
+model name, so one missing key never takes the workflow down.
 """
 
 from __future__ import annotations
@@ -39,6 +43,7 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_API_KEY = os.getenv("OPEN_ROUTER_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # ---------------------------------------------------------------------------
 # Per-stage model selection
@@ -46,12 +51,16 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # The `provider/model` prefix encodes which native SDK we route through:
 #   groq/...      → langchain-groq
 #   google/...    → langchain-google-genai
+#   anthropic/... → langchain-anthropic
 #   *             → OpenRouter (langchain-openai with custom base_url)
 
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "anthropic/claude-3-5-sonnet")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "anthropic/claude-sonnet-4-5")
 # Retrieval-stage metadata + sentiment — Groq Llama 3.3 70B for sub-second.
 RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile")
-ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-3-5-sonnet")
+# Claude 3.5 slugs were retired from OpenRouter, which silently dropped the
+# analyzer and credibility stages to their mock/heuristic fallbacks. Routed
+# natively via ANTHROPIC_API_KEY now, with OpenRouter still the fallback.
+ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-sonnet-4-5")
 INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "openai/gpt-4o")
 # Report compilation is formatting-heavy / low cognitive load — switch to
 # Groq Llama 3.3 70B for ~10x cost reduction vs Claude 3.5 Haiku and
@@ -151,6 +160,38 @@ def _build_google(model_name: str, temperature: float, max_tokens: Optional[int]
         return None
 
 
+def _build_anthropic(model_name: str, temperature: float, max_tokens: Optional[int]):
+    if not ANTHROPIC_API_KEY:
+        logger.warning(
+            "ANTHROPIC_API_KEY not set — falling back to OpenRouter for Anthropic "
+            f"model {model_name}"
+        )
+        return None
+    try:
+        from langchain_anthropic import ChatAnthropic  # type: ignore
+    except ImportError:
+        logger.warning(
+            "langchain-anthropic not installed. "
+            "`pip install langchain-anthropic>=0.3.0`. Falling back to OpenRouter."
+        )
+        return None
+
+    kwargs: dict[str, Any] = {
+        "model": model_name,
+        "temperature": temperature,
+        "anthropic_api_key": ANTHROPIC_API_KEY,
+    }
+    # ChatAnthropic requires max_tokens, unlike the other providers.
+    kwargs["max_tokens"] = max_tokens or 2000
+    try:
+        llm = ChatAnthropic(**kwargs)
+        logger.info(f"LLM initialized via Anthropic: {model_name} (temp={temperature})")
+        return llm
+    except Exception as e:
+        logger.error(f"Anthropic init failed: {e}. Falling back to OpenRouter.")
+        return None
+
+
 def _build_openrouter(model: str, temperature: float, max_tokens: Optional[int]):
     """OpenRouter call. Expects fully-qualified model (`provider/name`)."""
     if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_openrouter_key_here":
@@ -209,6 +250,12 @@ def create_llm(
 
     if provider == "google":
         llm = _build_google(native_name, temperature, max_tokens)
+        if llm is not None:
+            return llm
+        # Fall through to OpenRouter
+
+    if provider == "anthropic":
+        llm = _build_anthropic(native_name, temperature, max_tokens)
         if llm is not None:
             return llm
         # Fall through to OpenRouter

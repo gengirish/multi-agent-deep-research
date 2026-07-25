@@ -16,6 +16,9 @@ from agents.report_builder import ReportBuilderAgent
 from agents.credibility import SourceCredibilityAgent
 from agents.credibility_enhanced import EnhancedCredibilityAgent
 from utils.agent_logger import get_agent_logger
+from utils.degraded import detect_degradation
+
+logger = logging.getLogger(__name__)
 
 # Optional RAG import
 try:
@@ -25,8 +28,6 @@ except ImportError:
     logger.warning("RAG service not available (chromadb not installed)")
     RAG_AVAILABLE = False
     get_rag_service = None
-
-logger = logging.getLogger(__name__)
 
 
 class ResearchState(TypedDict, total=False):
@@ -421,7 +422,14 @@ class ResearchWorkflow:
             # Include conversation data in result
             if conversation_data.get("status") != "no_active_conversation":
                 result["conversation"] = conversation_data
-            
+
+            # Name any stage that silently fell back, so a degraded run is
+            # never presented as a healthy one.
+            degraded = detect_degradation(result)
+            if degraded:
+                logger.warning("Run completed degraded: " + "; ".join(degraded))
+            result["degraded"] = degraded
+
             return result
         except Exception as e:
             logger.error(f"Workflow execution failed: {e}")
