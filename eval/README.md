@@ -37,25 +37,22 @@ which is the point of the comparison. It uses the strongest provider available �
 baseline is a fair fight; override with `BASELINE_MODEL`. Without any key it is
 skipped and the multi-agent numbers still run.
 
-## Measured run — 25 Jul 2026
+## Measured run — 26 Jul 2026 (fixed pipeline)
 
-6 queries against the live deployment (`multi-agent-deep-research-api.fly.dev`),
-full detail in
-[`results/eval-live-vs-baseline.json`](results/eval-live-vs-baseline.json):
+6 queries against the live deployment, with every stage running for real
+(`degraded: []` on all of them). Full detail in
+[`results/eval-live-fixed.json`](results/eval-live-fixed.json).
 
 | Metric | Value |
 | --- | --- |
-| Time to cited report | 6.22 s mean, 4.41 s median, 3.64–16.16 s range |
-| Sources retrieved per report | 12 (6 web + 6 news + 0 papers) |
-| Distinct domains per report | 8.3 |
-| Citations per report | 9 |
-| Citation grounding rate | **100%** (54 of 54) |
-| Cited URLs that resolve | 92.6% (50 of 54) |
-| Report length | 694 words mean |
-
-The 16.16 s outlier is the first query of the run — a cold Fly.io machine.
-An earlier run of the same 6 queries on a warm machine averaged 7.89 s
-([`results/eval-live.json`](results/eval-live.json)).
+| Time to cited report | 48.63 s mean, 43.5–59.4 s range |
+| Sources retrieved per report | 17 (6 web + 5 papers + 6 news) |
+| Distinct domains per report | 8.6 |
+| Citations per report | 12.8 |
+| Citation grounding rate | 96.9% (62 of 64) |
+| Cited URLs that resolve | 100% (64 of 64) |
+| Credibility spread | 6 high / 2.8 medium / 8.2 low, mean 0.64 |
+| Contradictions flagged per report | 5.4 |
 
 ### Ablation: single LLM, no retrieval
 
@@ -64,92 +61,111 @@ cited report, with no retrieval and no verification:
 
 | Metric | Multi-agent | Single LLM |
 | --- | --- | --- |
-| Time to report (mean) | 6.22 s | 20.1 s |
-| Citations produced | 54 | 37 |
-| Citations grounded in a retrieved source | **100%** | **0%** |
-| Cited URLs that resolve | 92.6% (50/54) | 64.9% (24/37) |
+| Time to report (mean) | 48.63 s | 20.06 s |
+| Citations produced | 64 | 35 |
+| Citations grounded in a retrieved source | **96.9%** | **0%** |
+| Cited URLs that resolve | 100% (64/64) | 65.7% (23/35) |
 
-Two things fall out of this. The single LLM cites fewer sources and takes three
-times as long, because it writes prose where the pipeline assembles retrieved
-material. More importantly, **13 of the 37 URLs it cited do not resolve** — the
-hallucinated-citation failure, measured rather than asserted. None of the
-pipeline's 54 citations are invented, because the reporter can only cite what
-the retriever handed it; the 4 that don't resolve are live sources behind
-bot-blocking or since-moved pages, not fabrications.
+**12 of the 35 URLs the single model cited do not resolve.** That is the
+hallucinated-citation failure, measured rather than asserted.
 
-The grounding rate is a structural property, not a quality score: it says
-citations are real, not that the report is good. Read it alongside the
-credibility distribution, not instead of it.
+Read the rest honestly, because the numbers cut both ways:
 
-## What the measurement exposed
+- The pipeline is **2.4× slower**. It retrieves 17 sources, scores each one,
+  and runs a separate analysis pass; the single model writes from memory.
+  Latency is the price of grounding, not an implementation defect.
+- Grounding is **96.9%, not 100%** — 2 of 64 citations pointed somewhere the
+  retriever never fetched. The report model occasionally reaches for a URL of
+  its own. This is the honest ceiling of "ground by construction" without a
+  verification pass that rejects unmatched citations, and it is the strongest
+  argument for building one.
+- Grounding rate is a structural property, not a quality score: it says
+  citations are real, not that the report is right. Read it alongside the
+  credibility distribution, not instead of it.
 
-Three findings that the numbers above surfaced. The first two are fixed in the
-code — see [What changed](#what-changed) — but the fixes only reach the live
-deployment once its secrets and image are updated.
+### Comparison with the pre-fix run
 
-**1. The deployed backend is serving mock analysis.** Every response carries
-`analysis.raw_analysis == "Mock analysis - LLM not configured"` and
-`insights.raw_insights == "Mock insights - LLM not configured"`. The analyzer
-([`agents/analyzer.py:181`](../agents/analyzer.py#L181)) and insight generator
-([`agents/insight_generator.py:201`](../agents/insight_generator.py#L201)) are
-returning their canned fallbacks, so the "key findings", "contradictions",
-hypotheses and trends in every live report are fixed strings, identical across
-queries. Retrieval and report generation (both Groq-routed) are genuinely live;
-everything routed through OpenRouter is not.
+The same harness against the same deployment before the mock-analysis fix
+([`results/eval-live-vs-baseline.json`](results/eval-live-vs-baseline.json)):
 
-Contributing cause: `ANALYZER_MODEL` defaults to `anthropic/claude-3-5-sonnet`
-([`utils/llm_config.py:54`](../utils/llm_config.py#L54)), and OpenRouter no
-longer lists **any** Claude 3.5 slug — verified against
-`https://openrouter.ai/api/v1/models`. `INSIGHT_MODEL` (`openai/gpt-4o`) is
-still a valid slug but also falls back, which points at a key- or
-credit-level failure on top of the stale model id.
+| Metric | Before (mock analysis) | After |
+| --- | --- | --- |
+| Time to cited report | 6.22 s | 48.63 s |
+| Sources per report | 12 (0 papers) | 17 (5 papers) |
+| Contradictions per report | 1 (the same canned string every time) | 5.4, source-attributed |
+| Credibility: high / medium / low | 0 / 1 / 11 | 6 / 2.8 / 8.2 |
+| Citations per report | 9 | 12.8 |
 
-Because the credibility agent's LLM leg fails the same way, every source scores
-`llm_score` of exactly 0.5 — the failure constant from
-[`agents/credibility.py:257`](../agents/credibility.py#L257) — which is weighted
-0.6 and drags every source into a 0.52–0.57 band. That is why the measured run
-reports a 0.55 mean credibility score with 11 of 12 sources labelled "Low":
-the label is an artifact of the failure, not a judgement about the sources.
+The old 6-second latency was the speed of skipping the work. Any number taken
+from a run before 26 Jul 2026 describes the degraded pipeline.
 
-**Do not put the credibility or contradiction numbers from this run on a slide.**
-The grounding, latency, source-count and URL-resolution numbers are unaffected —
-they come from retrieval and report assembly, which work.
+### Known reliability issue
 
-**2. The arXiv channel returns nothing in production.** `papers` was 0 across
-all 6 queries even for the RAG-techniques query, which should hit arXiv
-squarely. `arxiv>=2.1.0` is in `requirements.txt`, so this is a runtime
-failure inside `_retrieve_papers_sync`, silently swallowed
-([`agents/retriever.py:192`](../agents/retriever.py#L192)).
+One of the 6 queries timed out at 900 s during the run and had to be retried;
+the retry succeeded in 91.8 s. Slow rather than broken, but the tail latency
+is real and worth a timeout budget before this is put in front of users.
 
-**3. Every failure path is silent.** Mock analysis, heuristic-only credibility
-and an empty paper channel all return HTTP 200 with a normal-looking report.
-Nothing in the API response distinguished a fully-live run from a degraded one.
+## What the measurement exposed, and what was done about it
 
-## What changed
+All of the following were found by running the harness against the live
+deployment. All are fixed and deployed as of 26 Jul 2026.
 
-**Native Anthropic routing, and a model id that exists.** `utils/llm_config.py`
-gained an `anthropic/...` provider branch (`_build_anthropic`, via
-`langchain-anthropic`) alongside the existing Groq and Google ones, and the
-analyzer/credibility default moved from the retired `anthropic/claude-3-5-sonnet`
-to `anthropic/claude-sonnet-4-5`. OpenRouter remains the fallback for every
-provider, so a missing native key still degrades rather than breaks. Set
-`ANTHROPIC_API_KEY` to use the native path.
+**1. The deployment was serving mock analysis.** Every response carried
+`analysis.raw_analysis == "Mock analysis - LLM not configured"` and the
+matching insight marker. The "key findings", "contradictions", hypotheses and
+trends in every live report were fixed strings, byte-identical across queries.
+Retrieval and report generation (Groq-routed) were live; everything routed
+through OpenRouter was not.
 
-**A `degraded` field on the response.** `utils/degraded.py` inspects a finished
-run and names the stages that fell back — mock analysis, mock insights,
-credibility scores pinned to the 0.5 failure constant, or an empty retrieval
-channel. `ResearchWorkflow.run()` attaches it and logs a warning;
-`ResearchResponse.degraded` carries it to the client. An empty list means a
-fully live run. The eval harness records it per query.
+Cause: `ANALYZER_MODEL` defaulted to `anthropic/claude-3-5-sonnet`, and
+OpenRouter no longer lists **any** Claude 3.5 slug — verified against
+`https://openrouter.ai/api/v1/models`. The credibility agent's LLM leg failed
+the same way, returning its 0.5 failure constant for every source, which was
+weighted 0.6 and dragged all sources into a 0.52–0.57 band. The reported "11
+of 12 sources are Low credibility" was an artifact of the failure, not a
+judgement.
+
+*Fixed by* native Anthropic routing (`_build_anthropic` via
+`langchain-anthropic`) and a model id that exists (`anthropic/claude-sonnet-4-5`).
+OpenRouter remains the fallback for every provider, so a missing native key
+degrades rather than breaks.
+
+**2. The arXiv channel returned nothing.** `papers` was 0 across all 6 queries,
+including one squarely about RAG research. The real exception, once surfaced,
+was `AttributeError: 'Search' object has no attribute 'results'` — LangChain's
+`ArxivAPIWrapper` calls `Search.results()`, removed in `arxiv` 2.2+, so the
+wrapper fails against every current version.
+
+*Fixed by* calling the `arxiv` SDK client directly. This also yields
+`entry_id` as a real URL; the wrapper's formatted-string output contained no
+URLs at all, so papers could never have been cited even when retrieval worked.
+Now 5 papers per report, cited and resolving.
+
+**3. Every failure path was silent, and some fabricated.** Mock analysis,
+heuristic-only credibility and an empty channel all returned HTTP 200 with a
+normal-looking report. Worse, the fallbacks produced *plausible* content —
+"multiple stakeholders involved", "the trend will continue based on current
+evidence" — that reads as findings.
+
+*Fixed by* making every fallback empty and attributable: each carries an
+`[unavailable] <stage>: <reason>` marker with the exception that caused it,
+`utils/degraded.py` names the affected stages, `ResearchWorkflow.run()`
+attaches the list, and both API paths return it. The UI renders it as a banner
+above the report.
+
+**4. A report was generated from zero sources.** Found while testing the
+retriever refactor: handed no sources at all, the report model wrote a fluent,
+confident, entirely ungrounded report from its own priors — precisely the
+failure this project exists to prevent, in the product that exists to prevent
+it.
+
+*Fixed by* refusing. The analyzer, insight generator and reporter now
+short-circuit when there is nothing to work from, and the response says what
+failed instead.
 
 Also fixed in passing: `orchestration/coordinator.py` called `logger.warning`
 in its RAG `except ImportError` handler before `logger` was defined, so a
-genuine import failure would have raised `NameError` instead of the intended
-warning. The logger is now initialized before the try block.
-
-Finding 2 (arXiv returning nothing) is **not** fixed — the failure is inside
-`_retrieve_papers_sync` and needs the real exception, which the current
-`except` swallows.
+genuine import failure would have raised `NameError` instead of the warning.
 
 ## Verifying the stages are live
 
@@ -162,8 +178,8 @@ python eval/verify_stages.py            # uses eval/fixtures/sources.json
 ```
 
 With `ANTHROPIC_API_KEY` set and the routing fix in place, all three report
-`LIVE`: `llm_score` values spread across 0.3–0.6 instead of pinning to 0.5, and
-the analyzer returns specific, source-derived contradictions — e.g. *"2025 TAM
-estimates conflict significantly: Gartner estimates $3.0–3.5B, MarketsandMarkets
-..."* — in place of the canned *"Some sources present conflicting viewpoints on
-key aspects"*.
+`LIVE`: `llm_score` values spread across 0.3–0.85 instead of pinning to 0.5,
+and the analyzer returns specific, source-attributed contradictions — e.g.
+*"Source 5 explicitly states you cannot completely prevent hallucinations,
+while Sources 1 and 4 imply they can be substantially reduced"* — in place of
+the canned *"Some sources present conflicting viewpoints on key aspects"*.

@@ -1,0 +1,767 @@
+{
+  "meta": {
+    "timestamp": "2026-07-26T01:33:25+00:00",
+    "mode": "api",
+    "api_url": "https://multi-agent-deep-research-api.fly.dev",
+    "query_count": 6,
+    "url_check_enabled": true
+  },
+  "multi_agent": {
+    "runs": [
+      {
+        "query": "What is the total addressable market for AI coding assistants in 2025?",
+        "status": "error",
+        "error": "ReadTimeout: HTTPSConnectionPool(host='multi-agent-deep-research-api.fly.dev', port=443): Read timed out. (read timeout=900)",
+        "latency_s": null
+      },
+      {
+        "query": "Who are the main competitors in the AI research assistant space and how do they differ?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 59.37,
+        "sources": {
+          "web": 6,
+          "papers": 5,
+          "news": 6,
+          "total": 17,
+          "distinct_domains": 8
+        },
+        "report": {
+          "words": 682,
+          "claim_lines": 12
+        },
+        "citations": {
+          "total": 14,
+          "grounded_exact": 14,
+          "grounded_same_domain": 0,
+          "ungrounded": 0,
+          "grounding_rate": 1.0,
+          "ungrounded_urls": []
+        },
+        "credibility": {
+          "average_score": 0.61,
+          "high": 6,
+          "medium": 1,
+          "low": 10,
+          "scored_sources": 17
+        },
+        "analysis": {
+          "key_claims": 6,
+          "contradictions_flagged": 3,
+          "summary_points": 5
+        },
+        "insights": {
+          "insights": 3,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 2
+        },
+        "url_check": {
+          "checked": 14,
+          "resolved": 14,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "What regulatory requirements apply to AI-generated medical advice in the EU?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 45.82,
+        "sources": {
+          "web": 6,
+          "papers": 5,
+          "news": 6,
+          "total": 17,
+          "distinct_domains": 10
+        },
+        "report": {
+          "words": 845,
+          "claim_lines": 16
+        },
+        "citations": {
+          "total": 14,
+          "grounded_exact": 14,
+          "grounded_same_domain": 0,
+          "ungrounded": 0,
+          "grounding_rate": 1.0,
+          "ungrounded_urls": []
+        },
+        "credibility": {
+          "average_score": 0.68,
+          "high": 7,
+          "medium": 4,
+          "low": 6,
+          "scored_sources": 17
+        },
+        "analysis": {
+          "key_claims": 5,
+          "contradictions_flagged": 2,
+          "summary_points": 5
+        },
+        "insights": {
+          "insights": 3,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 2
+        },
+        "url_check": {
+          "checked": 14,
+          "resolved": 14,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "What are the latest techniques for reducing hallucination in retrieval-augmented generation?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 43.46,
+        "sources": {
+          "web": 6,
+          "papers": 5,
+          "news": 6,
+          "total": 17,
+          "distinct_domains": 6
+        },
+        "report": {
+          "words": 784,
+          "claim_lines": 21
+        },
+        "citations": {
+          "total": 13,
+          "grounded_exact": 12,
+          "grounded_same_domain": 0,
+          "ungrounded": 1,
+          "grounding_rate": 0.9231,
+          "ungrounded_urls": [
+            "https://www.example.com"
+          ]
+        },
+        "credibility": {
+          "average_score": 0.72,
+          "high": 8,
+          "medium": 4,
+          "low": 5,
+          "scored_sources": 17
+        },
+        "analysis": {
+          "key_claims": 5,
+          "contradictions_flagged": 1,
+          "summary_points": 5
+        },
+        "insights": {
+          "insights": 3,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 2
+        },
+        "url_check": {
+          "checked": 13,
+          "resolved": 13,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "How much venture funding went into AI agent startups in the last twelve months?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 49.09,
+        "sources": {
+          "web": 6,
+          "papers": 5,
+          "news": 6,
+          "total": 17,
+          "distinct_domains": 10
+        },
+        "report": {
+          "words": 747,
+          "claim_lines": 21
+        },
+        "citations": {
+          "total": 10,
+          "grounded_exact": 9,
+          "grounded_same_domain": 0,
+          "ungrounded": 1,
+          "grounding_rate": 0.9,
+          "ungrounded_urls": [
+            "https://www.example.com"
+          ]
+        },
+        "credibility": {
+          "average_score": 0.6,
+          "high": 5,
+          "medium": 3,
+          "low": 9,
+          "scored_sources": 17
+        },
+        "analysis": {
+          "key_claims": 2,
+          "contradictions_flagged": 18,
+          "summary_points": 5
+        },
+        "insights": {
+          "insights": 3,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 2
+        },
+        "url_check": {
+          "checked": 10,
+          "resolved": 10,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "What are the dominant pricing models for developer-tool SaaS in 2025?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 45.41,
+        "sources": {
+          "web": 6,
+          "papers": 5,
+          "news": 6,
+          "total": 17,
+          "distinct_domains": 9
+        },
+        "report": {
+          "words": 720,
+          "claim_lines": 14
+        },
+        "citations": {
+          "total": 13,
+          "grounded_exact": 13,
+          "grounded_same_domain": 0,
+          "ungrounded": 0,
+          "grounding_rate": 1.0,
+          "ungrounded_urls": []
+        },
+        "credibility": {
+          "average_score": 0.58,
+          "high": 4,
+          "medium": 2,
+          "low": 11,
+          "scored_sources": 17
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 3,
+          "summary_points": 5
+        },
+        "insights": {
+          "insights": 3,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 2
+        },
+        "url_check": {
+          "checked": 13,
+          "resolved": 13,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      }
+    ],
+    "aggregate": {
+      "runs": 6,
+      "successful": 5,
+      "latency_s": {
+        "mean": 48.63,
+        "median": 45.82,
+        "min": 43.46,
+        "max": 59.37
+      },
+      "sources_per_report": {
+        "mean_total": 17,
+        "mean_distinct_domains": 8.6,
+        "mean_web": 6,
+        "mean_papers": 5,
+        "mean_news": 6
+      },
+      "citations": {
+        "total": 64,
+        "grounded": 62,
+        "grounding_rate": 0.9688,
+        "mean_per_report": 12.8
+      },
+      "url_check": {
+        "checked": 64,
+        "resolved": 64,
+        "resolve_rate": 1.0
+      },
+      "credibility": {
+        "mean_average_score": 0.64,
+        "mean_high": 6,
+        "mean_medium": 2.8,
+        "mean_low": 8.2
+      },
+      "analysis": {
+        "mean_key_claims": 3.6,
+        "mean_contradictions": 5.4,
+        "reports_with_contradictions": 5
+      },
+      "report": {
+        "mean_words": 755.6,
+        "mean_claim_lines": 16.8
+      }
+    }
+  },
+  "baseline": {
+    "model": "claude-sonnet-4-5",
+    "runs": [
+      {
+        "query": "What is the total addressable market for AI coding assistants in 2025?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 18.58,
+        "sources": {
+          "web": 0,
+          "papers": 0,
+          "news": 0,
+          "total": 0,
+          "distinct_domains": 0
+        },
+        "report": {
+          "words": 354,
+          "claim_lines": 12
+        },
+        "citations": {
+          "total": 5,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 5,
+          "grounding_rate": 0.0,
+          "ungrounded_urls": [
+            "https://www.marketsandmarkets.com/Market-Reports/ai-code-assistant-market-251943583.html",
+            "https://www.precedenceresearch.com/ai-coding-assistant-market",
+            "https://www.statista.com/statistics/627312/worldwide-developer-population/",
+            "https://github.blog/news-insights/product-news/github-copilot-workspace/",
+            "https://survey.stackoverflow.co/2024/"
+          ]
+        },
+        "credibility": {
+          "average_score": null,
+          "high": null,
+          "medium": null,
+          "low": null,
+          "scored_sources": null
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 0,
+          "summary_points": 0
+        },
+        "insights": {
+          "insights": 0,
+          "hypotheses": 0,
+          "trends": 0,
+          "reasoning_chains": 0
+        },
+        "url_check": {
+          "checked": 5,
+          "resolved": 5,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "Who are the main competitors in the AI research assistant space and how do they differ?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 17.63,
+        "sources": {
+          "web": 0,
+          "papers": 0,
+          "news": 0,
+          "total": 0,
+          "distinct_domains": 0
+        },
+        "report": {
+          "words": 325,
+          "claim_lines": 10
+        },
+        "citations": {
+          "total": 5,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 5,
+          "grounding_rate": 0.0,
+          "ungrounded_urls": [
+            "https://www.perplexity.ai/",
+            "https://blog.google/technology/ai/google-gemini-ai/",
+            "https://blogs.microsoft.com/blog/2023/02/07/reinventing-search-with-a-new-ai-powered-microsoft-bing-and-edge-your-copilot-for-the-web/",
+            "https://www.anthropic.com/index/claude-2",
+            "https://openai.com/blog/chatgpt"
+          ]
+        },
+        "credibility": {
+          "average_score": null,
+          "high": null,
+          "medium": null,
+          "low": null,
+          "scored_sources": null
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 0,
+          "summary_points": 0
+        },
+        "insights": {
+          "insights": 0,
+          "hypotheses": 0,
+          "trends": 0,
+          "reasoning_chains": 0
+        },
+        "url_check": {
+          "checked": 5,
+          "resolved": 5,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "What regulatory requirements apply to AI-generated medical advice in the EU?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 27.35,
+        "sources": {
+          "web": 0,
+          "papers": 0,
+          "news": 0,
+          "total": 0,
+          "distinct_domains": 0
+        },
+        "report": {
+          "words": 496,
+          "claim_lines": 14
+        },
+        "citations": {
+          "total": 7,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 7,
+          "grounding_rate": 0.0,
+          "ungrounded_urls": [
+            "https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en",
+            "https://health.ec.europa.eu/system/files/2020-09/md_mdcg_2019_11_guidance_qualification_classification_software_en_0.pdf",
+            "https://www.europarl.europa.eu/news/en/press-room/20240308IPR19015/artificial-intelligence-act-meps-adopt-landmark-law",
+            "https://www.europarl.europa.eu/topics/en/article/20230601STO93804/eu-ai-act-first-regulation-on-artificial-intelligence",
+            "https://edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-42021-codes-conduct-monitoring-criteria_en",
+            "https://health.ec.europa.eu/system/files/2020-09/md_mdcg_2020_1_guidance_clinical_evaluation_en_0.pdf",
+            "https://ec.europa.eu/commission/presscorner/detail/en/ip_22_5807"
+          ]
+        },
+        "credibility": {
+          "average_score": null,
+          "high": null,
+          "medium": null,
+          "low": null,
+          "scored_sources": null
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 0,
+          "summary_points": 0
+        },
+        "insights": {
+          "insights": 0,
+          "hypotheses": 0,
+          "trends": 0,
+          "reasoning_chains": 0
+        },
+        "url_check": {
+          "checked": 7,
+          "resolved": 4,
+          "unresolved": 3,
+          "resolve_rate": 0.5714,
+          "failures": [
+            {
+              "url": "https://health.ec.europa.eu/system/files/2020-09/md_mdcg_2019_11_guidance_qualification_classification_software_en_0.pdf",
+              "status": 403
+            },
+            {
+              "url": "https://edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-42021-codes-conduct-monitoring-criteria_en",
+              "status": 404
+            },
+            {
+              "url": "https://health.ec.europa.eu/system/files/2020-09/md_mdcg_2020_1_guidance_clinical_evaluation_en_0.pdf",
+              "status": 404
+            }
+          ]
+        }
+      },
+      {
+        "query": "What are the latest techniques for reducing hallucination in retrieval-augmented generation?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 17.92,
+        "sources": {
+          "web": 0,
+          "papers": 0,
+          "news": 0,
+          "total": 0,
+          "distinct_domains": 0
+        },
+        "report": {
+          "words": 352,
+          "claim_lines": 8
+        },
+        "citations": {
+          "total": 6,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 6,
+          "grounding_rate": 0.0,
+          "ungrounded_urls": [
+            "https://arxiv.org/abs/2310.11511",
+            "https://arxiv.org/abs/2401.15884",
+            "https://arxiv.org/abs/2305.14627",
+            "https://arxiv.org/abs/2408.04948",
+            "https://arxiv.org/abs/2305.14739",
+            "https://arxiv.org/abs/2309.11495"
+          ]
+        },
+        "credibility": {
+          "average_score": null,
+          "high": null,
+          "medium": null,
+          "low": null,
+          "scored_sources": null
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 0,
+          "summary_points": 0
+        },
+        "insights": {
+          "insights": 0,
+          "hypotheses": 0,
+          "trends": 0,
+          "reasoning_chains": 0
+        },
+        "url_check": {
+          "checked": 6,
+          "resolved": 6,
+          "unresolved": 0,
+          "resolve_rate": 1.0,
+          "failures": []
+        }
+      },
+      {
+        "query": "How much venture funding went into AI agent startups in the last twelve months?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 12.96,
+        "sources": {
+          "web": 0,
+          "papers": 0,
+          "news": 0,
+          "total": 0,
+          "distinct_domains": 0
+        },
+        "report": {
+          "words": 241,
+          "claim_lines": 8
+        },
+        "citations": {
+          "total": 5,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 5,
+          "grounding_rate": 0.0,
+          "ungrounded_urls": [
+            "https://techcrunch.com/2025/01/23/sierra-raises-175m-series-c/",
+            "https://www.forbes.com/sites/kenrickcai/2024/10/17/ema-raises-100-million-series-b-ai-agents/",
+            "https://techcrunch.com/2024/11/19/artisan-raises-30m-for-ai-agents/",
+            "https://www.theinformation.com/articles/ai-coding-startup-factory-raises-40-million",
+            "https://venturebeat.com/ai/ai-agents-are-the-next-frontier-and-vcs-are-paying-attention/"
+          ]
+        },
+        "credibility": {
+          "average_score": null,
+          "high": null,
+          "medium": null,
+          "low": null,
+          "scored_sources": null
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 0,
+          "summary_points": 0
+        },
+        "insights": {
+          "insights": 0,
+          "hypotheses": 0,
+          "trends": 0,
+          "reasoning_chains": 0
+        },
+        "url_check": {
+          "checked": 5,
+          "resolved": 0,
+          "unresolved": 5,
+          "resolve_rate": 0.0,
+          "failures": [
+            {
+              "url": "https://techcrunch.com/2025/01/23/sierra-raises-175m-series-c/",
+              "status": 404
+            },
+            {
+              "url": "https://www.forbes.com/sites/kenrickcai/2024/10/17/ema-raises-100-million-series-b-ai-agents/",
+              "status": 404
+            },
+            {
+              "url": "https://techcrunch.com/2024/11/19/artisan-raises-30m-for-ai-agents/",
+              "status": 404
+            },
+            {
+              "url": "https://www.theinformation.com/articles/ai-coding-startup-factory-raises-40-million",
+              "status": 404
+            },
+            {
+              "url": "https://venturebeat.com/ai/ai-agents-are-the-next-frontier-and-vcs-are-paying-attention/",
+              "status": 429
+            }
+          ]
+        }
+      },
+      {
+        "query": "What are the dominant pricing models for developer-tool SaaS in 2025?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 25.93,
+        "sources": {
+          "web": 0,
+          "papers": 0,
+          "news": 0,
+          "total": 0,
+          "distinct_domains": 0
+        },
+        "report": {
+          "words": 536,
+          "claim_lines": 16
+        },
+        "citations": {
+          "total": 7,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 7,
+          "grounding_rate": 0.0,
+          "ungrounded_urls": [
+            "https://openviewpartners.com/blog/2023-saas-benchmarks-report/",
+            "https://openviewpartners.com/blog/usage-based-pricing-playbook/",
+            "https://www.profitwell.com/recur/all/per-seat-pricing-saas",
+            "https://www.battery.com/blog/usage-based-pricing-the-new-saas-model/",
+            "https://openviewpartners.com/blog/freemium-saas-strategies/",
+            "https://www.bvp.com/atlas/state-of-the-cloud-2024",
+            "https://stackoverflow.blog/2024/01/15/developer-tools-pricing-preferences/"
+          ]
+        },
+        "credibility": {
+          "average_score": null,
+          "high": null,
+          "medium": null,
+          "low": null,
+          "scored_sources": null
+        },
+        "analysis": {
+          "key_claims": 0,
+          "contradictions_flagged": 0,
+          "summary_points": 0
+        },
+        "insights": {
+          "insights": 0,
+          "hypotheses": 0,
+          "trends": 0,
+          "reasoning_chains": 0
+        },
+        "url_check": {
+          "checked": 7,
+          "resolved": 3,
+          "unresolved": 4,
+          "resolve_rate": 0.4286,
+          "failures": [
+            {
+              "url": "https://www.profitwell.com/recur/all/per-seat-pricing-saas",
+              "status": 404
+            },
+            {
+              "url": "https://www.battery.com/blog/usage-based-pricing-the-new-saas-model/",
+              "status": 404
+            },
+            {
+              "url": "https://openviewpartners.com/blog/freemium-saas-strategies/",
+              "status": 404
+            },
+            {
+              "url": "https://stackoverflow.blog/2024/01/15/developer-tools-pricing-preferences/",
+              "status": 404
+            }
+          ]
+        }
+      }
+    ],
+    "aggregate": {
+      "runs": 6,
+      "successful": 6,
+      "latency_s": {
+        "mean": 20.06,
+        "median": 18.25,
+        "min": 12.96,
+        "max": 27.35
+      },
+      "sources_per_report": {
+        "mean_total": 0,
+        "mean_distinct_domains": 0,
+        "mean_web": 0,
+        "mean_papers": 0,
+        "mean_news": 0
+      },
+      "citations": {
+        "total": 35,
+        "grounded": 0,
+        "grounding_rate": 0.0,
+        "mean_per_report": 5.83
+      },
+      "url_check": {
+        "checked": 35,
+        "resolved": 23,
+        "resolve_rate": 0.6571
+      },
+      "credibility": {
+        "mean_average_score": null,
+        "mean_high": null,
+        "mean_medium": null,
+        "mean_low": null
+      },
+      "analysis": {
+        "mean_key_claims": 0,
+        "mean_contradictions": 0,
+        "reports_with_contradictions": 0
+      },
+      "report": {
+        "mean_words": 384,
+        "mean_claim_lines": 11.33
+      }
+    }
+  }
+}

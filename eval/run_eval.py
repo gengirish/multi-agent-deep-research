@@ -571,6 +571,11 @@ def markdown_summary(payload: Dict[str, Any]) -> str:
     lines += ["", "## Per-query detail", "", "| Query | Latency (s) | Sources | Citations | Grounded | Contradictions |", "| --- | --- | --- | --- | --- | --- |"]
     for r in payload["multi_agent"]["runs"]:
         q = r["query"][:60] + ("…" if len(r["query"]) > 60 else "")
+        if "citations" not in r:
+            # Run failed before producing a payload — say so rather than
+            # dropping the row, which would understate the failure rate.
+            lines.append(f"| {q} | — | — | — | — | failed: {r.get('error', 'unknown')} |")
+            continue
         gr = r["citations"]["grounding_rate"]
         lines.append(
             f"| {q} | {r['latency_s']} | {r['sources']['total']} | "
