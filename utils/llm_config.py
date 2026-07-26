@@ -5,7 +5,7 @@ Default routing:
     Enrichment   → Groq Llama 3.3 70B (sub-second metadata extraction)
     Analyzer     → Claude Sonnet 4.5, native Anthropic (strong reasoning)
     Insight      → GPT-4o via OpenRouter (creative pattern matching)
-    Reporter     → Groq Llama 3.3 70B (formatting-heavy, low cognitive load)
+    Reporter     → Claude Haiku 4.5 (formatting-heavy, low cognitive load)
     Credibility  → Claude Sonnet 4.5, native Anthropic (reasoning over sources)
 
 Each agent stage gets its own helper so swapping a provider is a one-line
@@ -62,10 +62,12 @@ RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile")
 # natively via ANTHROPIC_API_KEY now, with OpenRouter still the fallback.
 ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-sonnet-4-5")
 INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "openai/gpt-4o")
-# Report compilation is formatting-heavy / low cognitive load — switch to
-# Groq Llama 3.3 70B for ~10x cost reduction vs Claude 3.5 Haiku and
-# faster perceived completion. Override via REPORT_MODEL env to revert.
-REPORT_MODEL = os.getenv("REPORT_MODEL", "groq/llama-3.3-70b-versatile")
+# Report compilation is formatting-heavy / low cognitive load, so it runs on
+# the cheap tier. It was Groq Llama 3.3 70B, but a report prompt built from
+# ~17 sources exceeds Groq's free-tier 12k tokens/minute, and the stage was
+# 429ing into the template writer under normal use. Haiku is the cheapest
+# model that reliably carries the whole prompt. Set REPORT_MODEL to revert.
+REPORT_MODEL = os.getenv("REPORT_MODEL", "anthropic/claude-haiku-4-5")
 
 TEMPERATURES = {
     "retriever": float(os.getenv("RETRIEVER_TEMPERATURE", "0.1")),
@@ -311,3 +313,30 @@ def create_report_llm():
 def is_llm_available() -> bool:
     """True if at least one provider is configured."""
     return bool(OPENROUTER_API_KEY) or bool(GROQ_API_KEY) or bool(GOOGLE_API_KEY)
+
+
+def message_text(response: Any) -> str:
+    """Normalize a LangChain chat response into plain text.
+
+    Providers do not agree on the shape of `.content`. OpenAI-compatible and
+    Anthropic clients return a string; Gemini returns a list of content parts
+    (dicts carrying `text`, plus reasoning blocks that have no text at all).
+    Reading `.content` directly therefore yields a list for Google models,
+    which then flows downstream as a non-string report or analysis.
+    """
+    content = getattr(response, "content", None)
+    if content is None:
+        return str(response)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict):
+                text = part.get("text")
+                if isinstance(text, str) and text:
+                    parts.append(text)
+        return "".join(parts)
+    return str(content)

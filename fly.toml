@@ -24,12 +24,14 @@ primary_region = "sin"
 [http_service]
   internal_port = 8080
   force_https = true
-  # Web scales to zero when idle. Inline research runs as part of the
-  # request lifecycle, so the machine stays alive long enough to finish
-  # any in-flight pipeline before stopping.
+  # One machine stays warm. Scaling to zero meant the first request of any
+  # session paid a cold start, and a ~60s research POST arriving during boot
+  # got dropped by the proxy ("gave up after 15 attempts") while the run
+  # itself completed server-side — a request that fails while the work
+  # succeeds is the worst of both.
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
 
   [http_service.concurrency]
     type = "requests"

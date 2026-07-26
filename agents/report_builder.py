@@ -6,7 +6,7 @@ Compiles all insights into a structured report.
 import logging
 from typing import Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_report_llm, REPORT_MODEL, TEMPERATURES
+from utils.llm_config import create_report_llm, REPORT_MODEL, TEMPERATURES, message_text
 from utils.degraded import unavailable
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ Make the report professional, clear, and well-formatted in markdown.
             chain = prompt | self.llm
             response = chain.invoke({"report_data": report_data})
             
-            report = response.content if hasattr(response, 'content') else str(response)
+            report = message_text(response)
             
             logger.info("Report Builder: Report compilation complete")
             

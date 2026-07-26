@@ -6,7 +6,7 @@ Suggests hypotheses or trends using reasoning chains.
 import logging
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_insight_llm, INSIGHT_MODEL, TEMPERATURES
+from utils.llm_config import create_insight_llm, INSIGHT_MODEL, TEMPERATURES, message_text
 from utils.degraded import unavailable
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ REASONING CHAINS:
                 "analysis_text": analysis_text
             })
             
-            insights_text = response.content if hasattr(response, 'content') else str(response)
+            insights_text = message_text(response)
             
             # Parse the response
             parsed_insights = self._parse_insights(insights_text)

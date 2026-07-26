@@ -68,7 +68,7 @@ Five specialized agents, orchestrated as a [LangGraph](https://github.com/langch
 | ------------ | ----------------------------------------------------------------------- |
 | Frontend     | Next.js 14, React 18, TypeScript, D3 (visualizations)                   |
 | Backend      | FastAPI, uvicorn, LangChain, LangGraph, ARQ + Redis                     |
-| Models       | Groq (Llama 3.3 70B), Anthropic (Claude Sonnet 4.5), GPT-4o via OpenRouter |
+| Models       | Groq (Llama 3.3 70B), Anthropic (Claude Sonnet 4.5 + Haiku 4.5), GPT-4o via OpenRouter |
 | Search       | Tavily (primary), Perplexity (fallback), ArXiv                          |
 | Storage      | Neon Postgres; Chroma vector store (opt-in)                             |
 | Hosting      | Vercel (frontend), Fly.io (backend, container)                          |
@@ -139,7 +139,7 @@ The repo is platform-agnostic — anything that can run a Python ASGI container 
 | -------------------- | :------: | ------------------------------------------------ |
 | `OPEN_ROUTER_KEY`    |    ✅    | LLM access via OpenRouter (fallback for all providers) |
 | `ANTHROPIC_API_KEY`  |    ➖    | Native path for analyzer + credibility stages    |
-| `GROQ_API_KEY`       |    ➖    | Native path for retriever + reporter stages      |
+| `GROQ_API_KEY`       |    ➖    | Native path for the retriever stage               |
 | `TAVILY_API_KEY`     |    ➖    | Web search (recommended; falls back if missing)  |
 | `PERPLEXITY_API_KEY` |    ➖    | Search fallback                                  |
 | `ALLOWED_ORIGINS`    |    ➖    | Comma-separated CORS allowlist                   |

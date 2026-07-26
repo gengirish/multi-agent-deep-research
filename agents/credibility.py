@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Dict, Any, List, Optional
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES
+from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES, message_text
 
 logger = logging.getLogger(__name__)
 
@@ -247,7 +247,7 @@ Do not include any explanation, just the number.
             chain = prompt | self.llm
             response = chain.invoke({"source_info": source_info})
             
-            response_text = response.content if hasattr(response, 'content') else str(response)
+            response_text = message_text(response)
             
             # Extract number from response
             numbers = re.findall(r'\d+\.?\d*', response_text)

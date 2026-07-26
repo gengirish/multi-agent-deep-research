@@ -6,7 +6,7 @@ Summarizes findings, highlights contradictions, and validates sources.
 import logging
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES
+from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES, message_text
 from utils.degraded import unavailable
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ KEY CLAIMS:
                 "sources_text": sources_text
             })
             
-            analysis_text = response.content if hasattr(response, 'content') else str(response)
+            analysis_text = message_text(response)
             
             # Parse the response
             parsed_analysis = self._parse_analysis(analysis_text)
