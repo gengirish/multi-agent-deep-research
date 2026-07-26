@@ -111,11 +111,18 @@ test.describe("Landing extended sections", () => {
 });
 
 test.describe("Backend connectivity", () => {
+  // The Fly machine auto-stops when idle, so the first request of a run pays
+  // a cold start. The default 10s action timeout loses that race and reports
+  // it as a failure, which is how these two came to be the suite's flakiest.
+  const COLD_START_TIMEOUT = 45_000;
+
   test("Chronicle API health endpoint responds", async ({ request }) => {
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL ??
       "https://multi-agent-deep-research-api.fly.dev";
-    const response = await request.get(`${apiUrl}/api/health`);
+    const response = await request.get(`${apiUrl}/api/health`, {
+      timeout: COLD_START_TIMEOUT,
+    });
     expect(response.status()).toBeLessThan(500);
 
     const body = await response.json();
@@ -126,7 +133,9 @@ test.describe("Backend connectivity", () => {
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL ??
       "https://multi-agent-deep-research-api.fly.dev";
-    const response = await request.get(`${apiUrl}/api/demo-queries`);
+    const response = await request.get(`${apiUrl}/api/demo-queries`, {
+      timeout: COLD_START_TIMEOUT,
+    });
     expect(response.status()).toBe(200);
 
     const body = await response.json();

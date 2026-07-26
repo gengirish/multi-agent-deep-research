@@ -55,12 +55,18 @@ export const MOCK_JOB_ID = "e2e-test-job-0001";
  */
 export async function installResearchMocks(
   page: Page,
-  options: { failJobCreate?: boolean } = {},
+  options: { failJobCreate?: boolean; degraded?: string[] } = {},
 ): Promise<void> {
+  // `degraded` lets a test exercise the partial-run banner without needing a
+  // genuinely broken backend.
+  const researchData = options.degraded
+    ? { ...MOCK_RESEARCH_DATA, degraded: options.degraded }
+    : MOCK_RESEARCH_DATA;
+
   const sseBody = [
     `data: ${JSON.stringify({ stage: "retrieval", message: "Searching sources…", progress: 20 })}\n\n`,
     `data: ${JSON.stringify({ stage: "enrichment", message: "Enriching metadata…", progress: 45 })}\n\n`,
-    `data: ${JSON.stringify({ stage: "complete", data: MOCK_RESEARCH_DATA })}\n\n`,
+    `data: ${JSON.stringify({ stage: "complete", data: researchData })}\n\n`,
   ].join("");
 
   await page.route("**/api/research/jobs", async (route: Route) => {
@@ -98,7 +104,7 @@ export async function installResearchMocks(
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ data: MOCK_RESEARCH_DATA, status: "success" }),
+      body: JSON.stringify({ data: researchData, status: "success" }),
     });
   });
 }
