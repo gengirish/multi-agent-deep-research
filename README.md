@@ -68,7 +68,7 @@ Five specialized agents, orchestrated as a [LangGraph](https://github.com/langch
 | ------------ | ----------------------------------------------------------------------- |
 | Frontend     | Next.js 14, React 18, TypeScript, D3 (visualizations)                   |
 | Backend      | FastAPI, uvicorn, LangChain, LangGraph, ARQ + Redis                     |
-| Models       | Groq (Llama 3.3 70B), Anthropic (Claude Sonnet 4.5 + Haiku 4.5), GPT-4o via OpenRouter |
+| Models       | Groq (Llama 3.3 70B), Anthropic (Sonnet 4.5 + Haiku 4.5), Google (Gemini Flash) |
 | Search       | Tavily (primary), Perplexity (fallback), ArXiv                          |
 | Storage      | Neon Postgres; Chroma vector store (opt-in)                             |
 | Hosting      | Vercel (frontend), Fly.io (backend, container)                          |
@@ -83,7 +83,8 @@ The model mix is cost-optimized: routing each agent to the smallest model that d
 python -m venv venv && source venv/bin/activate     # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp env.example .env
-# edit .env: OPEN_ROUTER_KEY (required), TAVILY_API_KEY (recommended), PERPLEXITY_API_KEY (optional fallback)
+# edit .env: ANTHROPIC_API_KEY + GOOGLE_API_KEY (required), TAVILY_API_KEY (recommended),
+#            GROQ_API_KEY / OPEN_ROUTER_KEY / PERPLEXITY_API_KEY (optional)
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -137,8 +138,9 @@ The repo is platform-agnostic — anything that can run a Python ASGI container 
 
 | Variable             | Required | Purpose                                          |
 | -------------------- | :------: | ------------------------------------------------ |
-| `OPEN_ROUTER_KEY`    |    ✅    | LLM access via OpenRouter (fallback for all providers) |
-| `ANTHROPIC_API_KEY`  |    ➖    | Native path for analyzer + credibility stages    |
+| `OPEN_ROUTER_KEY`    |    ➖    | Fallback for every provider; needed only when a native key is absent |
+| `ANTHROPIC_API_KEY`  |    ✅    | Analyzer, credibility and report stages          |
+| `GOOGLE_API_KEY`     |    ✅    | Insight stage (Gemini Flash)                     |
 | `GROQ_API_KEY`       |    ➖    | Native path for the retriever stage               |
 | `TAVILY_API_KEY`     |    ➖    | Web search (recommended; falls back if missing)  |
 | `PERPLEXITY_API_KEY` |    ➖    | Search fallback                                  |

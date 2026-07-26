@@ -4,7 +4,7 @@ LLM configuration — multi-provider routing.
 Default routing:
     Enrichment   → Groq Llama 3.3 70B (sub-second metadata extraction)
     Analyzer     → Claude Sonnet 4.5, native Anthropic (strong reasoning)
-    Insight      → GPT-4o via OpenRouter (creative pattern matching)
+    Insight      → Gemini Flash, native Google (creative pattern matching)
     Reporter     → Claude Haiku 4.5 (formatting-heavy, low cognitive load)
     Credibility  → Claude Sonnet 4.5, native Anthropic (reasoning over sources)
 
@@ -61,7 +61,11 @@ RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile")
 # analyzer and credibility stages to their mock/heuristic fallbacks. Routed
 # natively via ANTHROPIC_API_KEY now, with OpenRouter still the fallback.
 ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-sonnet-4-5")
-INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "openai/gpt-4o")
+# Insight ran on openai/gpt-4o via OpenRouter until that account ran out of
+# credit and the stage started returning 402s, degrading to no insights at
+# all. Gemini Flash is a native path with its own quota, so the insight stage
+# no longer shares a failure domain with the OpenRouter fallback.
+INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "google/gemini-flash-latest")
 # Report compilation is formatting-heavy / low cognitive load, so it runs on
 # the cheap tier. It was Groq Llama 3.3 70B, but a report prompt built from
 # ~17 sources exceeds Groq's free-tier 12k tokens/minute, and the stage was
