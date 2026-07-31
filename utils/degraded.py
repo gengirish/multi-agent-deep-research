@@ -74,12 +74,29 @@ def detect_degradation(result: Dict[str, Any]) -> List[str]:
             + ". Key findings, claims and contradictions are empty, not inferred."
         )
 
+    elif raw_analysis and not any(
+        analysis.get(key) for key in ("summary", "key_claims", "contradictions")
+    ):
+        # The model answered but nothing survived parsing — typically a
+        # fallback model that ignored the section headers the parser keys on.
+        # Without this the run looks healthy while carrying no findings.
+        notes.append(
+            "analyzer: the model responded but no findings could be parsed from "
+            "it — summary, claims and contradictions are all empty"
+        )
+
     insights = result.get("insights") or {}
     raw_insights = insights.get("raw_insights") or ""
     if _is_unavailable(raw_insights, MOCK_INSIGHTS_MARKER):
         notes.append(
             "insight: no insights produced — "
             + _reason_from(raw_insights, "insight", "returned legacy mock text")
+        )
+    elif raw_insights and not any(
+        insights.get(key) for key in ("insights", "hypotheses", "trends")
+    ):
+        notes.append(
+            "insight: the model responded but no insights could be parsed from it"
         )
 
     credibility = result.get("credibility") or {}

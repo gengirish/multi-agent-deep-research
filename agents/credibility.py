@@ -7,7 +7,12 @@ import logging
 import re
 from typing import Dict, Any, List, Optional
 from langchain_core.prompts import ChatPromptTemplate
-from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES, message_text
+from utils.llm_config import (
+    create_credibility_llm,
+    CREDIBILITY_MODEL,
+    TEMPERATURES,
+    message_text,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +30,12 @@ class SourceCredibilityAgent:
         if model or temperature is not None:
             from utils.llm_config import create_llm
             self.llm = create_llm(
-                model=model or ANALYZER_MODEL,
+                model=model or CREDIBILITY_MODEL,
                 temperature=temperature if temperature is not None else 0.3,
                 max_tokens=1500
             )
         else:
-            self.llm = create_analyzer_llm()
+            self.llm = create_credibility_llm()
         if not self.llm:
             logger.warning("OpenRouter API key not found. Credibility will use heuristics only.")
     

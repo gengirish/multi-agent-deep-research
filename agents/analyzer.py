@@ -4,6 +4,7 @@ Summarizes findings, highlights contradictions, and validates sources.
 """
 
 import logging
+import re
 from typing import Dict, Any, List
 from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_analyzer_llm, ANALYZER_MODEL, TEMPERATURES, message_text
@@ -155,41 +156,64 @@ KEY CLAIMS:
         
         return "\n".join(formatted)
     
+    # Section headers as models actually write them: "SUMMARY:", "**SUMMARY**",
+    # "## Summary", "**KEY CLAIMS:**". Keying on a bare colon meant a model
+    # that used markdown emphasis parsed to nothing at all, and the run then
+    # looked healthy while carrying no findings.
+    _SECTIONS = (
+        ("summary", "SUMMARY"),
+        ("contradictions", "CONTRADICTIONS"),
+        ("credibility", "CREDIBILITY"),
+        ("key_claims", "KEY CLAIMS"),
+    )
+
+    @staticmethod
+    def _header_key(line: str) -> str:
+        """Return the section a line announces, or '' if it is not a header."""
+        stripped = line.strip().strip("#").strip().strip("*").strip()
+        stripped = stripped.rstrip(":").strip().upper()
+        if not stripped or len(stripped) > 40:
+            return ""
+        for key, label in CriticalAnalysisAgent._SECTIONS:
+            if stripped == label or stripped.startswith(label):
+                return key
+        return ""
+
     def _parse_analysis(self, analysis_text: str) -> Dict[str, Any]:
         """Parse LLM response into structured format."""
-        parsed = {
+        parsed: Dict[str, Any] = {
             "summary": [],
             "contradictions": [],
             "credibility": [],
-            "key_claims": []
+            "key_claims": [],
         }
-        
+
+        bullet_prefixes = ("-", "*", "\u2022", "\u2013")
         current_section = None
-        for line in analysis_text.split('\n'):
-            line = line.strip()
+        for raw_line in analysis_text.split("\n"):
+            line = raw_line.strip()
             if not line:
                 continue
-            
-            if 'SUMMARY:' in line.upper():
-                current_section = "summary"
+
+            header = self._header_key(line)
+            if header:
+                current_section = header
                 continue
-            elif 'CONTRADICTIONS:' in line.upper():
-                current_section = "contradictions"
+
+            if not current_section:
                 continue
-            elif 'CREDIBILITY:' in line.upper():
-                current_section = "credibility"
-                continue
-            elif 'KEY CLAIMS:' in line.upper():
-                current_section = "key_claims"
-                continue
-            
-            if current_section and (line.startswith('-') or line.startswith('*')):
+
+            if line[0] in bullet_prefixes:
                 content = line[1:].strip()
                 if content:
                     parsed[current_section].append(content)
-            elif current_section == "credibility" and ':' in line:
+            elif re.match(r"^\d+[.)]\s+", line):
+                content = re.sub(r"^\d+[.)]\s+", "", line).strip()
+                if content:
+                    parsed[current_section].append(content)
+            elif current_section == "credibility" and ":" in line:
                 parsed[current_section].append(line)
-        
+
         return parsed
     
     def _unavailable(self, reason: str) -> Dict[str, Any]:

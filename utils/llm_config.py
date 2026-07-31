@@ -3,10 +3,13 @@ LLM configuration — multi-provider routing.
 
 Default routing:
     Enrichment   → Groq Llama 3.3 70B (sub-second metadata extraction)
-    Analyzer     → Claude Sonnet 4.5, native Anthropic (strong reasoning)
+    Analyzer     → Gemini Flash, native Google (reasoning over sources)
     Insight      → Gemini Flash, native Google (creative pattern matching)
-    Reporter     → Claude Haiku 4.5 (formatting-heavy, low cognitive load)
-    Credibility  → Claude Sonnet 4.5, native Anthropic (reasoning over sources)
+    Reporter     → Gemini Flash, native Google (long prompt, all sources)
+    Credibility  → Groq Llama 3.3 70B (one short rating call per source)
+
+Every default sits on a free tier, with an OpenRouter `:free` OSS model as the
+invoke-time fallback, so the pipeline runs end-to-end on no paid credit.
 
 Each agent stage gets its own helper so swapping a provider is a one-line
 change. Overridable via env vars (e.g. RETRIEVER_MODEL=openai/gpt-4o-mini
@@ -45,6 +48,19 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+# Invoke-time safety net. Every stage's primary model can fail in ways that
+# construction cannot detect — a 429 from a rate-limited tier, a 402 from an
+# unfunded account, a provider outage — and the agents then fall back to empty
+# results. An OpenRouter `:free` OSS model costs nothing to call and has its
+# own quota, so it can absorb those failures without a funded balance. Set to
+# an empty string to disable.
+OPENROUTER_FALLBACK_MODEL = os.getenv(
+    "OPENROUTER_FALLBACK_MODEL", "openai/gpt-oss-20b:free"
+)
+
+# Minimum output budget for Gemini, which spends part of it on reasoning.
+GOOGLE_MIN_OUTPUT_TOKENS = int(os.getenv("GOOGLE_MIN_OUTPUT_TOKENS", "8192"))
+
 # ---------------------------------------------------------------------------
 # Per-stage model selection
 # ---------------------------------------------------------------------------
@@ -57,21 +73,27 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "anthropic/claude-sonnet-4-5")
 # Retrieval-stage metadata + sentiment — Groq Llama 3.3 70B for sub-second.
 RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile")
-# Claude 3.5 slugs were retired from OpenRouter, which silently dropped the
-# analyzer and credibility stages to their mock/heuristic fallbacks. Routed
-# natively via ANTHROPIC_API_KEY now, with OpenRouter still the fallback.
-ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-sonnet-4-5")
+# Analysis ran on Claude until that account's balance ran out and every call
+# came back 400 ("credit balance is too low"). Gemini Flash is a free-tier
+# native path. Set ANALYZER_MODEL=anthropic/claude-sonnet-4-5 to go back once
+# the Anthropic account is funded — reasoning quality there is better.
+ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "google/gemini-flash-latest")
+
+# Credibility runs one call per source (~17 per query), so it gets its own
+# slot rather than riding on ANALYZER_MODEL: the task is a short 0-1 rating
+# that a small fast model handles, and keeping it off the analyzer's provider
+# stops one stage's per-minute quota from starving the other.
+CREDIBILITY_MODEL = os.getenv("CREDIBILITY_MODEL", "groq/llama-3.3-70b-versatile")
 # Insight ran on openai/gpt-4o via OpenRouter until that account ran out of
 # credit and the stage started returning 402s, degrading to no insights at
 # all. Gemini Flash is a native path with its own quota, so the insight stage
 # no longer shares a failure domain with the OpenRouter fallback.
 INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "google/gemini-flash-latest")
-# Report compilation is formatting-heavy / low cognitive load, so it runs on
-# the cheap tier. It was Groq Llama 3.3 70B, but a report prompt built from
-# ~17 sources exceeds Groq's free-tier 12k tokens/minute, and the stage was
-# 429ing into the template writer under normal use. Haiku is the cheapest
-# model that reliably carries the whole prompt. Set REPORT_MODEL to revert.
-REPORT_MODEL = os.getenv("REPORT_MODEL", "anthropic/claude-haiku-4-5")
+# The report prompt carries all ~17 sources, so it needs headroom: Groq's
+# free tier caps at 12k tokens/minute and 429'd into the template writer,
+# and Haiku stopped working when the Anthropic balance ran out. Gemini Flash
+# has the context and a free-tier quota that survives a full run.
+REPORT_MODEL = os.getenv("REPORT_MODEL", "google/gemini-flash-latest")
 
 TEMPERATURES = {
     "retriever": float(os.getenv("RETRIEVER_TEMPERATURE", "0.1")),
@@ -156,7 +178,13 @@ def _build_google(model_name: str, temperature: float, max_tokens: Optional[int]
         "google_api_key": GOOGLE_API_KEY,
     }
     if max_tokens:
-        kwargs["max_output_tokens"] = max_tokens
+        # Gemini counts its internal reasoning against max_output_tokens, so a
+        # budget sized for the visible answer gets spent thinking and the reply
+        # is truncated mid-structure. Measured: at 2000 the analyzer returned
+        # only its SUMMARY section and the rest parsed to nothing; at 8192 all
+        # four sections came back. Raise the floor rather than the callers'
+        # budgets, which are correct for every other provider.
+        kwargs["max_output_tokens"] = max(max_tokens, GOOGLE_MIN_OUTPUT_TOKENS)
     try:
         llm = ChatGoogleGenerativeAI(**kwargs)
         logger.info(f"LLM initialized via Google: {model_name} (temp={temperature})")
@@ -232,6 +260,41 @@ def _build_openrouter(model: str, temperature: float, max_tokens: Optional[int])
         return None
 
 
+def _with_free_fallback(
+    llm: Any,
+    primary_model: str,
+    temperature: float,
+    max_tokens: Optional[int],
+):
+    """Attach a free OSS model as an invoke-time fallback.
+
+    LangChain retries the fallback when the primary raises, which is the only
+    layer that can catch a 429 or 402 — those surface on the call, not on
+    client construction. Returns the primary unchanged when no fallback is
+    configured or when the primary already *is* the fallback.
+    """
+    if llm is None or not OPENROUTER_FALLBACK_MODEL:
+        return llm
+    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_openrouter_key_here":
+        return llm
+    if primary_model == OPENROUTER_FALLBACK_MODEL:
+        return llm
+
+    fallback = _build_openrouter(OPENROUTER_FALLBACK_MODEL, temperature, max_tokens)
+    if fallback is None:
+        return llm
+
+    try:
+        wrapped = llm.with_fallbacks([fallback])
+        logger.info(
+            f"Fallback attached: {primary_model} -> {OPENROUTER_FALLBACK_MODEL}"
+        )
+        return wrapped
+    except Exception as e:  # older langchain-core without Runnable fallbacks
+        logger.warning(f"Could not attach fallback for {primary_model}: {e}")
+        return llm
+
+
 def create_llm(
     model: Optional[str] = None,
     temperature: float = 0.3,
@@ -248,26 +311,20 @@ def create_llm(
     model_name_full = model or DEFAULT_MODEL
     provider, native_name = _split_provider(model_name_full)
 
-    if provider == "groq":
-        llm = _build_groq(native_name, temperature, max_tokens)
+    builders = {
+        "groq": _build_groq,
+        "google": _build_google,
+        "anthropic": _build_anthropic,
+    }
+    builder = builders.get(provider)
+    if builder is not None:
+        llm = builder(native_name, temperature, max_tokens)
         if llm is not None:
-            return llm
-        # Fall through to OpenRouter
+            return _with_free_fallback(llm, model_name_full, temperature, max_tokens)
+        # Fall through to OpenRouter with the fully-qualified name
 
-    if provider == "google":
-        llm = _build_google(native_name, temperature, max_tokens)
-        if llm is not None:
-            return llm
-        # Fall through to OpenRouter
-
-    if provider == "anthropic":
-        llm = _build_anthropic(native_name, temperature, max_tokens)
-        if llm is not None:
-            return llm
-        # Fall through to OpenRouter
-
-    # OpenRouter expects the fully-qualified model name
-    return _build_openrouter(model_name_full, temperature, max_tokens)
+    llm = _build_openrouter(model_name_full, temperature, max_tokens)
+    return _with_free_fallback(llm, model_name_full, temperature, max_tokens)
 
 
 # ---------------------------------------------------------------------------
@@ -301,6 +358,16 @@ def create_insight_llm():
     return create_llm(
         model=INSIGHT_MODEL,
         temperature=TEMPERATURES["insight"],
+        max_tokens=1500,
+    )
+
+
+def create_credibility_llm():
+    """Short per-source rating calls — many of them, so speed matters more
+    than depth. Falls back to the analyzer model when unset."""
+    return create_llm(
+        model=CREDIBILITY_MODEL or ANALYZER_MODEL,
+        temperature=0.3,
         max_tokens=1500,
     )
 
