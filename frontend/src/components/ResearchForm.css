@@ -56,8 +56,64 @@
 }
 
 .voice-input-container,
+.picture-input-container,
 .text-input-container {
   margin-bottom: 20px;
+}
+
+.input-with-reset {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-reset .query-input {
+  padding-right: 48px;
+}
+
+.text-reset-button {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 15px;
+  color: var(--c-text-muted);
+  background: var(--c-bg-elev-hi);
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.text-reset-button:hover:not(:disabled) {
+  color: var(--c-text-strong);
+  border-color: var(--c-border-hi);
+  transform: rotate(90deg);
+}
+
+.text-reset-button:active:not(:disabled) {
+  transform: rotate(90deg) scale(0.95);
+}
+
+.text-reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.text-reset-button:focus-visible {
+  outline: 2px solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+
+.text-reset-button .reset-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .captured-query {
@@ -70,6 +126,7 @@
 }
 
 .captured-label {
+  display: block;
   margin: 0 0 6px 0;
   font-size: 11px;
   font-weight: 700;
@@ -78,13 +135,38 @@
   letter-spacing: 0.08em;
 }
 
-.captured-text {
-  margin: 0;
+.captured-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
   font-size: 0.95rem;
-  color: #f0fdf4;
   line-height: 1.55;
+  color: #f0fdf4;
+  background: var(--c-bg-input);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.2s ease;
 }
 
+.captured-textarea:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.captured-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.captured-textarea::placeholder {
+  color: var(--c-text-dim);
+  font-style: italic;
+}
+
+/* Responsive Design */
 @media (max-width: 640px) {
   .input-mode-toggle {
     width: 100%;

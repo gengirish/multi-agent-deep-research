@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { VoiceInput } from "./VoiceInput";
+import { PictureInput } from "./PictureInput";
 import "./ResearchForm.css";
 
-type InputMode = "text" | "voice";
+type InputMode = "text" | "voice" | "picture";
 
 interface Props {
   onSubmit: (query: string) => void;
@@ -92,6 +93,14 @@ export const ResearchForm: React.FC<Props> = ({
     handleQueryChange(text);
   };
 
+  const handlePictureCapture = (text: string) => {
+    handleQueryChange(text);
+  };
+
+  const handleReset = () => {
+    handleQueryChange("");
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -134,18 +143,76 @@ export const ResearchForm: React.FC<Props> = ({
           </span>
           <span className="mode-text">Speak</span>
         </button>
+        <button
+          type="button"
+          className={`mode-button ${inputMode === "picture" ? "active" : ""}`}
+          onClick={() => setInputMode("picture")}
+          aria-pressed={inputMode === "picture"}
+          aria-label="Switch to picture input mode"
+          disabled={loading || disabled}
+        >
+          <span className="mode-icon" aria-hidden="true">
+            📷
+          </span>
+          <span className="mode-text">Picture</span>
+        </button>
       </div>
 
       {inputMode === "voice" && (
         <div className="voice-input-container">
           <VoiceInput
             onVoiceCapture={handleVoiceCapture}
+            onReset={handleReset}
             disabled={loading || disabled}
           />
           {query && (
             <div className="captured-query">
-              <p className="captured-label">Captured query</p>
-              <p className="captured-text">{query}</p>
+              <label
+                htmlFor="captured-query-textarea"
+                className="captured-label"
+              >
+                Captured query
+              </label>
+              <textarea
+                id="captured-query-textarea"
+                value={query}
+                onChange={(e) => handleQueryChange(e.target.value)}
+                disabled={loading || disabled}
+                className="captured-textarea"
+                placeholder="Your voice input will appear here. You can edit it before submitting."
+                rows={4}
+                aria-label="Edit captured voice query"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {inputMode === "picture" && (
+        <div className="picture-input-container">
+          <PictureInput
+            onPictureCapture={handlePictureCapture}
+            onReset={handleReset}
+            disabled={loading || disabled}
+          />
+          {query && (
+            <div className="captured-query">
+              <label
+                htmlFor="captured-picture-textarea"
+                className="captured-label"
+              >
+                Extracted query
+              </label>
+              <textarea
+                id="captured-picture-textarea"
+                value={query}
+                onChange={(e) => handleQueryChange(e.target.value)}
+                disabled={loading || disabled}
+                className="captured-textarea"
+                placeholder="Extracted text from your picture will appear here. You can edit it before submitting."
+                rows={4}
+                aria-label="Edit extracted picture query"
+              />
             </div>
           )}
         </div>
@@ -153,19 +220,34 @@ export const ResearchForm: React.FC<Props> = ({
 
       {inputMode === "text" && (
         <div className="text-input-container">
-          <input
-            id="query-input"
-            type="text"
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            placeholder="e.g., Market size and key players in AI coding assistants 2025"
-            disabled={loading || disabled}
-            aria-busy={loading}
-            aria-describedby="query-hint"
-            aria-required="true"
-            className="query-input"
-            autoComplete="off"
-          />
+          <div className="input-with-reset">
+            <input
+              id="query-input"
+              type="text"
+              value={query}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              placeholder="e.g., Market size and key players in AI coding assistants 2025"
+              disabled={loading || disabled}
+              aria-busy={loading}
+              aria-describedby="query-hint"
+              aria-required="true"
+              className="query-input"
+              autoComplete="off"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={loading || disabled}
+                className="text-reset-button"
+                aria-label="Clear input"
+              >
+                <span className="reset-icon" aria-hidden="true">
+                  ✕
+                </span>
+              </button>
+            )}
+          </div>
           <p id="query-hint" className="form-hint">
             Tip — try a market, a competitor, or a specific customer segment.
           </p>

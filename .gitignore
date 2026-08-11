@@ -23,6 +23,8 @@ venv/
 .venv/
 env/
 ENV/
+chroma_store/
+gvectordb/
 
 # Frontend
 frontend/node_modules/
@@ -56,3 +58,6 @@ fly.toml.bak
 
 # Deck backups
 *.pptx.bak
+
+# Claude Code local (per-developer) settings
+.claude/settings.local.json

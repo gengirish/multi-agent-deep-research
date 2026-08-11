@@ -477,13 +477,6 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
     0
   );
 
-  const analysisCount = data.analysis
-    ? Object.keys(data.analysis).reduce((acc, key) => {
-        const value = data.analysis[key];
-        return acc + (Array.isArray(value) ? value.length : value ? 1 : 0);
-      }, 0)
-    : 0;
-
   const insightCount = data.insights?.insights?.length || 0;
 
   // Get sources list
@@ -505,21 +498,29 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
     });
   }
 
-  // Get analysis items
-  const analysisItems: Array<{ key: string; value: string }> = [];
+  // Get analysis items grouped by key
+  const analysisGroups: Record<string, string[]> = {};
   if (data.analysis) {
     Object.entries(data.analysis).forEach(([key, value]) => {
       if (value) {
+        if (!analysisGroups[key]) {
+          analysisGroups[key] = [];
+        }
         if (Array.isArray(value)) {
           value.forEach((item) => {
-            analysisItems.push({ key, value: String(item) });
+            analysisGroups[key].push(String(item));
           });
         } else {
-          analysisItems.push({ key, value: String(value) });
+          analysisGroups[key].push(String(value));
         }
       }
     });
   }
+
+  const analysisCount = Object.values(analysisGroups).reduce(
+    (acc, items) => acc + items.length,
+    0
+  );
 
   // Get insights list
   const insightsList = data.insights?.insights || [];
@@ -703,11 +704,15 @@ export const ResearchResults: React.FC<Props> = ({ data, shareId }) => {
           color="green"
         >
           <div className="analysis-list">
-            {analysisItems.length > 0 ? (
-              analysisItems.map((item, idx) => (
-                <div key={idx} className="analysis-item">
-                  <div className="analysis-label">{item.key}</div>
-                  <p className="analysis-content">{item.value}</p>
+            {Object.keys(analysisGroups).length > 0 ? (
+              Object.entries(analysisGroups).map(([key, items], idx) => (
+                <div key={idx} className="analysis-group">
+                  <div className="analysis-heading">{key.toUpperCase()}</div>
+                  <ul className="analysis-bullets">
+                    {items.map((item, itemIdx) => (
+                      <li key={itemIdx} className="analysis-bullet-item">{item}</li>
+                    ))}
+                  </ul>
                 </div>
               ))
             ) : (

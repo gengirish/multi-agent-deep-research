@@ -1,0 +1,32 @@
+# Project Rules for Claude Code
+
+## Quick Start
+- Read PROJECT_CONTEXT.md for complete project overview
+- This is a multi-agent research system with React frontend + FastAPI backend
+- Three input modes: Type, Speak, Picture (with OCR + AI Vision)
+
+## Key Implementation Details
+- Picture input uses hybrid OCR + GPT-4 Vision for text extraction
+- Analysis findings display as grouped bullet points (not repeated headings)
+- All result cards have 400px max height with vertical scrolling
+- Backend runs on port 8000, frontend on port 5173
+- Uses OpenRouter for all LLM access (OPEN_ROUTER_KEY in .env)
+
+## Code Patterns to Follow
+- TypeScript strict mode in frontend
+- React functional components with hooks
+- CSS modules for component styling
+- FastAPI with Pydantic models for backend
+- Multi-agent orchestration in backend/orchestration/
+
+## Recent Features
+1. Picture input with camera + OCR + GPT-4 Vision
+2. Scrollable result cards (400px max)
+3. Grouped analysis findings with bullets
+4. Two-stage AI processing with progress indicators
+
+## Important Files
+- `frontend/src/components/PictureInput.tsx` - Latest major feature
+- `frontend/src/components/ResearchResults.tsx` - Recent scrolling updates
+- `backend/main.py` - Image text extraction endpoint
+- `PROJECT_CONTEXT.md` - Complete project documentation

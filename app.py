@@ -39,9 +39,10 @@ st.title("🤖 Multi-Agent AI Deep Researcher")
 st.markdown("""
 **An AI-powered research assistant using specialized agents for multi-source investigation.**
 
-This system uses four specialized agents:
+This system uses five specialized agents:
 - 🔍 **Contextual Retriever** - Pulls data from web, papers, and news
-- 📊 **Critical Analyzer** - Summarizes findings and validates sources
+- 📊 **Data Enrichment** - Enriches sources with metadata and sentiment
+- 🎯 **Critical Analyzer** - Summarizes findings and validates sources
 - 💡 **Insight Generator** - Suggests hypotheses and trends
 - 📄 **Report Builder** - Compiles structured research reports
 """)
@@ -240,11 +241,11 @@ if st.session_state.results:
     
     with tab2:
         st.markdown("## Retrieved Sources")
-        
+
         sources = result.get("sources", {})
-        
+
         col1, col2, col3 = st.columns(3)
-        
+
         with col1:
             st.subheader("🌐 Web Sources")
             if sources.get("web"):
@@ -254,7 +255,7 @@ if st.session_state.results:
                         st.write(f"**Snippet:** {web.get('snippet', 'No snippet')}")
             else:
                 st.info("No web sources found")
-        
+
         with col2:
             st.subheader("📚 Research Papers")
             if sources.get("papers"):
@@ -265,7 +266,7 @@ if st.session_state.results:
                         st.write(f"**Summary:** {paper.get('summary', 'No summary')[:200]}...")
             else:
                 st.info("No papers found")
-        
+
         with col3:
             st.subheader("📰 News Sources")
             if sources.get("news"):
