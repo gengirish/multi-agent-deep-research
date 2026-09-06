@@ -48,6 +48,13 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+# NVIDIA NIM (build.nvidia.com). OpenAI-compatible, so it uses the same
+# ChatOpenAI client as OpenRouter with a different base URL. Its free tier is
+# credit-metered per request rather than capped tokens-per-minute, which suits
+# the token-heavy eval judge better than Groq's 12k/min ceiling.
+NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+
 # Invoke-time safety net. Every stage's primary model can fail in ways that
 # construction cannot detect — a 429 from a rate-limited tier, a 402 from an
 # unfunded account, a provider outage — and the agents then fall back to empty
@@ -226,6 +233,45 @@ def _build_anthropic(model_name: str, temperature: float, max_tokens: Optional[i
         return None
 
 
+def _build_nvidia(model_name: str, temperature: float, max_tokens: Optional[int]):
+    """NVIDIA NIM call via the OpenAI-compatible endpoint.
+
+    NIM model ids themselves contain a slash (`meta/llama-3.3-70b-instruct`),
+    so a fully-qualified name here is `nvidia/<vendor>/<model>`.
+    `_split_provider` partitions on the first slash only, which leaves the
+    vendor-qualified id intact.
+    """
+    if not NVIDIA_API_KEY or NVIDIA_API_KEY == "your_nvidia_key_here":
+        logger.warning(
+            "NVIDIA_API_KEY not set - falling back to OpenRouter for NVIDIA "
+            f"model {model_name}"
+        )
+        return None
+
+    api_key = NVIDIA_API_KEY.strip().strip('"').strip("'")
+    if not api_key.startswith("nvapi-"):
+        logger.warning(
+            "NVIDIA_API_KEY format looks wrong (expected 'nvapi-' prefix). "
+            "Continuing anyway in case the format changed."
+        )
+
+    kwargs: dict[str, Any] = {
+        "model": model_name,
+        "temperature": temperature,
+        "openai_api_key": api_key,
+        "openai_api_base": NVIDIA_BASE_URL,
+    }
+    if max_tokens:
+        kwargs["max_tokens"] = max_tokens
+    try:
+        llm = ChatOpenAI(**kwargs)
+        logger.info(f"LLM initialized via NVIDIA NIM: {model_name} (temp={temperature})")
+        return llm
+    except Exception as e:
+        logger.error(f"NVIDIA init failed: {e}. Falling back to OpenRouter.")
+        return None
+
+
 def _build_openrouter(model: str, temperature: float, max_tokens: Optional[int]):
     """OpenRouter call. Expects fully-qualified model (`provider/name`)."""
     if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_openrouter_key_here":
@@ -315,6 +361,7 @@ def create_llm(
         "groq": _build_groq,
         "google": _build_google,
         "anthropic": _build_anthropic,
+        "nvidia": _build_nvidia,
     }
     builder = builders.get(provider)
     if builder is not None:
@@ -383,7 +430,9 @@ def create_report_llm():
 
 def is_llm_available() -> bool:
     """True if at least one provider is configured."""
-    return bool(OPENROUTER_API_KEY) or bool(GROQ_API_KEY) or bool(GOOGLE_API_KEY)
+    return bool(
+        OPENROUTER_API_KEY or GROQ_API_KEY or GOOGLE_API_KEY or NVIDIA_API_KEY
+    )
 
 
 def message_text(response: Any) -> str:

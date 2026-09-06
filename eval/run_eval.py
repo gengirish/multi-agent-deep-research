@@ -608,11 +608,27 @@ def main() -> int:
                         help="Also run the single-LLM ablation (needs an API key)")
     parser.add_argument("--label", default="live",
                         help="Filename label for the results files")
+    parser.add_argument("--save-payloads", nargs="?", const="eval/semantic/captures",
+                        default=None, metavar="DIR",
+                        help="Also write each raw API payload to DIR, for the "
+                             "semantic suite to score offline (default "
+                             "eval/semantic/captures)")
     args = parser.parse_args()
 
     queries = args.custom_queries or DEFAULT_QUERIES[: args.queries]
     out_dir = Path(__file__).parent / "results"
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # The scored results keep only aggregates, so a semantic re-scoring would
+    # otherwise mean re-running the whole 50s/query pipeline against free-tier
+    # quota. Capturing the raw payload lets eval/semantic score the same run
+    # offline, as many times as the judge needs.
+    capture_dir: Optional[Path] = None
+    if args.save_payloads:
+        capture_dir = Path(args.save_payloads)
+        if not capture_dir.is_absolute():
+            capture_dir = REPO_ROOT / capture_dir
+        capture_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Chronicle eval — mode={args.mode} queries={len(queries)}", flush=True)
     if args.mode == "api":
@@ -635,6 +651,16 @@ def main() -> int:
                 "latency_s": None,
             })
             continue
+
+        if capture_dir is not None:
+            slug = re.sub(r"[^a-z0-9]+", "-", query.lower()).strip("-")[:60]
+            (capture_dir / f"{i:02d}-{slug}.json").write_text(
+                json.dumps(
+                    {"query": query, "latency_s": round(latency, 2), "payload": payload},
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
 
         scored = score_run(query, payload, latency, args.check_urls)
         runs.append(scored)

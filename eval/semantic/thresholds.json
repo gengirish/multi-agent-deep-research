@@ -1,0 +1,14 @@
+{
+  "_comment": "Minimum acceptable score per metric. `calibrated` is false until run_semantic.py --calibrate has measured this pipeline; the values below are conservative placeholders, NOT measurements. Do not quote them as results.",
+  "calibrated": false,
+  "calibrated_at": null,
+  "calibrated_from": null,
+  "judge_model": null,
+  "metrics": {
+    "faithfulness": 0.80,
+    "answer_relevancy": 0.75,
+    "contextual_relevancy": 0.50,
+    "contextual_precision": 0.60,
+    "contextual_recall": 0.60
+  }
+}

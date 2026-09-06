@@ -273,7 +273,11 @@ export const LandingPage: React.FC = () => {
           </ul>
         </section>
 
-        <section className="newsletter" aria-label="Subscribe to the Chronicle briefing">
+        <section
+          id="newsletter"
+          className="newsletter"
+          aria-label="Subscribe to the Chronicle briefing"
+        >
           <SubscribeForm
             variant="panel"
             title="Get the Chronicle briefing"

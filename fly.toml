@@ -20,6 +20,16 @@ primary_region = "sin"
   ENVIRONMENT = "production"
   PORT = "8080"
   PYTHONPATH = "/app"
+  # Public origin advertised in the OAuth discovery documents and the
+  # RFC 9728 WWW-Authenticate challenge. Must match the hostname a connector
+  # actually dials, or claude.ai rejects the issuer as mismatched.
+  CHRONICLE_PUBLIC_URL = "https://multi-agent-deep-research-api.fly.dev"
+  # Fly terminates TLS at its proxy and forwards over the private network, so
+  # the connecting peer is never loopback. Uvicorn's default
+  # forwarded_allow_ips="127.0.0.1" would therefore ignore X-Forwarded-Proto
+  # and report scheme="http" to the app — which would leak into any redirect
+  # or self-referential URL we build. Trust the proxy explicitly.
+  FORWARDED_ALLOW_IPS = "*"
 
 [http_service]
   internal_port = 8080

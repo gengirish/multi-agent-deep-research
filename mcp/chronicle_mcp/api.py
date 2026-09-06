@@ -70,11 +70,34 @@ def create_job(base_url: str, query: str) -> dict[str, Any]:
 
 
 def get_job(base_url: str, job_id: str) -> dict[str, Any]:
-    return _request(
+    """Fetch a job and flatten it to {job_id, status, error, result}.
+
+    The endpoint answers with the ConversationDetail envelope, which nests
+    the payload two levels deep:
+
+        {"id": <job_id>, "data": {..., "status", "error", "data": {report}}}
+
+    Callers here want a flat row, and reading `row["status"]` off the raw
+    envelope silently yields None — which is what made `wait_for_job` poll
+    until its 600s timeout on jobs that had already succeeded. Normalising in
+    one place keeps that shape mismatch from leaking into every caller.
+    """
+    raw = _request(
         "GET",
         f"{base_url.rstrip('/')}/api/research/jobs/{job_id}",
         timeout=30.0,
     )
+    detail = raw.get("data")
+    if not isinstance(detail, dict):
+        # Unexpected envelope — hand it back rather than masking it as empty.
+        return raw
+    return {
+        "job_id": raw.get("id") or job_id,
+        "status": detail.get("status"),
+        "error": detail.get("error") or "",
+        "query": detail.get("query"),
+        "result": detail.get("data") or {},
+    }
 
 
 def wait_for_job(base_url: str, job_id: str) -> dict[str, Any]:

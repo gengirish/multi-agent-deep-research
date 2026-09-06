@@ -1,0 +1,6 @@
+# Semantic eval layer. Kept out of the main requirements.txt: the judge is a
+# CI/measurement dependency, not something the served pipeline imports.
+deepeval>=4.2.0
+pytest>=8.0.0
+openai>=1.40.0
+python-dotenv>=1.0.0

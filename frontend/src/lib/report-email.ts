@@ -31,6 +31,11 @@ const APP_URL = (
   .trim()
   .replace(/<[^>]*>/g, "");
 
+// Public signup deep-link for the footer CTA. The landing page exposes the
+// SubscribeForm inside <section id="newsletter">, so /#newsletter jumps the
+// reader straight to the form — turning every forwarded briefing into a loop.
+const SUBSCRIBE_URL = `${APP_URL.replace(/\/$/, "")}/#newsletter`;
+
 // Gmail clips messages above ~102KB. Keep the rendered report well under that
 // so the recipient sees the whole thing inline. The "View full report" CTA
 // always points back to the Chronicle viewer for the un-clipped version.
@@ -167,6 +172,19 @@ export function buildReportEmail(
             You're receiving this because you subscribed to ${escapeHtml(input.senderName)}'s research briefings. <a href="${escapeHtml(input.unsubscribeUrl)}" style="color:${C.accent};text-decoration:underline;">Unsubscribe</a>.
           </div>`
     : "";
+
+  // ---- Subscribe CTA (rendered in every email) ------------------------------
+  // The daily briefing / weekly Spotlight are the biggest warm surface we have —
+  // every forward should carry a way to get on the list. Links to the landing
+  // page's newsletter section, which drops the reader straight on the form.
+  const subscribeCtaHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 0 6px;">
+        <tr>
+          <td bgcolor="${C.accent}" style="border-radius:8px;">
+            <a href="${escapeHtml(SUBSCRIBE_URL)}" style="display:inline-block;padding:11px 22px;font-family:${SANS};font-size:13px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Get briefings like this in your inbox&nbsp;&rarr;</a>
+          </td>
+        </tr>
+      </table>
+      <div style="font-family:${SANS};font-size:11px;color:${C.muted};text-align:center;line-height:1.5;">Cited, defensible market research · no spam · unsubscribe in one click.</div>`;
 
   // ---- Masthead metric chips ----------------------------------------------
   const metaRow = `${escapeHtml(issueDate)}&nbsp;&nbsp;·&nbsp;&nbsp;${minutes} min read&nbsp;&nbsp;·&nbsp;&nbsp;Ref ${escapeHtml(
@@ -338,8 +356,11 @@ export function buildReportEmail(
 
         <!-- Footer -->
         <tr>
-          <td class="px" style="padding:20px 36px 24px;border-top:1px solid ${C.line};font-family:${SANS};font-size:12px;color:${C.faint};line-height:1.6;">
-            This briefing was generated and sent via a verified ${escapeHtml(BRAND)} account. Every send is rate-limited and tied to a real user — if this looks like spam, just reply and we'll investigate.
+          <td class="px" style="padding:24px 36px 28px;border-top:1px solid ${C.line};font-family:${SANS};font-size:12px;color:${C.faint};line-height:1.6;">
+            ${subscribeCtaHtml}
+            <div style="font-family:${SANS};font-size:12px;color:${C.faint};line-height:1.6;margin-top:4px;">
+              This briefing was generated and sent via a verified ${escapeHtml(BRAND)} account. Every send is rate-limited and tied to a real user — if this looks like spam, just reply and we'll investigate.
+            </div>
             ${unsubscribeHtml}
           </td>
         </tr>
@@ -363,6 +384,7 @@ export function buildReportEmail(
     `\nRead the full briefing (sources, charts, citations):\n${input.shareUrl}\n\n` +
     `----------------------------------------\n${md}\n----------------------------------------\n\n` +
     `Shared by ${input.senderName} <${input.senderEmail}> via ${BRAND}.\n` +
+    `\nGet briefings like this in your inbox:\n${SUBSCRIBE_URL}\n` +
     `${APP_URL}\n` +
     (input.unsubscribeUrl ? `\nUnsubscribe: ${input.unsubscribeUrl}\n` : "");
 

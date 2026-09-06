@@ -100,7 +100,20 @@ class ResearchResult(Base):
         }
 
     def to_detail(self) -> dict[str, Any]:
-        """Full shape used by the /api/conversations/{id} detail endpoint."""
+        """Full shape used by the /api/conversations/{id} detail endpoint.
+
+        `status` and `error` are surfaced here so that a *polling* client can
+        tell a finished job from a running one. The browser never needed them
+        — it learns about completion from the SSE stream — but every
+        non-browser consumer polls this endpoint instead:
+        `scripts/scheduled_research.py`, the stdio MCP server's async path,
+        and anything driving the API from cron. Without these keys a poller
+        sees a row that never reports completion and spins until its own
+        timeout while the work has in fact long since succeeded.
+
+        Additive only: the existing keys keep their shape, so the frontend
+        DTO and the /api/conversations/{id} consumers are unaffected.
+        """
         data: dict[str, Any] = dict(self.result or {})
         if self.conversation:
             data["conversation"] = self.conversation
@@ -110,5 +123,7 @@ class ResearchResult(Base):
             "query": self.query,
             "file_name": f"conversation_{self.job_id}.json",
             "file_size": len(str(self.result or "")) + len(str(self.conversation or "")),
+            "status": self.status,
+            "error": self.error or "",
             "data": data,
         }

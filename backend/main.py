@@ -24,6 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from orchestration.coordinator import ResearchWorkflow
 from utils.agent_logger import get_agent_logger
 from backend.auth.jwt_dependency import optional_session, SessionUser
+from backend.auth import oauth as oauth_mod
 from backend.db import (
     dispose_engine,
     get_by_id,
@@ -44,6 +45,46 @@ from backend.queue.tasks import enqueue_research
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --------------------------------------------------------------------------
+# Remote MCP endpoint (claude.ai custom connector)
+# --------------------------------------------------------------------------
+# Built at import time so its lifespan can be chained into the app's below;
+# FastMCP's http_app carries a session manager that must be started, and a
+# mounted sub-app's lifespan is NOT run by the parent automatically.
+#
+# Fails closed: with no CHRONICLE_MCP_ACCESS_KEY / signing secret we mount
+# nothing rather than publishing an unauthenticated tool that spends LLM
+# credits. See backend/auth/oauth.py.
+_mcp_asgi = None
+if oauth_mod.oauth_enabled():
+    try:
+        from backend.mcp_server import build_mcp_server
+
+        # FastMCP 4 guards against DNS rebinding by allowing only loopback
+        # Hosts by default. Behind Fly the Host header is the public
+        # hostname, so it has to be allowed explicitly or every request 421s.
+        _mcp_allowed_hosts = ["*"] if os.getenv("CHRONICLE_MCP_ALLOW_ANY_HOST") else [
+            h for h in [
+                oauth_mod.public_url().replace("https://", "").replace("http://", ""),
+                "multi-agent-deep-research-api.fly.dev",
+                "127.0.0.1", "localhost", "::1",
+            ] if h
+        ]
+        _mcp_asgi = build_mcp_server().http_app(
+            path="/",
+            stateless_http=True,   # no sticky sessions; survives machine restarts
+            allowed_hosts=_mcp_allowed_hosts,
+        )
+        logger.info(f"MCP endpoint enabled at /mcp (hosts: {_mcp_allowed_hosts})")
+    except Exception as e:
+        logger.exception(f"Failed to build MCP app (endpoint disabled): {e}")
+        _mcp_asgi = None
+else:
+    logger.info(
+        "MCP endpoint disabled — set CHRONICLE_MCP_ACCESS_KEY and "
+        "CHRONICLE_OAUTH_SECRET (or JWT_SECRET) to enable the connector."
+    )
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler for startup and shutdown."""
@@ -59,7 +100,12 @@ async def lifespan(app: FastAPI):
         logger.error(f"DB init failed at startup (continuing without it): {e}")
     logger.info("App is ready to accept requests")
     # Workflow stays lazy so cold starts don't pay the LangGraph cost.
-    yield
+    if _mcp_asgi is not None:
+        # Runs FastMCP's session manager for the life of the process.
+        async with _mcp_asgi.lifespan(app):
+            yield
+    else:
+        yield
     logger.info("FastAPI app shutting down...")
     try:
         await dispose_engine()
@@ -108,6 +154,22 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# OAuth 2.1 discovery + authorization endpoints for the MCP connector.
+# Registered unconditionally so /.well-known/* answers with a clear 503 story
+# rather than a bare 404 when the deployment hasn't been given its secrets.
+app.include_router(oauth_mod.router)
+
+if _mcp_asgi is not None:
+    # The bearer gate wraps the MCP app rather than sitting on the FastAPI
+    # app, so /api/* keeps its existing auth-optional behaviour untouched.
+    app.mount(
+        "/mcp",
+        oauth_mod.MCPAuthMiddleware(_mcp_asgi),
+        name="mcp",
+    )
+    # Must be app-level: routing (and its slash redirect) runs before mounts.
+    app.add_middleware(oauth_mod.MCPPathNormalizeMiddleware)
 
 # Initialize workflow lazily to prevent crashes on startup
 # Workflow will be initialized on first use

@@ -29,6 +29,11 @@ redis[hiredis]>=5.0.0
 # Auth (optional HS256 JWT validation — shared secret with the Next.js layer)
 python-jose[cryptography]>=3.3.0
 
+# Remote MCP endpoint (claude.ai custom connector). Pinned to the 4.x line —
+# 4.0 renamed streamable_http_app() to http_app() and added the host/origin
+# guard that backend/main.py configures via allowed_hosts.
+fastmcp>=4.0.0,<5.0.0
+
 # Token counting / context truncation
 tiktoken>=0.7.0
 

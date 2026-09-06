@@ -1,0 +1,3 @@
+captures/*.json
+results/
+judge-validation.json
