@@ -152,6 +152,10 @@ The repo is platform-agnostic — anything that can run a Python ASGI container 
 
 ## MCP (Cursor / Claude Desktop)
 
+Chronicle ships **two** MCP surfaces: a local stdio server (below) and a hosted
+remote connector for claude.ai (next section). They expose the same five tools
+and are kept in sync by `backend/tests/test_mcp_parity.py`.
+
 ```bash
 pip install -e mcp/
 ```
@@ -176,9 +180,35 @@ Then ask Cursor: *"Use Chronicle to research TAM for AI coding assistants 2025."
 
 Full setup: [`mcp/README.md`](./mcp/README.md).
 
+## claude.ai remote connector
+
+The deployed backend also serves a hosted MCP endpoint at `/mcp`, fronted by an
+OAuth 2.1 authorization server, so claude.ai can use Chronicle without any local
+install.
+
+**Add it:** claude.ai → Settings → Connectors → Add custom connector →
+
+```
+https://multi-agent-deep-research-api.fly.dev/mcp
+```
+
+Claude handles dynamic client registration and PKCE automatically. The approval
+screen asks for a shared access key (`CHRONICLE_MCP_ACCESS_KEY`), which the
+operator sets — see [`DEPLOYMENT.md`](./DEPLOYMENT.md) Phase 3.
+
+The endpoint **fails closed**: without both a signing secret and an access key
+it is never mounted and `/mcp` returns 404. A 404 means "not configured", not
+"broken"; a correctly configured endpoint returns **401** with a
+`WWW-Authenticate: Bearer resource_metadata="…"` challenge.
+
+Because `research_market` takes 30–90s, ask for `async_mode=true` and poll
+`get_research_job(job_id)` rather than waiting inline.
+
+
 ## Roadmap
 
 - [x] MCP server for Cursor / Claude Desktop (`chronicle-mcp`)
+- [x] Hosted claude.ai remote connector (OAuth 2.1 + PKCE at `/mcp`)
 - [ ] Persistent project workspaces (save and revisit research threads)
 - [ ] Direct export to Notion, Google Docs, and Linear
 - [ ] Custom agent definitions (bring your own retrieval source)

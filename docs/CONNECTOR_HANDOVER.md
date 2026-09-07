@@ -1,5 +1,15 @@
 # Chronicle → Claude Connector: Master Handover Prompt
 
+> **STATUS: COMPLETE as of 2026-09-07.** Steps 1–4 below were executed and
+> verified against production; the connector is live at
+> `https://multi-agent-deep-research-api.fly.dev/mcp`. Secrets
+> (`CHRONICLE_OAUTH_SECRET`, `CHRONICLE_MCP_ACCESS_KEY`) are set on Fly and the
+> full OAuth 2.1 + PKCE flow was exercised end to end — see "VERIFICATION
+> RESULTS" at the bottom. What remains is step 5 (registering in claude.ai,
+> which needs a human at the approval screen) and the cold-start decision in
+> step 3. This file is kept as the record of intent and the re-run procedure;
+> it is no longer a to-do list.
+
 Paste everything below the line into a fresh Claude Code session opened at the
 repo root (`/Users/ghiremath/multi-agent-deep-research`).
 
@@ -164,3 +174,35 @@ The user can ask Claude on claude.ai, in a chat with no repo access, a market
 research question; Claude calls `research_market` through the connector; and a
 cited report with credibility scores comes back. You have personally verified
 steps 4's status codes and the tests in step 1 pass.
+
+---
+
+## VERIFICATION RESULTS (2026-09-07, against production)
+
+Observed status codes, not inferred from code.
+
+| Check | Result |
+|---|---|
+| `POST /oauth/register` (DCR) | **201**, `client_id` issued |
+| `POST /oauth/authorize`, wrong access key | **401**, no code issued |
+| `POST /oauth/authorize`, correct key | **302**, `state` echoed, code issued |
+| `POST /oauth/token`, wrong PKCE verifier | **400** `invalid_grant` |
+| `POST /oauth/token`, correct verifier | **200**, Bearer, scope `chronicle:research`, 3600s, refresh token |
+| Same authorization code replayed | **400** `invalid_grant` (single-use holds) |
+| `GET /mcp` no token | **401** + `WWW-Authenticate: Bearer resource_metadata="…", scope="chronicle:research"` |
+| `GET /mcp` bogus bearer | **401**, not 500 |
+| `/.well-known/oauth-protected-resource` | **200**, `resource` = `…fly.dev/mcp` |
+| `/.well-known/oauth-authorization-server` | **200**, `issuer` = `…fly.dev` |
+| `initialize` | `protocolVersion 2025-06-18`, `serverInfo: chronicle 1.0.0` |
+| `tools/list` | all five tools present |
+| `chronicle_health` | `mode: hosted`, `status: ok`, `database: ok` |
+| `list_starter_queries` | 6 prompts returned |
+
+Deployed as Fly release **v21**. `fly.toml [env]` carries `CHRONICLE_PUBLIC_URL`
+and `FORWARDED_ALLOW_IPS`; neither is duplicated as a secret.
+
+**Not verified:** the claude.ai registration itself (step 5) — it needs a human
+to paste the access key at the approval screen.
+
+**Outstanding:** `min_machines_running` is still unset, contrary to step 3, so
+cold start measured ~13s.
