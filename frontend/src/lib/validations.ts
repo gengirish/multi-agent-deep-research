@@ -55,6 +55,10 @@ export const broadcastReportSchema = z.object({
     .trim()
     .max(2000, "Note must be at most 2000 characters")
     .optional(),
+  // When true, report what a send would do and send nothing. Agents call this
+  // first so a human (or the model's own confirmation step) sees the recipient
+  // count before any irreversible mail goes out.
+  dryRun: z.boolean().optional().default(false),
 });
 
 export type AddSubscriberInput = z.infer<typeof addSubscriberSchema>;

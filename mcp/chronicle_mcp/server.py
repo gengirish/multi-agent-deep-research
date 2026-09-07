@@ -22,6 +22,7 @@ from pydantic import Field
 
 from chronicle_mcp import __version__
 from chronicle_mcp.api import (
+    broadcast,
     DEFAULT_API_URL,
     ChronicleAPIError,
     create_job,
@@ -92,6 +93,14 @@ def _format_result(payload: dict[str, Any], *, job_id: Optional[str] = None) -> 
 
     lines.extend(["", "--- Report ---", "", report or "(no report generated)"])
     return "\n".join(lines)
+
+
+
+def _app_url() -> str:
+    """Public origin of the Chronicle web app (owns the newsletter + mail)."""
+    return os.getenv(
+        "CHRONICLE_APP_URL", "https://deep-research.intelliforge.tech"
+    ).rstrip("/")
 
 
 @mcp.tool(
@@ -220,6 +229,67 @@ def list_starter_queries() -> str:
         queries = FOUNDER_STARTER_QUERIES
 
     return json.dumps({"queries": queries}, indent=2)
+
+
+
+@mcp.tool(
+    tags={"newsletter"},
+    annotations={"readOnlyHint": False, "destructiveHint": True},
+)
+def broadcast_briefing(
+    job_id: str,
+    note: str = "",
+    confirm: bool = False,
+) -> str:
+    """Email a finished research briefing to the Chronicle newsletter list.
+
+    THIS SENDS REAL EMAIL TO REAL PEOPLE AND CANNOT BE UNDONE.
+
+    Always call once with confirm=false first and show the caller how many
+    subscribers would receive it. Only call with confirm=true when the user has
+    asked for this specific report to go out — never to "finish" a task on your
+    own initiative.
+
+    Each report can be broadcast once, ever; a second attempt returns
+    already_broadcast and sends nothing, so a retried run is safe.
+    """
+    job_id = (job_id or "").strip()
+    if not job_id:
+        return json.dumps(
+            {"ok": False, "error": "invalid", "message": "job_id is required."},
+            indent=2,
+        )
+
+    # Sending is owned by the Next.js app (subscriber list, template, AgentMail
+    # credentials). Local mode has no route to it.
+    if _mode() == "local":
+        return json.dumps(
+            {
+                "ok": False,
+                "error": "unavailable",
+                "message": (
+                    "Broadcasting requires remote mode — the subscriber list "
+                    "and mail credentials live in the Chronicle web app."
+                ),
+            },
+            indent=2,
+        )
+
+    try:
+        result = broadcast(_app_url(), job_id, note.strip(), dry_run=not confirm)
+    except ChronicleAPIError as exc:
+        return json.dumps(
+            {"ok": False, "error": "request_failed", "message": str(exc)[:300]},
+            indent=2,
+        )
+
+    if not confirm and result.get("ok"):
+        result["sent"] = False
+        result["next_step"] = (
+            "Nothing was sent. Report the recipient count to the user and ask "
+            "them to confirm before calling again with confirm=true."
+        )
+    return json.dumps(result, indent=2)
 
 
 @mcp.tool(

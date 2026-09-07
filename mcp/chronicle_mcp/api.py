@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from typing import Any, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import quote
 
 DEFAULT_API_URL = "https://multi-agent-deep-research-api.fly.dev"
 POLL_INTERVAL_SEC = 2.0
@@ -123,3 +125,65 @@ def export_markdown(base_url: str, job_id: str) -> str:
         raise ChronicleAPIError(f"HTTP {exc.code}: {detail}") from exc
     except URLError as exc:
         raise ChronicleAPIError(f"Network error: {exc.reason}") from exc
+
+
+def broadcast(
+    app_url: str,
+    job_id: str,
+    note: str = "",
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    """Send (or preview) a briefing to the newsletter list.
+
+    Talks to the Next.js app rather than the research API: the subscriber
+    list, the email template and the mail credentials all live there.
+
+    Unlike the other helpers this does not raise on a 4xx. The interesting
+    outcomes — 409 already_broadcast, 400 no subscribers — are answers the
+    caller must relay verbatim, not transport failures.
+    """
+    token = (os.getenv("CHRONICLE_SERVICE_TOKEN") or "").strip()
+    if not token:
+        return {
+            "ok": False,
+            "error": "not_configured",
+            "message": (
+                "Set CHRONICLE_SERVICE_TOKEN to the value configured in the "
+                "Chronicle web app to enable broadcasting."
+            ),
+        }
+
+    payload: dict[str, Any] = {"dryRun": dry_run}
+    if note:
+        payload["note"] = note
+
+    url = f"{app_url.rstrip('/')}/api/reports/{quote(job_id, safe='')}/broadcast"
+    req = Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+    )
+    try:
+        with urlopen(req, timeout=120.0) as resp:
+            body = resp.read().decode("utf-8")
+            data = json.loads(body) if body else {}
+            data.setdefault("ok", True)
+            data["http_status"] = resp.status
+            return data
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace")
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            data = {"message": raw[:300]}
+        data.setdefault("ok", False)
+        data["http_status"] = exc.code
+        return data
+    except URLError as exc:
+        return {"ok": False, "error": "unreachable",
+                "message": f"Network error: {exc.reason}"}

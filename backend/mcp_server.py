@@ -27,7 +27,9 @@ import json
 import logging
 import os
 from typing import Annotated, Any, Optional
+from urllib.parse import quote
 
+import httpx
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
@@ -128,6 +130,59 @@ async def _visible_row(job_id: str) -> tuple[Any, Optional[str]]:
     if not _is_row_visible(row, None):
         return None, f"Job {job_id} not found."
     return row, None
+
+
+# --------------------------------------------------------------------------
+# Newsletter broadcast (calls the Next.js frontend, which owns the subscriber
+# list, the email template and the AgentMail credentials).
+# --------------------------------------------------------------------------
+CHRONICLE_APP_URL = os.getenv(
+    "CHRONICLE_APP_URL", "https://deep-research.intelliforge.tech"
+).rstrip("/")
+
+
+async def _call_broadcast(job_id: str, note: str, dry_run: bool) -> dict[str, Any]:
+    """POST the broadcast route with the service token.
+
+    The frontend owns sending; this is a thin authenticated proxy. Errors are
+    returned as dicts rather than raised so the tool can explain them to the
+    model instead of surfacing a stack trace.
+    """
+    token = (os.getenv("CHRONICLE_SERVICE_TOKEN") or "").strip()
+    if not token:
+        return {
+            "ok": False,
+            "error": "not_configured",
+            "message": (
+                "Broadcasting is not configured on this server. Set "
+                "CHRONICLE_SERVICE_TOKEN on the backend and the frontend to "
+                "the same value."
+            ),
+        }
+
+    url = f"{CHRONICLE_APP_URL}/api/reports/{quote(job_id, safe='')}/broadcast"
+    payload: dict[str, Any] = {"dryRun": dry_run}
+    if note:
+        payload["note"] = note
+
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                url,
+                json=payload,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    except Exception as exc:
+        logger.exception("broadcast call failed")
+        return {"ok": False, "error": "unreachable", "message": str(exc)[:300]}
+
+    try:
+        body = resp.json()
+    except Exception:
+        body = {"message": resp.text[:300]}
+    body.setdefault("ok", resp.is_success)
+    body["http_status"] = resp.status_code
+    return body
 
 
 def build_mcp_server():
@@ -245,6 +300,54 @@ def build_mcp_server():
     async def list_starter_queries() -> str:
         """Return founder-style starter queries for market sizing and competitive research."""
         return json.dumps({"queries": FOUNDER_STARTER_QUERIES}, indent=2)
+
+
+    @mcp.tool(
+        tags={"newsletter"},
+        annotations={"readOnlyHint": False, "destructiveHint": True},
+    )
+    async def broadcast_briefing(
+        job_id: str = Field(description="Report id to send, from research_market."),
+        note: str = Field(
+            default="",
+            description="Optional short editor's note shown above the briefing.",
+        ),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Must be true to actually send. When false (the default) this "
+                "returns the recipient count and sends nothing."
+            ),
+        ),
+    ) -> str:
+        """Email a finished research briefing to the Chronicle newsletter list.
+
+        THIS SENDS REAL EMAIL TO REAL PEOPLE AND CANNOT BE UNDONE.
+
+        Always call once with confirm=false first and show the caller how many
+        subscribers would receive it. Only call with confirm=true when the user
+        has asked for this specific report to go out — never to "finish" a task
+        on your own initiative.
+
+        Each report can be broadcast once, ever; a second attempt returns
+        already_broadcast and sends nothing, so a retried scheduled run is safe.
+        """
+        job_id = (job_id or "").strip()
+        if not job_id:
+            return json.dumps({"ok": False, "error": "invalid",
+                               "message": "job_id is required."}, indent=2)
+
+        result = await _call_broadcast(job_id, (note or "").strip(),
+                                       dry_run=not confirm)
+
+        # Make the not-yet-sent case unmistakable to the model.
+        if not confirm and result.get("ok"):
+            result["sent"] = False
+            result["next_step"] = (
+                "Nothing was sent. Report the recipient count to the user and "
+                "ask them to confirm before calling again with confirm=true."
+            )
+        return json.dumps(result, indent=2)
 
     @mcp.tool(tags={"meta"}, annotations={"readOnlyHint": True})
     async def chronicle_health() -> str:

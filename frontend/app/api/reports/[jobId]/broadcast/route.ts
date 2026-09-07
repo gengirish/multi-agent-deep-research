@@ -12,12 +12,15 @@ import {
 } from "@/lib/subscribers";
 import { rateLimit } from "@/lib/rate-limit";
 import { errorResponse, serverError } from "@/lib/api-utils";
+import { getServiceIdentity } from "@/lib/service-auth";
 
 export const runtime = "nodejs";
 
 // Broadcasts fan one report out to an owner's entire active subscriber list, so
 // they're heavier than a single send. Tighter per-user budget accordingly.
 const PER_USER_LIMIT = 5;
+// Dry runs are cheap and read-only, so they get a looser, separate budget.
+const DRY_RUN_LIMIT = 20;
 const WINDOW_MS = 10 * 60 * 1000;
 
 const APP_URL = (
@@ -33,11 +36,17 @@ interface RouteContext {
 
 export async function POST(req: Request, { params }: RouteContext) {
   try {
-    const session = await getSession();
+    // Two ways in: a browser session cookie, or a service token presented by
+    // the MCP connector (scheduled jobs cannot hold a cookie). The service
+    // path grants one fixed operator identity, never an arbitrary user.
+    const service = getServiceIdentity(req);
+    const session = service ?? (await getSession());
     if (!session?.sub) {
       return errorResponse("Sign in to broadcast research reports.", 401);
     }
-    if (!isNewsletterAdmin(session.email)) {
+    // A service token is already the operator, so the admin allowlist applies
+    // only to interactive sessions.
+    if (!service && !isNewsletterAdmin(session.email)) {
       return errorResponse(
         "You don't have access to broadcast to the newsletter list.",
         403,
@@ -57,13 +66,24 @@ export async function POST(req: Request, { params }: RouteContext) {
         400,
       );
     }
-    const { note } = parsed.data;
+    const { note, dryRun } = parsed.data;
 
     // Per-user rate limit only — broadcasts are owner-scoped and already gated
     // by the small subscriber list, so a per-IP guard adds little here.
-    if (!rateLimit(`broadcast:user:${session.sub}`, PER_USER_LIMIT, WINDOW_MS)) {
+    //
+    // Dry runs get their own bucket. They send no mail, but they do hit the
+    // database, so they are still capped — just not out of the send budget. A
+    // model looping dry runs must not be able to 429 the real send that
+    // follows it.
+    const limitKey = dryRun
+      ? `broadcast:dryrun:${session.sub}`
+      : `broadcast:user:${session.sub}`;
+    const limitMax = dryRun ? DRY_RUN_LIMIT : PER_USER_LIMIT;
+    if (!rateLimit(limitKey, limitMax, WINDOW_MS)) {
       return errorResponse(
-        "You've hit the broadcast limit. Try again in a few minutes.",
+        dryRun
+          ? "Too many broadcast previews. Try again in a few minutes."
+          : "You've hit the broadcast limit. Try again in a few minutes.",
         429,
       );
     }
@@ -124,6 +144,46 @@ export async function POST(req: Request, { params }: RouteContext) {
         "The newsletter has no active subscribers yet. Add some on the Audience page.",
         400,
       );
+    }
+
+    // Idempotency. Sending email cannot be undone, and an unattended caller
+    // (a retried scheduled run, a model that calls the tool twice) must not be
+    // able to mail the list again. One successful broadcast per report, ever.
+    // Checked for every caller, not just service tokens — a double-click in
+    // the UI is the same mistake.
+    const priorBroadcast = await prisma.broadcast.findFirst({
+      where: { jobId, status: { in: ["sent", "partial"] } },
+      select: { id: true, createdAt: true, sentCount: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (priorBroadcast) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "already_broadcast",
+          message:
+            `This report was already broadcast to ${priorBroadcast.sentCount} ` +
+            `subscribers on ${priorBroadcast.createdAt.toISOString()}. ` +
+            `Reports can only be broadcast once.`,
+          broadcastAt: priorBroadcast.createdAt.toISOString(),
+          sentCount: priorBroadcast.sentCount,
+        },
+        { status: 409 },
+      );
+    }
+
+    // Dry run: report exactly what a real send would do, and send nothing.
+    // This is what an agent calls before asking for confirmation.
+    if (dryRun) {
+      return NextResponse.json({
+        ok: true,
+        dryRun: true,
+        recipientCount: subscribers.length,
+        query: report.query,
+        message:
+          `Would send "${report.query}" to ${subscribers.length} active ` +
+          `subscriber(s). Nothing was sent. Call again with confirm to send.`,
+      });
     }
 
     const shareUrl = `${APP_URL}/r/${encodeURIComponent(jobId)}`;
