@@ -85,6 +85,24 @@ else:
         "CHRONICLE_OAUTH_SECRET (or JWT_SECRET) to enable the connector."
     )
 
+async def _probe_fallback() -> None:
+    """One tiny call against the configured fallback model, logged loudly."""
+    try:
+        from utils.llm_config import validate_fallback
+
+        ok, detail = await asyncio.to_thread(validate_fallback)
+    except Exception as e:  # never let a probe take the app down
+        logger.warning(f"Fallback probe could not run: {e}")
+        return
+    if ok:
+        logger.info(f"LLM fallback OK: {detail}")
+    else:
+        logger.error(
+            f"LLM FALLBACK IS BROKEN: {detail}. Every stage will degrade to an "
+            f"empty/template result the moment its primary model rate-limits."
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler for startup and shutdown."""
@@ -98,6 +116,18 @@ async def lifespan(app: FastAPI):
         # context. This also keeps `python backend/main.py` usable for
         # smoke-testing without Neon configured.
         logger.error(f"DB init failed at startup (continuing without it): {e}")
+
+    # Probe the LLM fallback in the background. Every stage relies on it to
+    # absorb a primary's 429, but a retired model slug makes it a no-op that
+    # only shows up the day a primary rate-limits — which is exactly how
+    # `openai/gpt-oss-20b:free` sat broken behind a "Fallback attached" log
+    # line. Backgrounded so a slow provider never delays readiness, and
+    # best-effort so a failed probe never blocks boot.
+    if os.getenv("CHRONICLE_SKIP_FALLBACK_PROBE"):
+        logger.info("Fallback probe skipped (CHRONICLE_SKIP_FALLBACK_PROBE set)")
+    else:
+        asyncio.create_task(_probe_fallback())
+
     logger.info("App is ready to accept requests")
     # Workflow stays lazy so cold starts don't pay the LangGraph cost.
     if _mcp_asgi is not None:

@@ -58,11 +58,19 @@ NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 # Invoke-time safety net. Every stage's primary model can fail in ways that
 # construction cannot detect — a 429 from a rate-limited tier, a 402 from an
 # unfunded account, a provider outage — and the agents then fall back to empty
-# results. An OpenRouter `:free` OSS model costs nothing to call and has its
-# own quota, so it can absorb those failures without a funded balance. Set to
-# an empty string to disable.
+# results.
+#
+# This was `openai/gpt-oss-20b:free` until OpenRouter retired the `:free`
+# variants. Every call to the retired slug returned 404 "This model is
+# unavailable for free", so the safety net was dead for weeks without a single
+# alarm: RunnableWithFallbacks re-raises the *first* exception when all options
+# fail, so callers only ever saw the primary's error and never the fallback's
+# 404. The paid slug is a fraction of a cent per call — cheap enough to be the
+# thing that stands between a 429 and an empty report. `validate_fallback()`
+# below now probes it so a future retirement is loud. Set to an empty string to
+# disable the fallback entirely.
 OPENROUTER_FALLBACK_MODEL = os.getenv(
-    "OPENROUTER_FALLBACK_MODEL", "openai/gpt-oss-20b:free"
+    "OPENROUTER_FALLBACK_MODEL", "openai/gpt-oss-20b"
 )
 
 # Minimum output budget for Gemini, which spends part of it on reasoning.
@@ -97,10 +105,17 @@ CREDIBILITY_MODEL = os.getenv("CREDIBILITY_MODEL", "groq/llama-3.3-70b-versatile
 # no longer shares a failure domain with the OpenRouter fallback.
 INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "google/gemini-flash-latest")
 # The report prompt carries all ~17 sources, so it needs headroom: Groq's
-# free tier caps at 12k tokens/minute and 429'd into the template writer,
-# and Haiku stopped working when the Anthropic balance ran out. Gemini Flash
-# has the context and a free-tier quota that survives a full run.
-REPORT_MODEL = os.getenv("REPORT_MODEL", "google/gemini-flash-latest")
+# free tier caps at 12k tokens/minute and 429'd into the template writer.
+#
+# This ran on Gemini Flash until that stacked three stages (analyzer, insight,
+# report) onto one Google project quota. Google's free tier is 20 requests per
+# day *per model* (quotaId GenerateRequestsPerDayPerProjectPerModel-FreeTier),
+# so three calls per run put the ceiling at ~6 runs/day — and the report stage,
+# drawing last, was the one that hit RESOURCE_EXHAUSTED and shipped a template
+# with empty TAM/SAM/SOM. Haiku is back (the Anthropic balance that ran out has
+# been funded), it has the context for all 17 sources, and it puts this stage in
+# a different failure domain from the analyzer.
+REPORT_MODEL = os.getenv("REPORT_MODEL", "anthropic/claude-haiku-4-5")
 
 TEMPERATURES = {
     "retriever": float(os.getenv("RETRIEVER_TEMPERATURE", "0.1")),
@@ -330,6 +345,8 @@ def _with_free_fallback(
     if fallback is None:
         return llm
 
+    fallback = _with_error_logging(fallback, OPENROUTER_FALLBACK_MODEL)
+
     try:
         wrapped = llm.with_fallbacks([fallback])
         logger.info(
@@ -339,6 +356,65 @@ def _with_free_fallback(
     except Exception as e:  # older langchain-core without Runnable fallbacks
         logger.warning(f"Could not attach fallback for {primary_model}: {e}")
         return llm
+
+
+def _with_error_logging(fallback: Any, model: str):
+    """Make the fallback's own failures visible.
+
+    RunnableWithFallbacks collects every exception and then re-raises the
+    *first* one — the primary's. A fallback that fails for its own reason (a
+    retired model slug, an unfunded account) therefore leaves no trace at all:
+    callers log the primary's 429 and the real second failure is swallowed.
+    That is precisely how a 404ing fallback went unnoticed. An error listener
+    fires before the exception is discarded, so both halves reach the log.
+
+    Best-effort: a langchain-core without `with_listeners` returns the fallback
+    unchanged rather than losing the fallback altogether.
+    """
+    # *args/**kwargs rather than a fixed signature: langchain-core has called
+    # listeners with (run) and with (run, config) across versions, and a
+    # signature mismatch here would raise from inside the fallback path — the
+    # one place that must not acquire a new way to fail.
+    def _on_error(*args: Any, **kwargs: Any) -> None:
+        run = args[0] if args else kwargs.get("run")
+        err = getattr(run, "error", run)
+        logger.error(
+            f"Fallback model {model} ALSO failed: {err}. "
+            f"The exception surfaced to the caller is the primary's, not this "
+            f"one — the stage has no working model."
+        )
+
+    try:
+        return fallback.with_listeners(on_error=_on_error)
+    except Exception as e:
+        logger.warning(f"Could not attach error listener to fallback {model}: {e}")
+        return fallback
+
+
+def validate_fallback(timeout: float = 20.0) -> tuple[bool, str]:
+    """Probe the configured fallback model with one tiny call.
+
+    The safety net is only worth having if it can actually be invoked, and a
+    model slug can be retired by the provider at any time without anything in
+    this process noticing. Called at startup so that failure is loud on boot
+    rather than silent until the day a primary rate-limits.
+
+    Returns (ok, detail). Never raises.
+    """
+    if not OPENROUTER_FALLBACK_MODEL:
+        return True, "fallback disabled (OPENROUTER_FALLBACK_MODEL empty)"
+    if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "your_openrouter_key_here":
+        return False, "OPEN_ROUTER_KEY not set — no fallback is attached to any stage"
+
+    probe = _build_openrouter(OPENROUTER_FALLBACK_MODEL, 0.0, 1)
+    if probe is None:
+        return False, f"could not construct fallback client for {OPENROUTER_FALLBACK_MODEL}"
+
+    try:
+        probe.invoke("ok", timeout=timeout)
+        return True, f"{OPENROUTER_FALLBACK_MODEL} reachable"
+    except Exception as e:
+        return False, f"{OPENROUTER_FALLBACK_MODEL} unusable: {type(e).__name__}: {e}"
 
 
 def create_llm(
