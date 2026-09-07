@@ -4,24 +4,24 @@ Open items as of 2026-09-07. Grouped by what blocks what.
 
 ---
 
-## 1. Pending activation (do these first — both are one command)
+## 1. Pending activation — DONE (2026-09-07)
 
-- [ ] **Redeploy the frontend so `NEWSLETTER_ADMIN_EMAILS` takes effect.**
-      The variable is set in Vercel Production, but Vercel injects env vars at
-      *build* time, so the running deployment still has the old (unset) value —
-      meaning `isNewsletterAdmin()` still returns `true` for every
-      authenticated user. Any push to `main` fixes this automatically, or:
-      ```
-      vercel redeploy <latest-production-url> --scope girish-hiremaths-projects
-      ```
-      Verify after: `GET /api/subscribers` as a signed-in non-admin should
-      return 403 rather than subscriber data.
+Both cleared; kept briefly for the record.
 
-- [ ] **Decide on `min_machines_running = 1` for the Fly backend.**
-      Currently unset, so the machine auto-stops and the first request pays
-      ~13s. `docs/CONNECTOR_HANDOVER.md` step 3 says not to scale to zero: a
-      claude.ai connector handshake landing in that window looks like a broken
-      connector rather than a sleeping machine. Costs one always-on machine.
+- [x] **`NEWSLETTER_ADMIN_EMAILS` is live.** Set for Production, Preview and
+      Development, and the docs push rebuilt production so it is now in effect.
+      `isNewsletterAdmin()` no longer returns `true` for every authenticated
+      user.
+- [x] **`min_machines_running` needed no change** — it was already
+      `= 1` in `fly.toml`. The ~13s first request measured during connector
+      verification was a machine *restart* (from `secrets set` / `deploy`), not
+      an idle cold start. Machine confirmed `started`, checks `1/1 passing`.
+
+Still worth doing:
+
+- [ ] Verify the lockdown behaves as intended: `GET /api/subscribers` as a
+      signed-in **non-admin** should return 403 rather than subscriber data.
+      Needs a second account or a session token — not yet exercised.
 
 ---
 
@@ -66,9 +66,6 @@ production. Resolved: there is no `/subscribe` page (it is `POST
 /api/subscribe`), so `/#newsletter` is the correct public link and the email
 footer CTA is right.
 
-- [ ] Consider setting `NEWSLETTER_ADMIN_EMAILS` for **Preview** and
-      **Development** too — currently Production only, so preview builds still
-      expose the subscriber list to any authenticated user
 - [ ] Verify the footer CTA renders in a real client (Gmail, Apple Mail) — the
       button is a `bgcolor` table cell, never tested end-to-end
 - [ ] Draft the LinkedIn / BuildWithAIGiri subscribe CTA copy

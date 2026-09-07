@@ -200,9 +200,13 @@ the correct pattern is `async_mode=true`, then poll `get_research_job(job_id)`.
 Polling relies on `status` and `error` in the `/api/conversations/{id}` detail
 payload; the browser learns completion from SSE instead.
 
-> **Cold start.** `min_machines_running` is not set, so an idle machine stops
-> and the first request pays ~13s. A connector handshake landing in that window
-> can look like a broken connector rather than a sleeping machine.
+> **Cold start.** `fly.toml` sets `min_machines_running = 1` precisely to avoid
+> this: scaling to zero meant a ~60s research POST arriving during boot was
+> dropped by the proxy while the run completed server-side. Machines still
+> restart on `flyctl deploy` and `flyctl secrets set`, and the first request
+> after a restart pays ~13s — that is a restart, not an idle cold start. If a
+> connector handshake fails immediately after a deploy, retry before
+> investigating.
 
 
 ## End-to-end verification

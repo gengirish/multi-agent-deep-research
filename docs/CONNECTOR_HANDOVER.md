@@ -204,5 +204,7 @@ and `FORWARDED_ALLOW_IPS`; neither is duplicated as a secret.
 **Not verified:** the claude.ai registration itself (step 5) — it needs a human
 to paste the access key at the approval screen.
 
-**Outstanding:** `min_machines_running` is still unset, contrary to step 3, so
-cold start measured ~13s.
+**On cold start:** `min_machines_running = 1` is already set in `fly.toml`, as
+step 3 requires. The ~13s first-request latency observed during verification
+was a *restart* (from `flyctl secrets set` and `flyctl deploy`), not an idle
+scale-to-zero. The machine is confirmed `started` with checks `1/1 passing`.
