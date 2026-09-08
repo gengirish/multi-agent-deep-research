@@ -66,7 +66,11 @@
 }
 
 .picture-icon {
-  font-size: 1.5rem;
+  /* Holds an inline SVG; the flex centring keeps it on the text baseline. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
 /* Camera Container */

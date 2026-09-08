@@ -27,6 +27,25 @@ const TextIcon = () => (
   </svg>
 );
 
+const PictureIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+    <path
+      d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.2a1 1 0 0 0 .83-.45l.74-1.1A1 1 0 0 1 9.1 4h5.8a1 1 0 0 1 .83.45l.74 1.1a1 1 0 0 0 .83.45h1.2A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5v-8Z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle
+      cx="12"
+      cy="12.5"
+      r="3.2"
+      stroke="currentColor"
+      strokeWidth="1.7"
+    />
+  </svg>
+);
+
 const VoiceIcon = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
     <rect
@@ -152,7 +171,7 @@ export const ResearchForm: React.FC<Props> = ({
           disabled={loading || disabled}
         >
           <span className="mode-icon" aria-hidden="true">
-            📷
+            <PictureIcon />
           </span>
           <span className="mode-text">Picture</span>
         </button>

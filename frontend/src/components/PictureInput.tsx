@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './PictureInput.css'
 
+/* Inline SVG rather than an emoji: emoji render as a different font per OS,
+ * cannot inherit currentColor, and read as text to assistive tech. */
+const CameraIcon = () => (
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+    <path
+      d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.2a1 1 0 0 0 .83-.45l.74-1.1A1 1 0 0 1 9.1 4h5.8a1 1 0 0 1 .83.45l.74 1.1a1 1 0 0 0 .83.45h1.2A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5v-8Z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
+
 interface Props {
   onPictureCapture: (text: string) => void
   onReset?: () => void
@@ -425,7 +440,9 @@ export const PictureInput: React.FC<Props> = ({ onPictureCapture, onReset, disab
           className="picture-button"
           aria-label="Start camera to picture your research query"
         >
-          <span className="picture-icon">📷</span>
+          <span className="picture-icon" aria-hidden="true">
+            <CameraIcon />
+          </span>
           <span className="picture-text">Picture Your Research Query</span>
         </button>
       )}
