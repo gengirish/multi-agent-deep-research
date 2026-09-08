@@ -41,7 +41,7 @@
   left: -140px;
   width: 560px;
   height: 560px;
-  background: radial-gradient(circle, #6366f1 0%, transparent 60%);
+  background: radial-gradient(circle, var(--c-accent-strong) 0%, transparent 60%);
 }
 
 .auth__glow--b {
@@ -86,7 +86,7 @@
 }
 
 .auth__brand:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--c-surface-3);
 }
 
 .auth__brand-mark {
@@ -171,13 +171,13 @@
 
 .auth__input:hover:not(:disabled):not(:focus) {
   border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--c-bg-sunken-hi);
 }
 
 .auth__input:focus {
   outline: none;
   border-color: var(--c-border-focus);
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--c-bg-sunken-hi);
   box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
 }
 
@@ -192,7 +192,7 @@
 .auth__input[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--c-bg-sunken);
 }
 
 .auth__hint {
@@ -265,7 +265,7 @@
 .auth__strength-seg {
   flex: 1;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--c-surface-6);
   transition: background 0.2s ease;
 }
 

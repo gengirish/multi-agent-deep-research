@@ -10,8 +10,8 @@
 }
 
 .topnav--landing {
-  background: rgba(15, 23, 42, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--c-bg-input);
+  border-bottom: 1px solid var(--c-border);
 }
 
 .topnav__inner {
@@ -29,12 +29,12 @@
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: #0f172a;
+  color: var(--c-text-strong);
   font-weight: 700;
 }
 
 .topnav--landing .topnav__brand {
-  color: #f8fafc;
+  color: var(--c-text-strong);
 }
 
 .topnav__logo {
@@ -57,7 +57,7 @@
 .topnav__link {
   padding: 8px 12px;
   border-radius: 8px;
-  color: #475569;
+  color: var(--c-text-muted);
   text-decoration: none;
   font-size: 0.93rem;
   font-weight: 500;
@@ -65,17 +65,17 @@
 }
 
 .topnav--landing .topnav__link {
-  color: #cbd5e1;
+  color: var(--c-text-subtle);
 }
 
 .topnav__link:hover {
   background: rgba(15, 23, 42, 0.06);
-  color: #0f172a;
+  color: var(--c-text-strong);
 }
 
 .topnav--landing .topnav__link:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+  background: var(--c-surface-6);
+  color: var(--c-text-strong);
 }
 
 .topnav__link.active {
@@ -84,7 +84,7 @@
 }
 
 .topnav--landing .topnav__link.active {
-  color: #c7d2fe;
+  color: var(--c-accent-soft);
   background: rgba(99, 102, 241, 0.18);
 }
 
@@ -92,7 +92,7 @@
   margin-left: 8px;
   padding: 9px 16px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  background: linear-gradient(135deg, var(--c-accent-strong), #0ea5e9);
   color: white !important;
   text-decoration: none;
   font-size: 0.92rem;

@@ -7,12 +7,12 @@
   align-items: center;
   gap: 10px;
   padding: 0 18px;
-  background: rgba(11, 18, 32, 0.85);
+  background: var(--c-bg-chrome-blur);
   backdrop-filter: saturate(180%) blur(12px);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--c-border);
   font-family: var(--font-inter), Inter, sans-serif;
-  color: #e2e8f0;
+  color: var(--c-text);
 }
 
 .apptop__hamburger {
@@ -24,15 +24,15 @@
   border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
-  color: #94a3b8;
+  color: var(--c-text-muted);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
 }
 
 .apptop__hamburger:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
+  background: var(--c-surface-5);
+  color: var(--c-text-strong);
 }
 
 .apptop__brand {
@@ -40,7 +40,7 @@
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: #f8fafc;
+  color: var(--c-text-strong);
   font-weight: 700;
   margin-right: 4px;
   flex-shrink: 0;
@@ -67,10 +67,10 @@
   gap: 10px;
   height: 36px;
   padding: 0 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border);
   border-radius: 9px;
-  color: #94a3b8;
+  color: var(--c-text-muted);
   font-family: inherit;
   font-size: 0.88rem;
   cursor: pointer;
@@ -79,9 +79,9 @@
 }
 
 .apptop__search:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--c-surface-5);
   border-color: rgba(129, 140, 248, 0.3);
-  color: #f8fafc;
+  color: var(--c-text-strong);
 }
 
 .apptop__search-label {
@@ -95,9 +95,9 @@
   font-size: 0.72rem;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
+  background: var(--c-surface-5);
+  border: 1px solid var(--c-border-hi);
+  color: var(--c-text-subtle);
   letter-spacing: 0.02em;
 }
 
@@ -110,15 +110,15 @@
   border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
-  color: #94a3b8;
+  color: var(--c-text-muted);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
 }
 
 .apptop__icon-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
+  background: var(--c-surface-5);
+  color: var(--c-text-strong);
 }
 
 @media (max-width: 900px) {

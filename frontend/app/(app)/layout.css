@@ -1,8 +1,8 @@
 .app-shell {
   width: 100%;
   min-height: 100vh;
-  background: #0b1220;
-  color: #e2e8f0;
+  background: var(--c-bg);
+  color: var(--c-text);
   display: flex;
   flex-direction: column;
 }
@@ -33,22 +33,22 @@
 }
 
 .app-shell__footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--c-border);
   padding: 14px 24px;
   font-size: 0.84rem;
-  color: #64748b;
+  color: var(--c-text-dim);
   text-align: center;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--c-surface-1);
 }
 
 .app-shell__footer a {
-  color: #94a3b8;
+  color: var(--c-text-muted);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .app-shell__footer a:hover {
-  color: #f8fafc;
+  color: var(--c-text-strong);
 }
 
 @media (max-width: 900px) {

@@ -7,7 +7,7 @@
   margin: 0 0 12px 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--c-text-strong, #f8fafc);
+  color: var(--c-text-strong, var(--c-text-strong));
 }
 
 .agent-performance .d3-chart {

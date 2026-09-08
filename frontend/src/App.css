@@ -1,15 +1,51 @@
-/* ============================================================
- * App shell — Chronicle dark theme
- * Uses tokens consistent with LandingPage.css for visual cohesion.
- * ============================================================ */
+/* ------------------------------------------------------------------
+ * Theme tokens.
+ *
+ * :root carries the DARK palette because dark is Chronicle's default and
+ * the design was built for it. The light palette is defined once, under
+ * [data-theme="light"], and only redefines values — never adds new names.
+ * Every colour in the app should resolve through one of these; a literal
+ * in a component stylesheet is a bug that will not theme.
+ *
+ * data-theme is set before first paint by the inline script in app/layout.tsx
+ * (see src/theme/theme-script.ts), so there is no flash on load.
+ * ------------------------------------------------------------------ */
 
 :root {
+  color-scheme: dark;
+
   /* Surfaces */
   --c-bg: #0b1220;
   --c-bg-elev: rgba(255, 255, 255, 0.03);
   --c-bg-elev-hi: rgba(255, 255, 255, 0.05);
   --c-bg-input: rgba(15, 23, 42, 0.6);
   --c-bg-card: rgba(255, 255, 255, 0.03);
+  /* Opaque card surface — for anything that must not show what is behind it
+   * (menus, popovers, the active segment of a control). */
+  --c-bg-card-solid: #131c2f;
+  --c-bg-overlay: rgba(2, 6, 23, 0.72);
+
+  /* Elevation ladder. On dark these are white washes that lift a surface off
+   * the background; each step is one notch brighter. Components should pick a
+   * step by MEANING (how raised is this?), not by copying an alpha value —
+   * that is what makes the light palette possible at all. */
+  --c-surface-1: rgba(255, 255, 255, 0.02);
+  --c-surface-2: rgba(255, 255, 255, 0.03);
+  --c-surface-3: rgba(255, 255, 255, 0.04);
+  --c-surface-4: rgba(255, 255, 255, 0.05);
+  --c-surface-5: rgba(255, 255, 255, 0.06);
+  --c-surface-6: rgba(255, 255, 255, 0.08);
+  --c-surface-7: rgba(255, 255, 255, 0.12);
+
+  /* App chrome — sidebar and top bar. Deliberately a touch darker than
+   * --c-bg on dark so the rails read as behind the content; on light they
+   * go white and the SHADOW does that job instead, because a darker rail on
+   * a light ground reads as a filled block, not as depth. */
+  --c-bg-chrome: #0a1020;
+  --c-bg-chrome-blur: rgba(11, 18, 32, 0.85);
+  /* Sunken wells: code blocks, inset panels, dialog bodies. */
+  --c-bg-sunken: rgba(15, 23, 42, 0.4);
+  --c-bg-sunken-hi: rgba(15, 23, 42, 0.75);
 
   /* Borders */
   --c-border: rgba(255, 255, 255, 0.06);
@@ -21,16 +57,25 @@
   --c-text-muted: #94a3b8;
   --c-text-dim: #64748b;
   --c-text-strong: #f8fafc;
+  --c-text-subtle: #cbd5e1;
+  --c-text-on-accent: #ffffff;
 
-  /* Brand accents (indigo → sky gradient) */
+  /* Brand accents (indigo -> sky gradient) */
   --c-accent: #818cf8;
   --c-accent-2: #38bdf8;
   --c-accent-strong: #6366f1;
+  --c-accent-soft: #c7d2fe;
+  --c-accent-deep: #0ea5e9;
   --c-gradient-brand: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
   --c-gradient-brand-text: linear-gradient(120deg, #818cf8 0%, #38bdf8 60%, #22d3ee 100%);
   --c-glow-brand: 0 8px 24px rgba(99, 102, 241, 0.32);
 
-  /* Semantic — used to differentiate state (not just brand) */
+  /* Elevation */
+  --c-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --c-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --c-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+
+  /* Semantic - used to differentiate state (not just brand) */
   --c-success: #22c55e;
   --c-success-text: #86efac;
   --c-success-bg: rgba(34, 197, 94, 0.08);
@@ -50,6 +95,102 @@
   --c-info-text: #7dd3fc;
   --c-info-bg: rgba(56, 189, 248, 0.08);
   --c-info-border: rgba(56, 189, 248, 0.25);
+}
+
+/* ------------------------------------------------------------------
+ * Light palette.
+ *
+ * Not a mechanical inversion. Three things change character:
+ *   - Elevated surfaces go OPAQUE. rgba(255,255,255,0.03) reads as "slightly
+ *     lighter" on a dark ground and as "invisible" on a light one, so the
+ *     translucent surfaces become solid tints instead.
+ *   - Text darkens past the naive mirror. Body text is #334155 (slate-700,
+ *     ~10:1 on white) and the dimmest text still clears 4.5:1 — the muted
+ *     greys that look fine on dark fail WCAG AA on white.
+ *   - Accents deepen. #818cf8 carries a dark background but only reaches
+ *     ~2.6:1 on white, so light mode uses the 500/600 steps instead.
+ * ------------------------------------------------------------------ */
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces */
+  --c-bg: #f8fafc;
+  --c-bg-elev: #ffffff;
+  --c-bg-elev-hi: #f1f5f9;
+  --c-bg-input: #ffffff;
+  --c-bg-card: #ffffff;
+  --c-bg-card-solid: #ffffff;
+  --c-bg-overlay: rgba(15, 23, 42, 0.45);
+
+  /* Elevation ladder, inverted in character. A white wash over white is
+   * invisible, so on light these are opaque slate tints that get DARKER as
+   * they rise — the opposite direction to dark mode, which is precisely why
+   * components must not hardcode the alpha. */
+  --c-surface-1: #ffffff;
+  --c-surface-2: #ffffff;
+  --c-surface-3: #f8fafc;
+  --c-surface-4: #f1f5f9;
+  --c-surface-5: #f1f5f9;
+  --c-surface-6: #e8edf3;
+  --c-surface-7: #e2e8f0;
+
+  --c-bg-chrome: #ffffff;
+  --c-bg-chrome-blur: rgba(255, 255, 255, 0.85);
+  --c-bg-sunken: #f1f5f9;
+  --c-bg-sunken-hi: #e2e8f0;
+
+  /* Borders — solid, not alpha. An alpha-white border is invisible on white. */
+  --c-border: #e2e8f0;
+  --c-border-hi: #cbd5e1;
+  --c-border-focus: rgba(79, 70, 229, 0.55);
+
+  /* Text — all clear 4.5:1 on --c-bg */
+  --c-text: #334155;
+  --c-text-muted: #475569;
+  --c-text-dim: #64748b;
+  --c-text-strong: #0f172a;
+  --c-text-subtle: #475569;
+  --c-text-on-accent: #ffffff;
+
+  /* Accents — deeper steps so they hold contrast on a light ground */
+  --c-accent: #4f46e5;
+  /* #0284c7 only reaches 3.91:1 on --c-bg, under the 4.5:1 floor for body
+   * text. Deepened one step; the brand gradient keeps the brighter sky via
+   * --c-gradient-brand, where large-text contrast rules apply instead. */
+  --c-accent-2: #0369a1;
+  --c-accent-strong: #4338ca;
+  --c-accent-soft: #4f46e5;
+  --c-accent-deep: #0369a1;
+  --c-gradient-brand: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%);
+  --c-gradient-brand-text: linear-gradient(120deg, #4338ca 0%, #0284c7 60%, #0891b2 100%);
+  --c-glow-brand: 0 8px 24px rgba(79, 70, 229, 0.18);
+
+  /* Elevation — softer, since shadows read much stronger on light grounds */
+  --c-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --c-shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --c-shadow-lg: 0 16px 48px rgba(15, 23, 42, 0.12);
+
+  /* Semantic — text steps darkened to stay legible on white */
+  --c-success: #16a34a;
+  --c-success-text: #15803d;
+  --c-success-bg: #f0fdf4;
+  --c-success-border: #bbf7d0;
+
+  --c-warning: #d97706;
+  --c-warning-text: #b45309;
+  --c-warning-bg: #fffbeb;
+  --c-warning-border: #fde68a;
+
+  --c-error: #dc2626;
+  --c-error-text: #b91c1c;
+  --c-error-bg: #fef2f2;
+  --c-error-border: #fecaca;
+
+  --c-info: #0284c7;
+  --c-info-text: #0369a1;
+  --c-info-bg: #f0f9ff;
+  --c-info-border: #bae6fd;
 }
 
 .app-container {
@@ -183,7 +324,7 @@
   font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: linear-gradient(120deg, #818cf8 0%, #38bdf8 60%, #22d3ee 100%);
+  background: linear-gradient(120deg, var(--c-accent) 0%, var(--c-info) 60%, #22d3ee 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -221,7 +362,7 @@
 }
 
 .report-content {
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--c-bg-sunken);
   padding: 28px;
   border-radius: 12px;
   text-align: left;
@@ -276,7 +417,7 @@
 }
 
 .markdown-content code {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--c-surface-5);
   color: #e879f9;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
@@ -286,7 +427,7 @@
 }
 
 .markdown-content pre {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--c-bg-input);
   border: 1px solid var(--c-border);
   padding: 16px;
   border-radius: 10px;
@@ -303,7 +444,7 @@
 }
 
 .markdown-content a {
-  color: #c7d2fe;
+  color: var(--c-accent-soft);
   text-decoration: none;
   border-bottom: 1px solid rgba(199, 210, 254, 0.3);
   transition: border-color 0.15s ease;
@@ -317,7 +458,7 @@
   margin: 1rem 0;
   padding: 12px 18px;
   border-left: 3px solid var(--c-accent);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--c-surface-1);
   color: var(--c-text-muted);
   border-radius: 4px;
 }
@@ -336,7 +477,7 @@
 }
 
 .markdown-content th {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--c-surface-2);
   color: var(--c-text-strong);
   font-weight: 600;
 }
@@ -345,7 +486,7 @@
 
 .error-box {
   background: rgba(239, 68, 68, 0.06);
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--c-error);
   padding: 18px 20px;
   border-radius: 10px;
   color: var(--c-text);
@@ -359,7 +500,7 @@
 /* ---------- Footer ---------- */
 
 .app-footer {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--c-surface-1);
   border-top: 1px solid var(--c-border);
   padding: 18px 24px;
   text-align: center;
@@ -412,7 +553,7 @@ input[type="text"]:hover:not(:disabled):not(:focus),
 input[type="search"]:hover:not(:disabled):not(:focus),
 textarea:hover:not(:disabled):not(:focus) {
   border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--c-bg-sunken-hi);
 }
 
 input[type="text"]:focus,
@@ -420,7 +561,7 @@ input[type="search"]:focus,
 textarea:focus {
   outline: none;
   border-color: var(--c-border-focus);
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--c-bg-sunken-hi);
   box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
 }
 
@@ -429,7 +570,7 @@ input[type="search"][disabled],
 textarea[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--c-bg-sunken);
 }
 
 button {
@@ -492,7 +633,7 @@ button[disabled] {
 }
 
 .submit-button[disabled] {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--c-surface-6);
   border-color: var(--c-border-hi);
   color: var(--c-text-dim);
   box-shadow: none;

@@ -1,11 +1,15 @@
+/* ------------------------------------------------------------------
+ * Base document styles.
+ *
+ * Colour lives in the token layer (src/App.css), not here. This file used to
+ * hardcode a dark background and a light-mode @media override, which fought
+ * the [data-theme] tokens and left the page dark when the user picked light.
+ * ------------------------------------------------------------------ */
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0b1220;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,16 +28,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   width: 100%;
-  background-color: #0b1220;
+  background-color: var(--c-bg);
+  color: var(--c-text);
 }
 
 body {
   display: block;
   text-align: left;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-  }
 }

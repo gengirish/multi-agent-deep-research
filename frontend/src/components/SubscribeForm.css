@@ -13,7 +13,7 @@
   max-width: 560px;
   margin: 0 auto;
   text-align: center;
-  background: #ffffff;
+  background: var(--c-bg-elev);
   border: 1px solid var(--sub-line);
   border-radius: 16px;
   padding: 2rem 1.75rem;
@@ -70,12 +70,12 @@
   border-radius: 9px;
   font-size: 0.95rem;
   color: var(--sub-ink);
-  background: #ffffff;
+  background: var(--c-bg-elev);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .subscribe__input::placeholder {
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 
 .subscribe__input:focus {

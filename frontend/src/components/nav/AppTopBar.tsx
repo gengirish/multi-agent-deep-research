@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { UserMenu } from "../auth/UserMenu";
+import { ThemeToggle } from "./ThemeToggle";
 import "./AppTopBar.css";
 
 interface Props {
@@ -113,6 +114,8 @@ export const AppTopBar: React.FC<Props> = ({
             />
           </svg>
         </button>
+
+        <ThemeToggle />
 
         <UserMenu />
       </div>

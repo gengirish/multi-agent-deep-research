@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ServiceWorkerRegistration } from "../src/components/pwa/ServiceWorkerRegistration";
+import { ThemeProvider } from "../src/theme/ThemeProvider";
+import { THEME_INIT_SCRIPT } from "../src/theme/theme-script";
 import { InstallPrompt } from "../src/components/pwa/InstallPrompt";
 import "../src/index.css";
 import "../src/accessibility.css";
@@ -90,8 +92,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${jakarta.variable} ${jetbrainsMono.variable}`}
     >
+      <head>
+        {/* Must run before first paint, or light-mode users see a dark flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
         <ServiceWorkerRegistration />
         <InstallPrompt />
         <script

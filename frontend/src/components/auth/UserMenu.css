@@ -50,7 +50,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+  background: linear-gradient(135deg, var(--c-accent-strong) 0%, #0ea5e9 100%);
   color: #ffffff;
   font-weight: 700;
   font-size: 0.88rem;
@@ -99,9 +99,9 @@
   height: 36px;
   padding: 0 14px;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--c-surface-3);
   border: 1px solid rgba(129, 140, 248, 0.3);
-  color: #e2e8f0;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
@@ -113,7 +113,7 @@
 .usermenu__signin:hover {
   background: rgba(99, 102, 241, 0.14);
   border-color: rgba(129, 140, 248, 0.55);
-  color: #f8fafc;
+  color: var(--c-text-strong);
 }
 
 .usermenu__signin:active {
@@ -122,8 +122,8 @@
 
 /* Landing TopNav (dark hero) — keep the same look. */
 .topnav--landing .usermenu__signin {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
+  background: var(--c-surface-5);
+  color: var(--c-text-strong);
 }
 
 .usermenu__dropdown {
@@ -131,7 +131,7 @@
   top: calc(100% + 8px);
   right: 0;
   min-width: 248px;
-  background: #0f172a;
+  background: var(--c-bg-sunken-hi);
   border: 1px solid rgba(129, 140, 248, 0.25);
   border-radius: 12px;
   box-shadow:
@@ -169,7 +169,7 @@
 }
 
 .usermenu__name {
-  color: #f8fafc;
+  color: var(--c-text-strong);
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.25;
@@ -179,7 +179,7 @@
 }
 
 .usermenu__email {
-  color: #94a3b8;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   line-height: 1.3;
   white-space: nowrap;
@@ -190,7 +190,7 @@
 
 .usermenu__divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--c-surface-6);
   margin: 4px 0;
 }
 
@@ -203,7 +203,7 @@
   border-radius: 8px;
   background: transparent;
   border: none;
-  color: #e2e8f0;
+  color: var(--c-text);
   font-family: inherit;
   font-size: 0.9rem;
   text-align: left;
@@ -214,7 +214,7 @@
 .usermenu__item:hover:not(:disabled),
 .usermenu__item:focus-visible {
   background: rgba(99, 102, 241, 0.16);
-  color: #f8fafc;
+  color: var(--c-text-strong);
   outline: none;
 }
 
@@ -224,13 +224,13 @@
 }
 
 .usermenu__item svg {
-  color: #94a3b8;
+  color: var(--c-text-muted);
   flex-shrink: 0;
 }
 
 .usermenu__item:hover:not(:disabled) svg,
 .usermenu__item:focus-visible svg {
-  color: #c7d2fe;
+  color: var(--c-accent-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

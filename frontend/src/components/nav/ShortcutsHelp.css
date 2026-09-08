@@ -22,13 +22,13 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: #0f172a;
+  background: var(--c-bg-sunken-hi);
   border: 1px solid rgba(129, 140, 248, 0.25);
   border-radius: 14px;
   box-shadow: 0 24px 60px rgba(2, 6, 23, 0.7);
   overflow: hidden;
   font-family: var(--font-inter), Inter, system-ui, sans-serif;
-  color: #e2e8f0;
+  color: var(--c-text);
 }
 
 .shortcuts__head {
@@ -36,8 +36,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface-1);
 }
 
 .shortcuts__title {
@@ -47,7 +47,7 @@
   font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
     Inter, sans-serif;
   letter-spacing: -0.01em;
-  color: #f8fafc;
+  color: var(--c-text-strong);
 }
 
 .shortcuts__close {
@@ -59,15 +59,15 @@
   border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
-  color: #94a3b8;
+  color: var(--c-text-muted);
   cursor: pointer;
   font-size: 1rem;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .shortcuts__close:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
+  background: var(--c-surface-5);
+  color: var(--c-text-strong);
 }
 
 .shortcuts__body {
@@ -85,7 +85,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: var(--c-text-dim);
   font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
     monospace;
 }
@@ -101,7 +101,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+  border-bottom: 1px dashed var(--c-border);
 }
 
 .shortcuts__row:last-child {
@@ -110,7 +110,7 @@
 
 .shortcuts__label {
   font-size: 0.92rem;
-  color: #cbd5e1;
+  color: var(--c-text-subtle);
 }
 
 .shortcuts__keys {
@@ -121,7 +121,7 @@
 
 .shortcuts__plus {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--c-text-dim);
   margin: 0 2px;
 }
 
@@ -132,8 +132,8 @@
   justify-content: center;
   padding: 2px 7px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--c-surface-5);
+  border: 1px solid var(--c-border-hi);
   font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
     monospace;
   font-size: 0.78rem;

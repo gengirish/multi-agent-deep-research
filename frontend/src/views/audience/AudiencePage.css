@@ -2,7 +2,7 @@
   max-width: 860px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
-  color: #334155;
+  color: var(--c-text);
   text-align: left;
 }
 
@@ -15,20 +15,20 @@
   font-size: 1.7rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #0f172a;
+  color: var(--c-text-strong);
 }
 
 .audience-subtitle {
   margin: 0;
-  color: #64748b;
+  color: var(--c-text-dim);
   font-size: 0.98rem;
   line-height: 1.5;
 }
 
 /* Add subscriber form ---------------------------------------------------- */
 .audience-add {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
   border-radius: 12px;
   padding: 1.1rem 1.1rem 1.2rem;
   margin-bottom: 1.4rem;
@@ -58,48 +58,48 @@
 .audience-label {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--c-text);
 }
 
 .audience-optional {
   font-weight: 400;
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 
 .audience-input {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--c-bg-elev);
   font: inherit;
   font-size: 0.95rem;
-  color: #0f172a;
+  color: var(--c-text-strong);
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .audience-input::placeholder {
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 
 .audience-input:focus {
   outline: none;
-  border-color: #0369a1;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+  border-color: var(--c-accent-2);
+  box-shadow: 0 0 0 3px var(--c-border-focus);
 }
 
 .audience-input:disabled {
-  background: #f1f5f9;
+  background: var(--c-surface-4);
   cursor: not-allowed;
 }
 
 .audience-add-btn {
   flex: 0 0 auto;
   padding: 0.62rem 1.1rem;
-  border: 1px solid #0369a1;
+  border: 1px solid var(--c-accent-2);
   border-radius: 10px;
-  background: #0369a1;
-  color: #ffffff;
+  background: var(--c-accent-2);
+  color: var(--c-text-on-accent);
   font: inherit;
   font-size: 0.92rem;
   font-weight: 600;
@@ -109,12 +109,12 @@
 }
 
 .audience-add-btn:hover:not(:disabled) {
-  background: #075985;
+  background: var(--c-accent-deep);
 }
 
 .audience-add-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.3);
+  box-shadow: 0 0 0 3px var(--c-border-focus);
 }
 
 .audience-add-btn:disabled {
@@ -125,9 +125,9 @@
 .audience-inline-error {
   margin-top: 0.75rem;
   padding: 0.55rem 0.75rem;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+  border: 1px solid var(--c-error-border);
+  background: var(--c-error-bg);
+  color: var(--c-error-text);
   border-radius: 9px;
   font-size: 0.88rem;
 }
@@ -135,13 +135,13 @@
 /* Stat line -------------------------------------------------------------- */
 .audience-stat {
   font-size: 0.92rem;
-  color: #64748b;
+  color: var(--c-text-dim);
   margin-bottom: 0.9rem;
   padding-left: 0.15rem;
 }
 
 .audience-stat strong {
-  color: #0f172a;
+  color: var(--c-text-strong);
   font-weight: 700;
 }
 
@@ -149,50 +149,50 @@
 .audience-state {
   padding: 1.6rem 1rem;
   text-align: center;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--c-bg-elev);
   font-size: 0.95rem;
 }
 
 .audience-state--loading {
-  color: #64748b;
+  color: var(--c-text-dim);
 }
 
 .audience-state--error {
-  color: #b91c1c;
-  border-color: #fecaca;
-  background: #fef2f2;
+  color: var(--c-error-text);
+  border-color: var(--c-error-border);
+  background: var(--c-error-bg);
 }
 
 .audience-empty {
   padding: 2.2rem 1.5rem;
   text-align: center;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--c-border-hi);
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--c-bg);
 }
 
 .audience-empty-title {
   margin: 0 0 0.4rem;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--c-text-strong);
 }
 
 .audience-empty-text {
   margin: 0 auto;
   max-width: 420px;
-  color: #64748b;
+  color: var(--c-text-dim);
   font-size: 0.92rem;
   line-height: 1.5;
 }
 
 /* Table ------------------------------------------------------------------ */
 .audience-table {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--c-bg-elev);
   overflow: hidden;
 }
 
@@ -202,7 +202,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.8rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--c-border);
 }
 
 .audience-row:last-child {
@@ -210,35 +210,35 @@
 }
 
 .audience-row--head {
-  background: #f8fafc;
+  background: var(--c-bg);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--c-text-dim);
 }
 
 .audience-col {
   min-width: 0;
   font-size: 0.92rem;
-  color: #334155;
+  color: var(--c-text);
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .audience-col--name {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--c-text-strong);
 }
 
 .audience-col--email {
-  color: #475569;
+  color: var(--c-text-muted);
   word-break: break-word;
 }
 
 .audience-row--head .audience-col {
   font-weight: 700;
-  color: #64748b;
+  color: var(--c-text-dim);
 }
 
 .audience-col--action {
@@ -256,21 +256,21 @@
 }
 
 .audience-badge--active {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--c-success-bg);
+  color: var(--c-success-text);
 }
 
 .audience-badge--unsub {
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: var(--c-surface-4);
+  color: var(--c-text-muted);
 }
 
 .audience-remove-btn {
   padding: 0.4rem 0.7rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 8px;
-  background: #ffffff;
-  color: #64748b;
+  background: var(--c-bg-elev);
+  color: var(--c-text-dim);
   font: inherit;
   font-size: 0.84rem;
   font-weight: 600;
@@ -280,14 +280,14 @@
 }
 
 .audience-remove-btn:hover:not(:disabled) {
-  border-color: #fca5a5;
-  color: #b91c1c;
-  background: #fef2f2;
+  border-color: var(--c-error-border);
+  color: var(--c-error-text);
+  background: var(--c-error-bg);
 }
 
 .audience-remove-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.25);
+  box-shadow: 0 0 0 3px var(--c-border-focus);
 }
 
 .audience-remove-btn:disabled {
@@ -351,7 +351,7 @@
   .audience-col--date {
     grid-area: date;
     text-align: right;
-    color: #94a3b8;
+    color: var(--c-text-muted);
     font-size: 0.82rem;
   }
 

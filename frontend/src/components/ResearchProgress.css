@@ -1,8 +1,8 @@
 /* ResearchProgress — dark theme matching Chronicle landing */
 
 .research-progress {
-  background: var(--c-bg-elev, rgba(255, 255, 255, 0.03));
-  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
+  background: var(--c-bg-elev, var(--c-surface-2));
+  border: 1px solid var(--c-border, var(--c-border));
   border-radius: 16px;
   padding: 28px;
   margin: 24px 0;
@@ -15,14 +15,14 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
+  border-bottom: 1px solid var(--c-border, var(--c-border));
 }
 
 .progress-header h2 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--c-text-strong);
   font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter),
     Inter, sans-serif;
   letter-spacing: -0.01em;
@@ -31,7 +31,7 @@
 .overall-progress {
   font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(120deg, #818cf8 0%, #38bdf8 60%, #22d3ee 100%);
+  background: linear-gradient(120deg, var(--c-accent) 0%, var(--c-info) 60%, #22d3ee 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -47,8 +47,8 @@
 }
 
 .stage {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
+  background: var(--c-bg-sunken);
+  border: 1px solid var(--c-border, var(--c-border));
   border-left: 3px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
   padding: 14px 18px;
@@ -56,7 +56,7 @@
 }
 
 .stage.active {
-  border-left-color: #818cf8;
+  border-left-color: var(--c-accent);
   background: linear-gradient(
     135deg,
     rgba(99, 102, 241, 0.08),
@@ -65,12 +65,12 @@
 }
 
 .stage.complete {
-  border-left-color: #22c55e;
+  border-left-color: var(--c-success);
   background: rgba(34, 197, 94, 0.04);
 }
 
 .stage.error {
-  border-left-color: #ef4444;
+  border-left-color: var(--c-error);
   background: rgba(239, 68, 68, 0.06);
 }
 
@@ -99,15 +99,15 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 
 .stage.active .stage-icon {
-  color: #818cf8;
+  color: var(--c-accent);
 }
 
 .stage.complete .stage-icon {
-  color: #22c55e;
+  color: var(--c-success);
 }
 
 .stage-name {
@@ -131,22 +131,22 @@
   font-size: 11px;
   font-weight: bold;
   background: rgba(148, 163, 184, 0.15);
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 
 .status-badge.active {
-  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  background: linear-gradient(135deg, var(--c-accent-strong), #0ea5e9);
   color: white;
   animation: spin 1s linear infinite;
 }
 
 .status-badge.complete {
-  background: #22c55e;
+  background: var(--c-success);
   color: white;
 }
 
 .status-badge.error {
-  background: #ef4444;
+  background: var(--c-error);
   color: white;
 }
 
@@ -170,7 +170,7 @@
 .progress-bar {
   height: 100%;
   border-radius: 3px;
-  background: linear-gradient(90deg, #818cf8, #38bdf8);
+  background: linear-gradient(90deg, var(--c-accent), var(--c-info));
   transition: width 0.3s ease;
   position: relative;
 }
@@ -213,21 +213,21 @@
 .stage-message {
   margin: 0;
   font-size: 0.84rem;
-  color: #94a3b8;
+  color: var(--c-text-muted);
   line-height: 1.45;
 }
 
 .stage-message.active {
-  color: #c7d2fe;
+  color: var(--c-accent-soft);
   font-weight: 500;
 }
 
 .stage-message.complete {
-  color: #86efac;
+  color: var(--c-success-text);
 }
 
 .stage-message.error {
-  color: #fca5a5;
+  color: var(--c-error-text);
   font-weight: 500;
 }
 
@@ -240,17 +240,17 @@
 }
 
 .stage-connector.complete {
-  background: #22c55e;
+  background: var(--c-success);
 }
 
 .progress-footer {
   margin-top: 18px;
   padding-top: 14px;
-  border-top: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
+  border-top: 1px solid var(--c-border, var(--c-border));
   text-align: center;
   font-size: 0.88rem;
   font-weight: 500;
-  color: #cbd5e1;
+  color: var(--c-text-subtle);
 }
 
 .status-text {
@@ -260,15 +260,15 @@
 }
 
 .status-text--complete {
-  color: var(--c-success-text, #86efac);
+  color: var(--c-success-text, var(--c-success-text));
 }
 
 .status-text--error {
-  color: var(--c-error-text, #fca5a5);
+  color: var(--c-error-text, var(--c-error-text));
 }
 
 .status-text--active {
-  color: #c7d2fe;
+  color: var(--c-accent-soft);
 }
 
 .status-text__spinner {

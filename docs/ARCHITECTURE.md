@@ -127,6 +127,39 @@ twice.
 | `CHRONICLE_SERVICE_TOKEN` | `getServiceIdentity()` is inert, so connector-driven broadcast is simply off |
 | `FORWARDED_ALLOW_IPS` | Fly terminates TLS upstream; without it Uvicorn reports `scheme="http"` and the wrong scheme leaks into the advertised OAuth issuer |
 
+## Theming
+
+Colour lives in one place: the token block at the top of `frontend/src/App.css`.
+`:root` carries the dark palette (Chronicle's default, and what the design was
+built for); `[data-theme="light"]` redefines the same names and never adds new
+ones. A literal colour in a component stylesheet is a bug — it will not theme.
+
+`src/theme/ThemeProvider.tsx` holds three states, not two: `light`, `dark` and
+`system`. "System" is a real preference — a boolean cannot express "keep
+following the OS" once it has been persisted — so the provider tracks the
+`prefers-color-scheme` media query for as long as that is the choice. The
+resolved value is written to `<html data-theme>` and to `style.colorScheme`,
+which is what themes native form controls and scrollbars.
+
+`src/theme/theme-script.ts` is inlined into `<head>` by `app/layout.tsx` and
+runs before first paint. Without it the page paints dark, React mounts, and
+light-mode users get a flash on every navigation. It must be blocking and
+dependency-free, which is why it is a string rather than a component.
+
+### The elevation ladder
+
+The tokens `--c-surface-1` … `--c-surface-7` exist because the two themes lift
+surfaces in opposite directions. On dark they are white washes that get
+brighter as they rise; on light a white wash over white is invisible, so they
+become opaque slate tints that get *darker*. Components pick a step by meaning
+("how raised is this?") rather than by copying an alpha value — that inversion
+is exactly what a hardcoded `rgba(255,255,255,0.03)` cannot survive.
+
+Chrome (`--c-bg-chrome`) works the same way: the sidebar and top bar sit
+slightly darker than the page on dark, and go white on light, where the shadow
+carries the depth instead.
+
+
 ## Evaluation
 
 `eval/run_eval.py` measures what the project actually claims: latency, distinct

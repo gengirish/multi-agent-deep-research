@@ -19,7 +19,7 @@
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--c-text-strong);
 }
 
 .visualization-toggle {
@@ -51,7 +51,7 @@
 .metrics-placeholder {
   text-align: center;
   padding: 40px 20px;
-  color: #6b7280;
+  color: var(--c-text-muted);
 }
 
 .metrics-placeholder p {
@@ -147,7 +147,7 @@
 }
 
 .sentiment-fill.negative {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--c-error) 0%, #dc2626 100%);
 }
 
 .sentiment-legend {
@@ -178,7 +178,7 @@
 }
 
 .legend-color.negative {
-  background: #ef4444;
+  background: var(--c-error);
 }
 
 /* Category Distribution */
@@ -221,7 +221,7 @@
   text-align: right;
   font-size: 14px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--c-text-muted);
 }
 
 /* Source Quality Breakdown */
@@ -261,11 +261,11 @@
 }
 
 .quality-fill.medium {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--c-warning) 0%, #d97706 100%);
 }
 
 .quality-fill.low {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--c-error) 0%, #dc2626 100%);
 }
 
 .quality-count {
@@ -273,7 +273,7 @@
   text-align: right;
   font-size: 14px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--c-text-muted);
 }
 
 /* D3 Visualizations */
@@ -327,7 +327,7 @@
 .history-page,
 .session-detail-page,
 .visualizations-page {
-  color: #e2e8f0;
+  color: var(--c-text);
 }
 .history-page,
 .session-detail-page,
@@ -339,37 +339,37 @@
 .session-info h2,
 .visualizations-page h1,
 .visualizations-page h2 {
-  color: #f8fafc;
+  color: var(--c-text-strong);
   font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter), Inter, sans-serif;
   letter-spacing: -0.01em;
 }
 .history-header p,
 .session-info p,
 .visualizations-page p {
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 .search-input,
 .history-page input[type="search"],
 .session-detail-page input[type="text"] {
-  background: rgba(15, 23, 42, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #e2e8f0 !important;
+  background: var(--c-bg-input) !important;
+  border: 1px solid var(--c-border-hi) !important;
+  color: var(--c-text) !important;
 }
 .history-table-container,
 .history-table {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: var(--c-surface-2) !important;
+  border: 1px solid var(--c-border) !important;
   border-radius: 12px;
   overflow: hidden;
 }
 .history-table th {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #cbd5e1 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--c-surface-3) !important;
+  color: var(--c-text-subtle) !important;
+  border-bottom: 1px solid var(--c-border) !important;
 }
 .history-table td {
-  color: #e2e8f0 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: var(--c-text) !important;
+  border-bottom: 1px solid var(--c-border) !important;
 }
 .history-row:hover {
   background: rgba(99, 102, 241, 0.06) !important;
@@ -379,9 +379,9 @@
 .back-button,
 .view-button,
 .tab-button {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #e2e8f0 !important;
+  background: var(--c-surface-3) !important;
+  border: 1px solid var(--c-border-hi) !important;
+  color: var(--c-text) !important;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -390,54 +390,54 @@
 .back-button:hover,
 .view-button:hover,
 .tab-button:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--c-surface-6) !important;
   border-color: rgba(129, 140, 248, 0.4) !important;
 }
 .tab-button.active {
   background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.12)) !important;
   border-color: rgba(129, 140, 248, 0.45) !important;
-  color: #f8fafc !important;
+  color: var(--c-text-strong) !important;
 }
 .empty-state,
 .loading-state,
 .error-state {
-  color: #94a3b8 !important;
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  color: var(--c-text-muted) !important;
+  background: var(--c-surface-1) !important;
+  border: 1px dashed var(--c-border);
   border-radius: 12px;
 }
 .spinner {
-  border-top-color: #818cf8 !important;
+  border-top-color: var(--c-accent) !important;
 }
 .error-banner,
 .error-state {
   background: rgba(239, 68, 68, 0.06) !important;
-  border-left: 3px solid #ef4444 !important;
+  border-left: 3px solid var(--c-error) !important;
   color: #fecaca !important;
 }
 .session-tabs,
 .tabs {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--c-border);
 }
 .conversation-entry {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  color: #e2e8f0;
+  background: var(--c-surface-2) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text);
 }
 .entry-content,
 .entry-details summary {
-  color: #cbd5e1 !important;
+  color: var(--c-text-subtle) !important;
 }
 .entry-details pre {
-  background: rgba(15, 23, 42, 0.6) !important;
-  color: #e2e8f0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: var(--c-bg-input) !important;
+  color: var(--c-text) !important;
+  border: 1px solid var(--c-border) !important;
 }
 .tts-controls,
 .voice-input-button {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #e2e8f0 !important;
+  background: var(--c-surface-2) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .history-row,
@@ -457,7 +457,7 @@
 
 .research-metrics .section-title svg,
 .metrics-title svg {
-  color: var(--c-accent, #818cf8);
+  color: var(--c-accent, var(--c-accent));
   flex-shrink: 0;
 }
 

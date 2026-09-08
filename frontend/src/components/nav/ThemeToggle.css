@@ -1,0 +1,63 @@
+/* Segmented theme control. All colours come from tokens so the control itself
+ * themes correctly in both modes. */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: var(--c-bg-elev);
+}
+
+.theme-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  /* Colour-only transition: no transform, so the control never shifts layout. */
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.theme-toggle__btn:hover {
+  color: var(--c-text);
+  background: var(--c-bg-elev-hi);
+}
+
+.theme-toggle__btn:focus-visible {
+  outline: 2px solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+
+.theme-toggle__btn--active {
+  color: var(--c-text-strong);
+  background: var(--c-bg-card-solid);
+  box-shadow: var(--c-shadow-sm);
+}
+
+.theme-toggle__label {
+  /* Icon-only below the widest breakpoint; the aria-label still names it. */
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .theme-toggle__label {
+    display: inline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle__btn {
+    transition: none;
+  }
+}

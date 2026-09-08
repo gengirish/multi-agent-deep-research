@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "./auth/UserMenu";
+import { ThemeToggle } from "./nav/ThemeToggle";
 import "./TopNav.css";
 
 interface TopNavProps {
@@ -67,6 +68,7 @@ export const TopNav: React.FC<TopNavProps> = ({ variant = "app" }) => {
           >
             GitHub
           </a>
+          <ThemeToggle />
           <Link href="/research" className="topnav__cta">
             Try a query
           </Link>

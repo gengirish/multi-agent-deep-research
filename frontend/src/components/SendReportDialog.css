@@ -24,7 +24,7 @@
 .send-report-card {
   width: 100%;
   max-width: 480px;
-  background: #121519;
+  background: var(--c-bg-card-solid);
   border: 1px solid #1f242b;
   border-radius: 16px;
   box-shadow:
@@ -99,7 +99,7 @@
 }
 
 .send-report-close:hover {
-  background: #1a1f25;
+  background: var(--c-surface-6);
   color: #fafafa;
   border-color: #2a3037;
 }
@@ -134,7 +134,7 @@
 .send-report-input,
 .send-report-textarea {
   width: 100%;
-  background: #0f1216;
+  background: var(--c-bg-sunken-hi);
   border: 1px solid #2a3037;
   border-radius: 8px;
   padding: 10px 12px;
@@ -155,7 +155,7 @@
 .send-report-textarea:focus {
   outline: none;
   border-color: #4a5260;
-  background: #131720;
+  background: var(--c-bg-card-solid);
 }
 
 .send-report-input::placeholder,
@@ -180,7 +180,7 @@
 .send-report-error {
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.35);
-  color: #fca5a5;
+  color: var(--c-error-text);
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 0.82rem;
@@ -236,7 +236,7 @@
 }
 
 .send-report-secondary:hover:not(:disabled) {
-  background: #1a1f25;
+  background: var(--c-surface-6);
   border-color: #3a4150;
   color: #fafafa;
 }
