@@ -1,10 +1,12 @@
 .subscribe {
-  --sub-ink: #0f172a;
-  --sub-body: #334155;
-  --sub-muted: #64748b;
-  --sub-accent: #0369a1;
-  --sub-line: #e2e8f0;
-  --sub-panel: #f8fafc;
+  /* Local aliases, resolved from the global palette so the form themes with
+   * the rest of the app instead of pinning itself to the light values. */
+  --sub-ink: var(--c-text-strong);
+  --sub-body: var(--c-text);
+  --sub-muted: var(--c-text-muted);
+  --sub-accent: var(--c-accent);
+  --sub-line: var(--c-border);
+  --sub-panel: var(--c-surface-2);
   font-family: inherit;
 }
 
@@ -17,7 +19,7 @@
   border: 1px solid var(--sub-line);
   border-radius: 16px;
   padding: 2rem 1.75rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--c-shadow-sm);
 }
 
 .subscribe--inline {
@@ -81,7 +83,7 @@
 .subscribe__input:focus {
   outline: none;
   border-color: var(--sub-accent);
-  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.15);
+  box-shadow: 0 0 0 3px var(--c-border-focus);
 }
 
 .subscribe__input:disabled {
@@ -95,7 +97,7 @@
   border: none;
   border-radius: 9px;
   background: var(--sub-accent);
-  color: #ffffff;
+  color: var(--c-text-on-accent);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -104,7 +106,7 @@
 }
 
 .subscribe__btn:hover:not(:disabled) {
-  background: #075a87;
+  background: var(--c-accent-strong);
 }
 
 .subscribe__btn:active:not(:disabled) {
@@ -123,7 +125,7 @@
 
 .subscribe__error {
   margin: 0.6rem 0 0;
-  color: #b42318;
+  color: var(--c-error-text);
   font-size: 0.85rem;
 }
 
@@ -133,9 +135,9 @@
   gap: 0.5rem;
   padding: 0.7rem 1rem;
   border-radius: 9px;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #047857;
+  background: var(--c-success-bg);
+  border: 1px solid var(--c-success-border);
+  color: var(--c-success-text);
   font-size: 0.92rem;
   font-weight: 600;
 }

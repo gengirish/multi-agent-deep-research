@@ -90,7 +90,7 @@
   align-items: center;
   gap: 12px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--c-text-strong);
 }
 
 .stage-icon {

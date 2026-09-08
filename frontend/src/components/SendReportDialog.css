@@ -1,7 +1,7 @@
 .send-report-overlay {
   position: fixed;
   inset: 0;
-  background: color-mix(in srgb, #000 70%, transparent);
+  background: var(--c-bg-overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;
@@ -25,12 +25,12 @@
   width: 100%;
   max-width: 480px;
   background: var(--c-bg-card-solid);
-  border: 1px solid #1f242b;
+  border: 1px solid var(--c-border);
   border-radius: 16px;
   box-shadow:
-    0 24px 48px -12px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.02);
-  color: #e6e8eb;
+    var(--c-shadow-lg),
+    0 0 0 1px var(--c-border);
+  color: var(--c-text);
   animation: send-report-pop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -58,7 +58,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 20px 22px 12px;
-  border-bottom: 1px solid #1f242b;
+  border-bottom: 1px solid var(--c-border);
 }
 
 .send-report-title {
@@ -66,25 +66,25 @@
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #fafafa;
+  color: var(--c-text-strong);
 }
 
 .send-report-sub {
   margin: 4px 0 0;
   font-size: 0.78rem;
-  color: #8a939c;
+  color: var(--c-text-muted);
   line-height: 1.4;
 }
 
 .send-report-sub strong {
-  color: #cfd3d8;
+  color: var(--c-text-subtle);
   font-weight: 600;
 }
 
 .send-report-close {
   background: transparent;
   border: 1px solid transparent;
-  color: #8a939c;
+  color: var(--c-text-muted);
   border-radius: 6px;
   width: 30px;
   height: 30px;
@@ -100,8 +100,8 @@
 
 .send-report-close:hover {
   background: var(--c-surface-6);
-  color: #fafafa;
-  border-color: #2a3037;
+  color: var(--c-text-strong);
+  border-color: var(--c-border);
 }
 
 .send-report-body {
@@ -121,12 +121,12 @@
 .send-report-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #cfd3d8;
+  color: var(--c-text-subtle);
   letter-spacing: 0.01em;
 }
 
 .send-report-optional {
-  color: #6b7480;
+  color: var(--c-text-dim);
   font-weight: 400;
   margin-left: 4px;
 }
@@ -135,10 +135,10 @@
 .send-report-textarea {
   width: 100%;
   background: var(--c-bg-sunken-hi);
-  border: 1px solid #2a3037;
+  border: 1px solid var(--c-border);
   border-radius: 8px;
   padding: 10px 12px;
-  color: #fafafa;
+  color: var(--c-text-strong);
   font-size: 0.92rem;
   font-family: inherit;
   transition: border-color 0.15s, background 0.15s;
@@ -154,13 +154,13 @@
 .send-report-input:focus,
 .send-report-textarea:focus {
   outline: none;
-  border-color: #4a5260;
+  border-color: var(--c-border-hi);
   background: var(--c-bg-card-solid);
 }
 
 .send-report-input::placeholder,
 .send-report-textarea::placeholder {
-  color: #5a6168;
+  color: var(--c-text-dim);
 }
 
 .send-report-input:disabled,
@@ -174,12 +174,12 @@
   right: 4px;
   bottom: -18px;
   font-size: 0.7rem;
-  color: #5a6168;
+  color: var(--c-text-dim);
 }
 
 .send-report-error {
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: var(--c-error-bg);
+  border: 1px solid var(--c-error-border);
   color: var(--c-error-text);
   padding: 10px 12px;
   border-radius: 8px;
@@ -195,8 +195,8 @@
 }
 
 .send-report-cta {
-  background: #e6e8eb;
-  color: #0b0d10;
+  background: var(--c-accent);
+  color: var(--c-text-on-accent);
   border: none;
   padding: 9px 18px;
   border-radius: 8px;
@@ -211,7 +211,7 @@
 }
 
 .send-report-cta:hover:not(:disabled) {
-  background: #fafafa;
+  background: var(--c-accent-strong);
 }
 
 .send-report-cta:active:not(:disabled) {
@@ -225,8 +225,8 @@
 
 .send-report-secondary {
   background: transparent;
-  color: #cfd3d8;
-  border: 1px solid #2a3037;
+  color: var(--c-text-subtle);
+  border: 1px solid var(--c-border);
   padding: 9px 16px;
   border-radius: 8px;
   font-size: 0.88rem;
@@ -237,8 +237,8 @@
 
 .send-report-secondary:hover:not(:disabled) {
   background: var(--c-surface-6);
-  border-color: #3a4150;
-  color: #fafafa;
+  border-color: var(--c-border-hi);
+  color: var(--c-text-strong);
 }
 
 .send-report-secondary:disabled {
@@ -254,7 +254,7 @@
 
 .send-report-gate p {
   margin: 0 0 16px;
-  color: #cfd3d8;
+  color: var(--c-text-subtle);
   font-size: 0.92rem;
 }
 
@@ -269,8 +269,8 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(34, 197, 94, 0.12);
-  color: #4ade80;
+  background: var(--c-success-bg);
+  color: var(--c-success-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -279,6 +279,6 @@
 
 .send-report-success-text {
   margin: 0;
-  color: #cfd3d8;
+  color: var(--c-text-subtle);
   font-size: 0.92rem;
 }

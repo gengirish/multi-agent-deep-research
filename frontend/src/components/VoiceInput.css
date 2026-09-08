@@ -11,20 +11,20 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--c-gradient-brand);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--c-glow-brand);
 }
 
 .voice-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--c-glow-brand);
 }
 
 .voice-button:active:not(:disabled) {
@@ -37,16 +37,16 @@
 }
 
 .voice-button.listening {
-  background: linear-gradient(135deg, var(--c-error) 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--c-error) 0%, var(--c-error-text) 100%);
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
   0%, 100% {
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    box-shadow: var(--c-shadow-md);
   }
   50% {
-    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.6);
+    box-shadow: var(--c-shadow-lg);
   }
 }
 
@@ -63,10 +63,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
+  background: var(--c-warning-bg);
+  border: 1px solid var(--c-warning-border);
   border-radius: 6px;
-  color: #92400e;
+  color: var(--c-warning-text);
   font-size: 14px;
 }
 
@@ -91,10 +91,10 @@
 
 .voice-transcript {
   padding: 12px 16px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border);
   border-radius: 6px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--c-accent);
 }
 
 .transcript-label {
@@ -119,10 +119,10 @@
   align-items: flex-start;
   gap: 8px;
   padding: 12px 16px;
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--c-error-bg);
+  border: 1px solid var(--c-error-border);
   border-radius: 6px;
-  color: #991b1b;
+  color: var(--c-error-text);
 }
 
 .error-icon {
@@ -142,10 +142,10 @@
   align-items: center;
   gap: 8px;
   padding: 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
+  background: var(--c-warning-bg);
+  border: 1px solid var(--c-warning-border);
   border-radius: 6px;
-  color: #92400e;
+  color: var(--c-warning-text);
   text-align: center;
 }
 
@@ -160,13 +160,13 @@
 
 .voice-input-unavailable .hint {
   font-size: 12px;
-  color: #78350f;
+  color: var(--c-warning-text);
   margin-top: 4px;
 }
 
 /* Accessibility improvements */
 .voice-button:focus {
-  outline: 2px solid #667eea;
+  outline: 2px solid var(--c-accent);
   outline-offset: 2px;
 }
 
@@ -181,21 +181,21 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--c-warning) 0%, #d97706 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--c-warning) 0%, var(--c-warning-text) 100%);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+  box-shadow: var(--c-shadow-sm);
   margin-top: 8px;
 }
 
 .reset-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+  box-shadow: var(--c-shadow-md);
 }
 
 .reset-button:active:not(:disabled) {
@@ -299,7 +299,7 @@
   border-bottom: 1px solid var(--c-border) !important;
 }
 .history-row:hover {
-  background: rgba(99, 102, 241, 0.06) !important;
+  background: var(--c-accent-bg) !important;
 }
 .refresh-button,
 .retry-button,
@@ -318,11 +318,11 @@
 .view-button:hover,
 .tab-button:hover {
   background: var(--c-surface-6) !important;
-  border-color: rgba(129, 140, 248, 0.4) !important;
+  border-color: var(--c-accent-border) !important;
 }
 .tab-button.active {
-  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.12)) !important;
-  border-color: rgba(129, 140, 248, 0.45) !important;
+  background: var(--c-accent-bg-hi) !important;
+  border-color: var(--c-accent-border) !important;
   color: var(--c-text-strong) !important;
 }
 .empty-state,
@@ -338,9 +338,9 @@
 }
 .error-banner,
 .error-state {
-  background: rgba(239, 68, 68, 0.06) !important;
+  background: var(--c-error-bg) !important;
   border-left: 3px solid var(--c-error) !important;
-  color: #fecaca !important;
+  color: var(--c-error-text) !important;
 }
 .session-tabs,
 .tabs {

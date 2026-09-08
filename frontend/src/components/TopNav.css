@@ -79,7 +79,7 @@
 }
 
 .topnav__link.active {
-  color: #4f46e5;
+  color: var(--c-accent);
   background: rgba(99, 102, 241, 0.08);
 }
 

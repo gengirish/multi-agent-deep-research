@@ -137,7 +137,7 @@
   font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
     monospace;
   font-size: 0.78rem;
-  color: #f1f5f9;
+  color: var(--c-text-strong);
   font-weight: 600;
 }
 

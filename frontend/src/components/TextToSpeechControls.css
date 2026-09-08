@@ -1,8 +1,8 @@
 /* frontend/src/components/TextToSpeechControls.css */
 
 .tts-container {
-  background: linear-gradient(135deg, #f0f4ff 0%, #f9f5ff 100%);
-  border: 2px solid #e0e7ff;
+  background: var(--c-accent-bg);
+  border: 2px solid var(--c-accent-border);
   border-radius: 12px;
   padding: 16px;
   margin: 20px 0;
@@ -10,8 +10,8 @@
 }
 
 .tts-container:hover {
-  border-color: #c7d2fe;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  border-color: var(--c-accent);
+  box-shadow: var(--c-glow-brand);
 }
 
 /* Main Controls */
@@ -38,31 +38,31 @@
 
 /* Play Button */
 .play-button {
-  background: linear-gradient(135deg, var(--c-accent-strong) 0%, #4f46e5 100%);
-  color: white;
+  background: var(--c-gradient-brand);
+  color: var(--c-text-on-accent);
   flex: 1;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--c-glow-brand);
   min-height: 44px;
   font-size: 15px;
 }
 
 .play-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: var(--c-glow-brand);
 }
 
 .play-button.playing {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  background: linear-gradient(135deg, var(--c-warning) 0%, var(--c-warning-text) 100%);
+  box-shadow: var(--c-shadow-md);
   animation: pulse-button 1s ease-in-out infinite;
 }
 
 @keyframes pulse-button {
   0%, 100% {
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    box-shadow: var(--c-shadow-md);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.6);
+    box-shadow: var(--c-shadow-lg);
   }
 }
 
@@ -77,13 +77,13 @@
 /* Stop Button */
 .stop-button {
   background: var(--c-error);
-  color: white;
+  color: var(--c-text-on-accent);
   padding: 10px 12px;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+  box-shadow: var(--c-shadow-md);
 }
 
 .stop-button:hover {
-  background: #dc2626;
+  background: var(--c-error);
   transform: scale(1.05);
 }
 
@@ -93,20 +93,20 @@
 
 /* Settings Button */
 .settings-button {
-  background: white;
+  background: var(--c-bg-card);
   color: var(--c-accent-strong);
-  border: 2px solid #e0e7ff;
+  border: 2px solid var(--c-accent-border);
   padding: 10px 12px;
 }
 
 .settings-button:hover {
-  background: #f0f4ff;
-  border-color: #c7d2fe;
+  background: var(--c-accent-bg-hi);
+  border-color: var(--c-accent);
 }
 
 .settings-button.active {
   background: var(--c-accent-strong);
-  color: white;
+  color: var(--c-text-on-accent);
   border-color: var(--c-accent-strong);
 }
 
@@ -125,7 +125,7 @@
 .progress-fill {
   flex: 1;
   height: 6px;
-  background: #e0e7ff;
+  background: var(--c-accent-bg-hi);
   border-radius: 3px;
   overflow: hidden;
   position: relative;
@@ -135,13 +135,13 @@
 .progress-indicator {
   width: 12px;
   height: 12px;
-  background: linear-gradient(135deg, var(--c-accent-strong) 0%, #4f46e5 100%);
+  background: var(--c-gradient-brand);
   border-radius: 50%;
   position: absolute;
   right: -6px;
   top: 50%;
   transform: translateY(-50%);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  box-shadow: var(--c-glow-brand);
 }
 
 .progress-text {
@@ -154,11 +154,11 @@
 
 /* Settings Panel */
 .tts-settings {
-  background: white;
+  background: var(--c-bg-card);
   border-radius: 8px;
   padding: 16px;
   margin-top: 12px;
-  border: 1px solid #e0e7ff;
+  border: 1px solid var(--c-accent-border);
   animation: slideDown 0.3s ease;
 }
 
@@ -189,15 +189,15 @@
 .setting-label {
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--c-text);
 }
 
 .setting-select {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--c-border-hi);
   border-radius: 6px;
   font-size: 13px;
-  background: white;
+  background: var(--c-bg-card);
   cursor: pointer;
   transition: border-color 0.2s ease;
 }
@@ -209,7 +209,7 @@
 .setting-select:focus {
   outline: none;
   border-color: var(--c-accent-strong);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px var(--c-border-focus);
 }
 
 /* Speed Slider */
@@ -217,7 +217,7 @@
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, #e0e7ff 0%, #e0e7ff 100%);
+  background: var(--c-surface-6);
   outline: none;
   -webkit-appearance: none;
   appearance: none;
@@ -230,31 +230,31 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--c-accent-strong) 0%, #4f46e5 100%);
+  background: var(--c-gradient-brand);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--c-glow-brand);
   transition: all 0.2s ease;
 }
 
 .setting-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+  box-shadow: var(--c-glow-brand);
 }
 
 .setting-slider::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--c-accent-strong) 0%, #4f46e5 100%);
+  background: var(--c-gradient-brand);
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--c-glow-brand);
   transition: all 0.2s ease;
 }
 
 .setting-slider::-moz-range-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+  box-shadow: var(--c-glow-brand);
 }
 
 /* Speed Presets */
@@ -266,8 +266,8 @@
 
 .preset-btn {
   padding: 6px 12px;
-  border: 1px solid #d1d5db;
-  background: white;
+  border: 1px solid var(--c-border-hi);
+  background: var(--c-bg-card);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -283,13 +283,13 @@
 
 .preset-btn.active {
   background: var(--c-accent-strong);
-  color: white;
+  color: var(--c-text-on-accent);
   border-color: var(--c-accent-strong);
 }
 
 /* Setting Info */
 .setting-info {
-  background: #fef3c7;
+  background: var(--c-warning-bg);
   border-left: 3px solid var(--c-warning);
   padding: 12px;
   border-radius: 6px;
@@ -298,7 +298,7 @@
 .info-text {
   margin: 0 0 8px 0;
   font-size: 13px;
-  color: #92400e;
+  color: var(--c-warning-text);
   font-weight: 500;
 }
 
@@ -306,7 +306,7 @@
   margin: 0;
   padding-left: 20px;
   font-size: 12px;
-  color: #92400e;
+  color: var(--c-warning-text);
 }
 
 .keyboard-shortcuts li {
@@ -314,7 +314,7 @@
 }
 
 .keyboard-shortcuts code {
-  background: white;
+  background: var(--c-bg-card);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: monospace;
@@ -323,14 +323,14 @@
 
 /* Unavailable State */
 .tts-unavailable {
-  background: #fef2f2;
-  border: 2px solid #fca5a5;
+  background: var(--c-error-bg);
+  border: 2px solid var(--c-error-border);
   border-radius: 12px;
   padding: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #991b1b;
+  color: var(--c-error-text);
   font-size: 13px;
 }
 
@@ -445,7 +445,7 @@
   border-bottom: 1px solid var(--c-border) !important;
 }
 .history-row:hover {
-  background: rgba(99, 102, 241, 0.06) !important;
+  background: var(--c-accent-bg) !important;
 }
 .refresh-button,
 .retry-button,
@@ -464,11 +464,11 @@
 .view-button:hover,
 .tab-button:hover {
   background: var(--c-surface-6) !important;
-  border-color: rgba(129, 140, 248, 0.4) !important;
+  border-color: var(--c-accent-border) !important;
 }
 .tab-button.active {
-  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.12)) !important;
-  border-color: rgba(129, 140, 248, 0.45) !important;
+  background: var(--c-accent-bg-hi) !important;
+  border-color: var(--c-accent-border) !important;
   color: var(--c-text-strong) !important;
 }
 .empty-state,
@@ -484,9 +484,9 @@
 }
 .error-banner,
 .error-state {
-  background: rgba(239, 68, 68, 0.06) !important;
+  background: var(--c-error-bg) !important;
   border-left: 3px solid var(--c-error) !important;
-  color: #fecaca !important;
+  color: var(--c-error-text) !important;
 }
 .session-tabs,
 .tabs {

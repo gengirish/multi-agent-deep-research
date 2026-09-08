@@ -11,7 +11,7 @@
 .history-header h2 {
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
-  color: #ffffff;
+  color: var(--c-text-strong);
 }
 
 .history-header p {
@@ -30,10 +30,10 @@
   flex: 1;
   min-width: 250px;
   padding: 0.75rem 1rem;
-  background: #2d2d2d;
-  border: 1px solid #3d3d3d;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--c-text-strong);
   font-size: 0.95rem;
 }
 
@@ -43,22 +43,22 @@
 }
 
 .search-input::placeholder {
-  color: #666;
+  color: var(--c-text-dim);
 }
 
 .refresh-button {
   padding: 0.75rem 1.5rem;
-  background: #3d3d3d;
-  border: 1px solid #4d4d4d;
+  background: var(--c-surface-4);
+  border: 1px solid var(--c-border-hi);
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--c-text-strong);
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .refresh-button:hover:not(:disabled) {
-  background: #4d4d4d;
+  background: var(--c-surface-6);
 }
 
 .refresh-button:disabled {
@@ -79,7 +79,7 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #3d3d3d;
+  border: 4px solid var(--c-border);
   border-top: 4px solid var(--c-error);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -102,8 +102,8 @@
   align-items: center;
   gap: 1rem;
   padding: 3rem 2rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--c-error-bg);
+  border: 1px solid var(--c-error-border);
   border-radius: 8px;
   text-align: center;
 }
@@ -123,14 +123,14 @@
   background: var(--c-error);
   border: none;
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--c-text-strong);
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .retry-button:hover {
-  background: #dc2626;
+  background: var(--c-error);
 }
 
 /* Empty State */
@@ -155,13 +155,13 @@
 
 .empty-hint {
   font-size: 0.9rem !important;
-  color: #666 !important;
+  color: var(--c-text-dim) !important;
 }
 
 /* History Table */
 .history-table-container {
-  background: #2d2d2d;
-  border: 1px solid #3d3d3d;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -172,15 +172,15 @@
 }
 
 .history-table thead {
-  background: #1e1e1e;
+  background: var(--c-surface-3);
 }
 
 .history-table th {
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: #ffffff;
-  border-bottom: 2px solid #3d3d3d;
+  color: var(--c-text-strong);
+  border-bottom: 2px solid var(--c-border);
 }
 
 .history-row {
@@ -189,7 +189,7 @@
 }
 
 .history-row:hover {
-  background: #3d3d3d;
+  background: var(--c-surface-4);
 }
 
 .history-row:focus {
@@ -199,8 +199,8 @@
 
 .history-table td {
   padding: 1rem;
-  border-bottom: 1px solid #3d3d3d;
-  color: #e0e0e0;
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-text);
 }
 
 .history-table tbody tr:last-child td {
@@ -219,7 +219,7 @@
 }
 
 .query-text em {
-  color: #666;
+  color: var(--c-text-dim);
   font-style: italic;
 }
 
@@ -241,17 +241,17 @@
 
 .view-button {
   padding: 0.5rem 1rem;
-  background: #3d3d3d;
-  border: 1px solid #4d4d4d;
+  background: var(--c-surface-4);
+  border: 1px solid var(--c-border-hi);
   border-radius: 4px;
-  color: #ffffff;
+  color: var(--c-text-strong);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .view-button:hover {
-  background: #4d4d4d;
+  background: var(--c-surface-6);
   border-color: var(--c-error);
 }
 
@@ -259,8 +259,8 @@
 .pagination-info {
   margin-top: 1.5rem;
   padding: 1rem;
-  background: #2d2d2d;
-  border: 1px solid #3d3d3d;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
   border-radius: 6px;
   text-align: center;
 }
@@ -272,7 +272,7 @@
 }
 
 .pagination-hint {
-  color: #666 !important;
+  color: var(--c-text-dim) !important;
   font-size: 0.85rem !important;
 }
 
@@ -375,7 +375,7 @@
   border-bottom: 1px solid var(--c-border) !important;
 }
 .history-row:hover {
-  background: rgba(99, 102, 241, 0.06) !important;
+  background: var(--c-accent-bg) !important;
 }
 .refresh-button,
 .retry-button,
@@ -394,11 +394,11 @@
 .view-button:hover,
 .tab-button:hover {
   background: var(--c-surface-6) !important;
-  border-color: rgba(129, 140, 248, 0.4) !important;
+  border-color: var(--c-accent-border) !important;
 }
 .tab-button.active {
-  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.12)) !important;
-  border-color: rgba(129, 140, 248, 0.45) !important;
+  background: var(--c-accent-bg-hi) !important;
+  border-color: var(--c-accent-border) !important;
   color: var(--c-text-strong) !important;
 }
 .empty-state,
@@ -414,9 +414,9 @@
 }
 .error-banner,
 .error-state {
-  background: rgba(239, 68, 68, 0.06) !important;
+  background: var(--c-error-bg) !important;
   border-left: 3px solid var(--c-error) !important;
-  color: #fecaca !important;
+  color: var(--c-error-text) !important;
 }
 .session-tabs,
 .tabs {

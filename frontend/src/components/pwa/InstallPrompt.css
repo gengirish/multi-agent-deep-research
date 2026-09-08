@@ -80,8 +80,8 @@
   padding: 7px 14px;
   border: none;
   border-radius: 8px;
-  background: #0369a1;
-  color: #ffffff;
+  background: var(--c-accent-deep);
+  color: var(--c-text-on-accent);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -90,7 +90,7 @@
 }
 
 .pwa-install__btn:hover {
-  background: #075a87;
+  background: var(--c-accent-strong);
 }
 
 .pwa-install__btn:focus-visible {

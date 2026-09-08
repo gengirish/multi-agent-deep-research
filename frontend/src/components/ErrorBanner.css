@@ -217,7 +217,7 @@
 .error-state {
   background: rgba(239, 68, 68, 0.06) !important;
   border-left: 3px solid var(--c-error) !important;
-  color: #fecaca !important;
+  color: var(--c-error-text) !important;
 }
 .session-tabs,
 .tabs {

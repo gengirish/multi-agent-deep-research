@@ -9,8 +9,8 @@
 }
 
 .picture-input-unavailable {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-  border: 2px solid #f39c12;
+  background: var(--c-warning-bg);
+  border: 2px solid var(--c-warning-border);
   border-radius: 12px;
   padding: 2rem;
   text-align: center;
@@ -25,7 +25,7 @@
 
 .picture-input-unavailable p {
   margin: 0.5rem 0;
-  color: #856404;
+  color: var(--c-warning-text);
 }
 
 .picture-input-unavailable .hint {
@@ -35,8 +35,8 @@
 
 /* Picture Button */
 .picture-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--c-gradient-brand);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 12px;
   padding: 1.5rem 2rem;
@@ -48,12 +48,12 @@
   justify-content: center;
   gap: 0.75rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--c-glow-brand);
 }
 
 .picture-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: var(--c-glow-brand);
 }
 
 .picture-button:active:not(:disabled) {
@@ -86,8 +86,8 @@
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
-  background: #000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: #000;  /* live camera feed — intentionally black in both themes */
+  box-shadow: var(--c-shadow-lg);
 }
 
 .video-preview {
@@ -112,15 +112,15 @@
 }
 
 .detection-box {
-  background: rgba(46, 213, 115, 0.9);
-  color: white;
+  background: var(--c-success);
+  color: var(--c-text-on-accent);
   padding: 1rem 2rem;
   border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
+  box-shadow: var(--c-shadow-md);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -136,8 +136,8 @@
 }
 
 .capture-button {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--c-error) 0%, var(--c-error-text) 100%);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 10px;
   padding: 1rem 2rem;
@@ -154,22 +154,22 @@
 }
 
 .capture-button.ready {
-  background: linear-gradient(135deg, #2ed573 0%, #26de81 100%);
+  background: linear-gradient(135deg, var(--c-success) 0%, var(--c-success-text) 100%);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
 .capture-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+  box-shadow: var(--c-shadow-md);
 }
 
 .capture-button.ready:hover:not(:disabled) {
-  box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
+  box-shadow: var(--c-shadow-md);
 }
 
 .cancel-button {
-  background: #6c757d;
-  color: white;
+  background: var(--c-surface-6);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 10px;
   padding: 1rem 2rem;
@@ -186,7 +186,7 @@
 }
 
 .cancel-button:hover {
-  background: #5a6268;
+  background: var(--c-surface-7);
   transform: translateY(-2px);
 }
 
@@ -198,9 +198,9 @@
 /* Camera Hint */
 .camera-hint {
   padding: 1.25rem;
-  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  background: var(--c-info-bg);
   border-radius: 8px;
-  color: #00695c;
+  color: var(--c-info-text);
 }
 
 .camera-hint p {
@@ -228,12 +228,12 @@
   content: "✓";
   position: absolute;
   left: 0;
-  color: #00897b;
+  color: var(--c-info-text);
   font-weight: bold;
 }
 
 .hint-success {
-  color: #2ed573;
+  color: var(--c-success);
   font-weight: 600;
   animation: pulse 1.5s ease-in-out infinite;
   text-align: center;
@@ -243,11 +243,11 @@
 .hint-note {
   margin: 0.75rem 0 0 0;
   padding: 0.5rem;
-  background: rgba(255, 193, 7, 0.2);
+  background: var(--c-warning-bg);
   border-radius: 6px;
-  border-left: 3px solid #ffa726;
+  border-left: 3px solid var(--c-warning);
   font-size: 0.85rem;
-  color: #e65100;
+  color: var(--c-warning-text);
   text-align: center;
 }
 
@@ -263,8 +263,8 @@
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  background: #f8f9fa;
+  box-shadow: var(--c-shadow-md);
+  background: var(--c-surface-2);
 }
 
 .captured-preview {
@@ -279,7 +279,7 @@
 .processing-indicator {
   text-align: center;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  background: var(--c-info-bg);
   border-radius: 8px;
   animation: fadeIn 0.3s ease-in;
 }
@@ -287,8 +287,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(66, 165, 245, 0.3);
-  border-top-color: #42a5f5;
+  border: 4px solid var(--c-info-border);
+  border-top-color: var(--c-info);
   border-radius: 50%;
   margin: 0 auto 1rem;
   animation: spin 1s linear infinite;
@@ -296,20 +296,20 @@
 
 .processing-indicator p {
   margin: 0.5rem 0;
-  color: #1565c0;
+  color: var(--c-info-text);
   font-weight: 500;
 }
 
 .stage-text {
   font-size: 1.05rem;
   font-weight: 600;
-  color: #0d47a1;
+  color: var(--c-info-text);
   margin: 0.75rem 0 !important;
 }
 
 .stage-description {
   font-size: 0.9rem;
-  color: #1565c0;
+  color: var(--c-info-text);
   font-style: italic;
   margin: 0.5rem 0 0 0 !important;
 }
@@ -317,7 +317,7 @@
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: rgba(66, 165, 245, 0.2);
+  background: var(--c-info-bg-hi);
   border-radius: 4px;
   overflow: hidden;
   margin: 1rem 0 0.5rem;
@@ -325,21 +325,21 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #42a5f5 0%, #1e88e5 100%);
+  background: var(--c-gradient-brand);
   transition: width 0.3s ease;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
 .progress-text {
   font-size: 0.9rem;
-  color: #1565c0;
+  color: var(--c-info-text);
   font-weight: 600;
 }
 
 /* Extracted Text */
 .extracted-text-container {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  border-left: 4px solid #4caf50;
+  background: var(--c-success-bg);
+  border-left: 4px solid var(--c-success);
   border-radius: 8px;
   padding: 1.25rem;
   animation: slideIn 0.3s ease-out;
@@ -356,7 +356,7 @@
 
 .extracted-label {
   font-weight: 600;
-  color: #2e7d32;
+  color: var(--c-success-text);
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -367,16 +367,16 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.75rem;
-  background: rgba(46, 125, 50, 0.15);
-  border: 1px solid rgba(46, 125, 50, 0.3);
+  background: var(--c-success-bg-hi);
+  border: 1px solid var(--c-success-border);
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #1b5e20;
+  color: var(--c-success-text);
 }
 
 .extracted-text {
-  color: #1b5e20;
+  color: var(--c-success-text);
   line-height: 1.6;
   margin: 0 0 0.75rem 0;
   white-space: pre-wrap;
@@ -387,12 +387,12 @@
 .ocr-note {
   margin: 0.75rem 0 0 0;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--c-surface-4);
   border-radius: 6px;
-  color: #558b2f;
+  color: var(--c-success-text);
   font-size: 0.85rem;
   font-style: italic;
-  border: 1px dashed #81c784;
+  border: 1px dashed var(--c-success-border);
 }
 
 /* Image Controls */
@@ -403,8 +403,8 @@
 }
 
 .retake-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--c-gradient-brand);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 10px;
   padding: 1rem 2rem;
@@ -422,12 +422,12 @@
 
 .retake-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--c-glow-brand);
 }
 
 .reset-button {
-  background: #6c757d;
-  color: white;
+  background: var(--c-surface-6);
+  color: var(--c-text-on-accent);
   border: none;
   border-radius: 10px;
   padding: 1rem 2rem;
@@ -444,7 +444,7 @@
 }
 
 .reset-button:hover {
-  background: #5a6268;
+  background: var(--c-surface-7);
   transform: translateY(-2px);
 }
 
@@ -455,8 +455,8 @@
 
 /* Picture Error */
 .picture-error {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  border-left: 4px solid #f44336;
+  background: var(--c-error-bg);
+  border-left: 4px solid var(--c-error);
   border-radius: 8px;
   padding: 1rem;
   display: flex;
@@ -472,7 +472,7 @@
 
 .picture-error p {
   margin: 0;
-  color: #c62828;
+  color: var(--c-error-text);
   font-weight: 500;
 }
 

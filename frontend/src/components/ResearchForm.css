@@ -141,7 +141,7 @@
   font-family: inherit;
   font-size: 0.95rem;
   line-height: 1.55;
-  color: #f0fdf4;
+  color: var(--c-success-text);
   background: var(--c-bg-input);
   border: 1px solid rgba(34, 197, 94, 0.25);
   border-radius: 6px;

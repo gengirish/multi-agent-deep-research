@@ -182,7 +182,7 @@
 }
 
 .share__footer-link:hover {
-  border-bottom-color: #c7d2fe;
+  border-bottom-color: var(--c-accent);
 }
 
 .share__credit {

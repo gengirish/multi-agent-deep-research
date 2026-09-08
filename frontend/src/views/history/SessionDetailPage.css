@@ -11,10 +11,10 @@
 
 .back-button {
   padding: 0.75rem 1.5rem;
-  background: #3d3d3d;
-  border: 1px solid #4d4d4d;
+  background: var(--c-surface-4);
+  border: 1px solid var(--c-border-hi);
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--c-text-strong);
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -22,13 +22,13 @@
 }
 
 .back-button:hover {
-  background: #4d4d4d;
+  background: var(--c-surface-6);
 }
 
 .session-info h2 {
   font-size: 2rem;
   margin: 0 0 1rem 0;
-  color: #ffffff;
+  color: var(--c-text-strong);
 }
 
 .session-query,
@@ -40,7 +40,7 @@
 
 .session-query strong,
 .session-id strong {
-  color: #ffffff;
+  color: var(--c-text-strong);
   margin-right: 0.5rem;
 }
 
@@ -49,7 +49,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 2rem;
-  border-bottom: 2px solid #3d3d3d;
+  border-bottom: 2px solid var(--c-border);
 }
 
 .tab-button {
@@ -65,12 +65,12 @@
 }
 
 .tab-button:hover {
-  color: #ffffff;
+  color: var(--c-text-strong);
   background: var(--c-surface-4);
 }
 
 .tab-button.active {
-  color: #ffffff;
+  color: var(--c-text-strong);
   border-bottom-color: var(--c-error);
 }
 
@@ -106,21 +106,21 @@
 }
 
 .conversation-entry {
-  background: #2d2d2d;
-  border: 1px solid #3d3d3d;
-  border-left: 4px solid #4d4d4d;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-left: 4px solid var(--c-border-hi);
   border-radius: 6px;
   padding: 1.5rem;
   transition: all 0.2s ease;
 }
 
 .conversation-entry:hover {
-  background: #333333;
+  background: var(--c-surface-4);
   border-left-color: var(--c-error);
 }
 
 .conversation-entry.query {
-  border-left-color: #3b82f6;
+  border-left-color: var(--c-info);
 }
 
 .conversation-entry.error {
@@ -129,7 +129,7 @@
 }
 
 .conversation-entry.final_result {
-  border-left-color: #10b981;
+  border-left-color: var(--c-success);
 }
 
 /* Entry Header */
@@ -140,7 +140,7 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #3d3d3d;
+  border-bottom: 1px solid var(--c-border);
 }
 
 .entry-timestamp {
@@ -150,16 +150,16 @@
 }
 
 .entry-agent {
-  color: #3b82f6;
+  color: var(--c-info-text);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .entry-type {
   padding: 0.25rem 0.75rem;
-  background: #3d3d3d;
+  background: var(--c-surface-4);
   border-radius: 4px;
-  color: #ffffff;
+  color: var(--c-text-strong);
   font-size: 0.75rem;
   text-transform: uppercase;
   font-weight: 600;
@@ -167,7 +167,7 @@
 }
 
 .entry-type.query {
-  background: #3b82f6;
+  background: var(--c-info);
 }
 
 .entry-type.error {
@@ -175,19 +175,19 @@
 }
 
 .entry-type.final_result {
-  background: #10b981;
+  background: var(--c-success);
 }
 
 /* Entry Content */
 .entry-content {
   margin: 1rem 0;
-  color: #e0e0e0;
+  color: var(--c-text);
 }
 
 .entry-content strong {
   display: block;
   margin-bottom: 0.5rem;
-  color: #ffffff;
+  color: var(--c-text-strong);
 }
 
 .entry-content p {
@@ -200,15 +200,15 @@
 /* Entry Details (collapsible) */
 .entry-details {
   margin: 1rem 0;
-  background: #1e1e1e;
-  border: 1px solid #3d3d3d;
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .entry-details summary {
   padding: 0.75rem 1rem;
-  color: #ffffff;
+  color: var(--c-text-strong);
   cursor: pointer;
   user-select: none;
   font-weight: 500;
@@ -216,13 +216,13 @@
 }
 
 .entry-details summary:hover {
-  background: #2d2d2d;
+  background: var(--c-surface-2);
 }
 
 .entry-details pre {
   margin: 0;
   padding: 1rem;
-  background: #0d0d0d;
+  background: var(--c-bg-sunken-hi);
   color: var(--c-text-dim);
   font-size: 0.85rem;
   font-family: monospace;
@@ -259,7 +259,7 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #3d3d3d;
+  border: 4px solid var(--c-border);
   border-top: 4px solid var(--c-error);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -385,7 +385,7 @@
   border-bottom: 1px solid var(--c-border) !important;
 }
 .history-row:hover {
-  background: rgba(99, 102, 241, 0.06) !important;
+  background: var(--c-accent-bg) !important;
 }
 .refresh-button,
 .retry-button,
@@ -404,11 +404,11 @@
 .view-button:hover,
 .tab-button:hover {
   background: var(--c-surface-6) !important;
-  border-color: rgba(129, 140, 248, 0.4) !important;
+  border-color: var(--c-accent-border) !important;
 }
 .tab-button.active {
-  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.12)) !important;
-  border-color: rgba(129, 140, 248, 0.45) !important;
+  background: var(--c-accent-bg-hi) !important;
+  border-color: var(--c-accent-border) !important;
   color: var(--c-text-strong) !important;
 }
 .empty-state,
@@ -424,9 +424,9 @@
 }
 .error-banner,
 .error-state {
-  background: rgba(239, 68, 68, 0.06) !important;
+  background: var(--c-error-bg) !important;
   border-left: 3px solid var(--c-error) !important;
-  color: #fecaca !important;
+  color: var(--c-error-text) !important;
 }
 .session-tabs,
 .tabs {

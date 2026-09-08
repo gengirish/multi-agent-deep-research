@@ -365,7 +365,7 @@
 }
 
 .madeby__text a:hover {
-  border-bottom-color: #c7d2fe;
+  border-bottom-color: var(--c-accent);
 }
 
 .madeby__text strong {
