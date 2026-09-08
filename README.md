@@ -62,6 +62,39 @@ Five specialized agents, orchestrated as a [LangGraph](https://github.com/langch
 | **Insight**        | Turns claims into hypotheses, trend chains, and reasoning steps.             |
 | **Report builder** | Compiles everything into a structured, cited markdown report.                |
 
+## Architecture
+
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/chronicle-architecture-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/diagrams/chronicle-architecture-light.png">
+  <img alt="Chronicle architecture: Researchers and MCP clients on the left; Next.js 14 on Vercel and FastAPI on Fly.io in the middle, with the LangGraph coordinator, the model router and the source APIs; Neon Postgres, Chroma, AgentMail and the OAuth-gated /mcp surface around them" src="docs/diagrams/chronicle-architecture-dark.png" width="100%">
+</picture>
+
+<sub>
+  <a href="https://raw.githack.com/gengirish/multi-agent-deep-research/main/docs/diagrams/chronicle.architecture.html"><b>Open the interactive version →</b></a>
+  &nbsp;·&nbsp; search nodes, trace a route, jump straight to the source line
+  &nbsp;·&nbsp; <a href="./docs/diagrams/chronicle-architecture-dark.svg">SVG</a>
+  &nbsp;·&nbsp; <a href="./docs/diagrams/chronicle.architecture.json">spec</a>
+</sub>
+
+</div>
+
+Three deployables and two MCP surfaces. Next.js on Vercel owns auth, history and the
+subscriber list; FastAPI on Fly.io runs the pipeline **inline** — `asyncio.create_task`,
+not a worker process — and streams progress back over SSE. One Neon Postgres is reached
+two ways: Prisma from the Next.js layer, async SQLAlchemy from FastAPI.
+
+Two edges are worth reading closely. The **back-edge** from FastAPI into Next.js exists
+because the subscriber list and mail credentials live in the web layer; a connector has no
+browser cookie, so that call carries `CHRONICLE_SERVICE_TOKEN` instead. And `/mcp`
+**fails closed** — without `CHRONICLE_MCP_ACCESS_KEY` it is never mounted and returns 404,
+because an unauthenticated research tool spends real LLM credits. The stdio server takes
+neither path: in remote mode it calls the plain REST endpoints.
+
+Full detail in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
 ## Stack
 
 | Layer        | Tech                                                                    |
@@ -290,6 +323,7 @@ becomes a published issue rather than a one-off answer.
 | [`QUICK_START.md`](./QUICK_START.md) | Fastest local setup, with troubleshooting |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Vercel + Fly.io, the claude.ai connector, newsletter broadcast |
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | How it fits together and why |
+| [`docs/diagrams/`](./docs/diagrams/) | The architecture diagram — interactive HTML, SVG, and the Archify spec it is generated from |
 | [`docs/SCHEDULED_BRIEFINGS.md`](./docs/SCHEDULED_BRIEFINGS.md) | Scheduling unattended briefings, and the prompt to hand the claude.ai scheduler |
 | [`mcp/README.md`](./mcp/README.md) | The local stdio MCP server |
 | [`env.example`](./env.example) | Every environment variable, with free-tier limits |

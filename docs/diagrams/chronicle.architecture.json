@@ -1,0 +1,442 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Chronicle — Multi-Agent Deep Research",
+    "output": "docs/diagrams/chronicle.architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "https://github.com/gengirish/multi-agent-deep-research",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "da1924f5735e202a56e0a2a5f1db2dc783ec033e"
+    },
+    "viewBox": [
+      1360,
+      670
+    ],
+    "views": [
+      {
+        "id": "browser-run",
+        "label": "A research run",
+        "focus": [
+          "clients",
+          "web",
+          "api",
+          "pipeline",
+          "models"
+        ],
+        "note": "Browser request to FastAPI, then the inline LangGraph pipeline."
+      },
+      {
+        "id": "connector-surface",
+        "label": "MCP surfaces",
+        "focus": [
+          "connectors",
+          "stdio",
+          "oauth",
+          "api"
+        ],
+        "note": "Two MCP servers expose the same six tools; the hosted one fails closed."
+      },
+      {
+        "id": "state-and-mail",
+        "label": "State and newsletter",
+        "focus": [
+          "web",
+          "api",
+          "neon",
+          "chroma",
+          "agentmail"
+        ],
+        "note": "One Postgres reached two ways, plus the back-edge that sends mail."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "clients",
+      "type": "external",
+      "label": "Researchers",
+      "sublabel": "browser + PWA",
+      "pos": [
+        30,
+        205
+      ],
+      "size": [
+        145,
+        62
+      ]
+    },
+    {
+      "id": "connectors",
+      "type": "external",
+      "label": "MCP Clients",
+      "sublabel": "claude.ai custom connector",
+      "brand": "anthropic",
+      "pos": [
+        600,
+        545
+      ],
+      "size": [
+        170,
+        66
+      ]
+    },
+    {
+      "id": "stdio",
+      "type": "external",
+      "label": "chronicle-mcp",
+      "sublabel": "stdio server for Cursor",
+      "pos": [
+        830,
+        545
+      ],
+      "size": [
+        165,
+        66
+      ],
+      "sources": [
+        {
+          "path": "mcp/chronicle_mcp/server.py",
+          "label": "stdio server"
+        }
+      ]
+    },
+    {
+      "id": "agentmail",
+      "type": "external",
+      "label": "AgentMail",
+      "sublabel": "newsletter delivery",
+      "pos": [
+        250,
+        60
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "sources": [
+        {
+          "path": "frontend/app/api/reports/[jobId]/broadcast/route.ts",
+          "label": "broadcast route"
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Next.js 14",
+      "sublabel": "landing, research, auth",
+      "tag": "Vercel",
+      "brand": "next-js",
+      "pos": [
+        250,
+        200
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "frontend/src/components/ResearchResults.tsx",
+          "label": "results view"
+        }
+      ]
+    },
+    {
+      "id": "oauth",
+      "type": "security",
+      "label": "OAuth 2.1 + PKCE",
+      "sublabel": "fronts /mcp, fails closed",
+      "pos": [
+        600,
+        370
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "backend/auth/oauth.py",
+          "label": "authorization server"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI",
+      "sublabel": "/api/research · SSE · /mcp",
+      "tag": "Fly.io",
+      "brand": "fastapi",
+      "pos": [
+        560,
+        200
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "sources": [
+        {
+          "path": "backend/main.py",
+          "line": 343,
+          "label": "POST /api/research"
+        }
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "backend",
+      "label": "LangGraph Coordinator",
+      "sublabel": "five agents as a state machine",
+      "pos": [
+        870,
+        200
+      ],
+      "size": [
+        180,
+        72
+      ],
+      "sources": [
+        {
+          "path": "orchestration/coordinator.py",
+          "line": 108,
+          "label": "_build_workflow"
+        }
+      ]
+    },
+    {
+      "id": "sources",
+      "type": "external",
+      "label": "Source APIs",
+      "sublabel": "Tavily → Perplexity → ArXiv",
+      "pos": [
+        870,
+        60
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "agents/retriever.py",
+          "label": "retriever"
+        }
+      ]
+    },
+    {
+      "id": "models",
+      "type": "external",
+      "label": "Model Router",
+      "sublabel": "Groq · Gemini · OpenRouter",
+      "pos": [
+        1160,
+        200
+      ],
+      "size": [
+        165,
+        72
+      ],
+      "sources": [
+        {
+          "path": "utils/llm_config.py",
+          "label": "provider selection"
+        }
+      ]
+    },
+    {
+      "id": "chroma",
+      "type": "database",
+      "label": "Chroma",
+      "sublabel": "vector store, opt-in",
+      "pos": [
+        1160,
+        370
+      ],
+      "size": [
+        165,
+        64
+      ],
+      "sources": [
+        {
+          "path": "utils/rag_service.py",
+          "label": "RAG service"
+        }
+      ]
+    },
+    {
+      "id": "neon",
+      "type": "database",
+      "label": "Neon Postgres",
+      "sublabel": "Prisma + async SQLAlchemy",
+      "brand": "neon",
+      "pos": [
+        350,
+        370
+      ],
+      "size": [
+        170,
+        68
+      ],
+      "sources": [
+        {
+          "path": "backend/db/database.py",
+          "label": "async engine"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Vercel",
+      "wraps": [
+        "web"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Fly.io — single container",
+      "wraps": [
+        "api",
+        "oauth",
+        "pipeline"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "from": "clients",
+      "to": "web",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "web",
+      "to": "api",
+      "label": "HTTPS + SSE progress",
+      "variant": "emphasis",
+      "labelDy": 22
+    },
+    {
+      "from": "api",
+      "to": "pipeline",
+      "label": "asyncio.create_task",
+      "variant": "emphasis"
+    },
+    {
+      "from": "pipeline",
+      "to": "models",
+      "label": "provider/model",
+      "variant": "emphasis"
+    },
+    {
+      "from": "pipeline",
+      "to": "sources",
+      "label": "search + fetch"
+    },
+    {
+      "from": "pipeline",
+      "to": "chroma",
+      "label": "semantic index",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "from": "web",
+      "to": "neon",
+      "label": "Prisma",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "api",
+      "to": "neon",
+      "label": "async SQLAlchemy",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          645,
+          325
+        ],
+        [
+          435,
+          325
+        ]
+      ]
+    },
+    {
+      "from": "api",
+      "to": "web",
+      "label": "CHRONICLE_SERVICE_TOKEN",
+      "variant": "security",
+      "labelDy": 52
+    },
+    {
+      "from": "web",
+      "to": "agentmail",
+      "label": "send briefing"
+    },
+    {
+      "from": "connectors",
+      "to": "oauth",
+      "label": "OAuth 2.1 + PKCE",
+      "variant": "security"
+    },
+    {
+      "from": "oauth",
+      "to": "api",
+      "label": "mounts /mcp",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 60
+    },
+    {
+      "from": "stdio",
+      "to": "api",
+      "label": "REST /api/*",
+      "variant": "dashed",
+      "labelDx": 70
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Three deployables",
+      "items": [
+        "Next.js 14 on Vercel owns auth, history and the subscriber list",
+        "FastAPI on Fly.io runs the pipeline inline — no worker process",
+        "chronicle-mcp ships separately as a pip-installable stdio server"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The pipeline",
+      "items": [
+        "Five agents as a LangGraph state machine in coordinator.py",
+        "Credibility and analyzer run as one parallel_analysis node",
+        "Every stage streams to the browser over SSE as it completes"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Named crossings",
+      "items": [
+        "/mcp is never mounted without CHRONICLE_MCP_ACCESS_KEY — 404 means unconfigured",
+        "The back-edge to Next.js carries a service token, not a browser cookie",
+        "Both MCP surfaces expose the same six tools; test_mcp_parity.py fails on drift"
+      ]
+    }
+  ]
+}

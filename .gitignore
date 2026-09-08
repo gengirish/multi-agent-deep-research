@@ -47,6 +47,9 @@ fly.toml.bak
 
 # Claude Code local (per-developer) settings
 .claude/settings.local.json
+# Archify is installed, not vendored (see docs/diagrams/README.md); the project's
+# own skills in .claude/skills/ stay tracked.
+.claude/skills/archify/
 
 # IDE
 .vscode/
