@@ -168,9 +168,13 @@ Gemini because it counts internal reasoning against `max_output_tokens` — at 2
 the response truncated after the first section.
 
 **Q. What happens when a provider is down or out of quota?**
-Every client is wrapped at *invoke* time with `.with_fallbacks([openai/gpt-oss-20b:free])`
-through OpenRouter. It has to be invoke-time: 429 and 402 surface on the call, not
-on client construction, so a construction-time fallback never fires. If the
+Every client is wrapped at *invoke* time with a `.with_fallbacks([...])` OpenRouter
+model, set by `OPENROUTER_FALLBACK_MODEL`. It has to be invoke-time: 429 and 402
+surface on the call, not on client construction, so a construction-time fallback
+never fires. (Note: this originally pointed at `openai/gpt-oss-20b:free`.
+OpenRouter has since retired its `:free` variants, so that slug 404s on every call
+and the fallback was silently dead until it was repointed at a paid slug on
+2026-09-07.) If the
 fallback also fails, the stage returns an empty, attributable result carrying
 `[unavailable] <stage>: <reason>`, `utils/degraded.py` collects the affected
 stage names, and the UI shows a banner above the report. It degrades visibly

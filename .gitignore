@@ -1,36 +1,52 @@
+# Secrets / local env
 .env
-.env.local
-.env.production
+.env.*
+!env.example
+.env*.local
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 venv/
-env/
-ENV/
-.venv
-logs/
-*.log
-demo_cache.json
-.pytest_cache/
-.coverage
-htmlcov/
-.DS_Store
-
-# Virtual environment
-venv/
 .venv/
 env/
 ENV/
+.pytest_cache/
+.deepeval/
+.coverage
+htmlcov/
+
+# Local data stores
 chroma_store/
 gvectordb/
+logs/
+logs-debug/
+*.log
 
-# Frontend
+# Frontend (Next.js)
 frontend/node_modules/
-frontend/dist/
-frontend/.vite/
-frontend/.DS_Store
+frontend/.next/
+frontend/test-results/
+frontend/playwright-report/
+frontend/tsconfig.tsbuildinfo
+
+# Deploy CLI metadata
+.vercel/
+.fly/
+fly.toml.bak
+
+# Local commit-message scratch
+.git-commit-msg.tmp
+*.commit-msg.tmp
+
+# Deck backups
+*.pptx.bak
+
+# Claude Code local (per-developer) settings
+.claude/settings.local.json
 
 # IDE
 .vscode/
@@ -42,22 +58,3 @@ frontend/.DS_Store
 # OS
 .DS_Store
 Thumbs.db
-
-# Deploy CLI metadata
-.vercel/
-.fly/
-fly.toml.bak
-
-# Local commit-message scratch
-.git-commit-msg.tmp
-*.commit-msg.tmp
-
-
-.vercel
-.env*.local
-
-# Deck backups
-*.pptx.bak
-
-# Claude Code local (per-developer) settings
-.claude/settings.local.json

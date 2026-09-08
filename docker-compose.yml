@@ -1,31 +1,30 @@
-version: '3.8'
+# Local dev stack.
+#
+# Only the backend is containerised — it uses the same `Dockerfile` that Fly.io
+# builds in production, so what you run here is what ships. The frontend is a
+# Next.js app; run it on the host with `cd frontend && npm run dev` (port 3000).
+# Containerising it would mean a second Dockerfile whose only job is to run
+# `next dev`, which buys nothing over running it directly.
 
 services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - OPEN_ROUTER_KEY=${OPEN_ROUTER_KEY}
+      # The image defaults to 8080 (Fly's internal port); override for local parity
+      # with the uvicorn command in README/QUICK_START.
+      PORT: "8000"
+      ALLOWED_ORIGINS: "http://localhost:3000"
     volumes:
+      # Hot-reload the pipeline without rebuilding. requirements.txt changes
+      # still need `docker compose build`.
       - ./agents:/app/agents
       - ./orchestration:/app/orchestration
       - ./utils:/app/utils
-    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
-  
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-
+      - ./backend:/app/backend
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload

@@ -139,7 +139,7 @@ connector (task 5 below).
 5. **Register in claude.ai**: Settings → Connectors → Add custom connector →
    URL `https://multi-agent-deep-research-api.fly.dev/mcp`. Claude performs DCR
    and PKCE automatically. Walk the user through the approval screen (they paste
-   the access key from step 2). Then have them confirm the five tools appear and
+   the access key from step 2). Then have them confirm the tools appear and
    that `list_starter_queries` and `chronicle_health` return.
 
 6. **Long-run guidance**: `research_market` takes 30–90s and the inline wait can
@@ -194,7 +194,7 @@ Observed status codes, not inferred from code.
 | `/.well-known/oauth-protected-resource` | **200**, `resource` = `…fly.dev/mcp` |
 | `/.well-known/oauth-authorization-server` | **200**, `issuer` = `…fly.dev` |
 | `initialize` | `protocolVersion 2025-06-18`, `serverInfo: chronicle 1.0.0` |
-| `tools/list` | all five tools present |
+| `tools/list` | all five tools present *(six as of 2026-09-07, after `broadcast_briefing`)* |
 | `chronicle_health` | `mode: hosted`, `status: ok`, `database: ok` |
 | `list_starter_queries` | 6 prompts returned |
 

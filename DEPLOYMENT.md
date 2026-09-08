@@ -1,8 +1,8 @@
 # Deployment Guide
 
-This guide covers deploying the Multi-Agent AI Deep Researcher to production.
+This guide covers deploying Chronicle to production.
 
-- **Frontend (React + Vite)** → **Vercel**
+- **Frontend (Next.js 14, App Router)** → **Vercel**
 - **Backend (FastAPI)** → any container host (Fly.io, Render, Cloud Run, ECS, etc.)
 
 The backend has no platform-specific coupling. Anything that can run a Python ASGI app on a configurable `$PORT` will work.
@@ -12,12 +12,18 @@ The backend has no platform-specific coupling. Anything that can run a Python AS
 ## Architecture
 
 ```
-┌──────────────────────┐        HTTPS         ┌────────────────────────┐
-│  Vercel (frontend)   │ ───────────────────▶ │  Container backend     │
-│  React + Vite        │                      │  FastAPI / uvicorn     │
-│  VITE_API_URL ──────▶│                      │  PORT, ALLOWED_ORIGINS │
-└──────────────────────┘                      └────────────────────────┘
+┌──────────────────────────┐      HTTPS       ┌──────────────────────────┐
+│  Vercel (frontend)       │ ───────────────▶ │  Fly.io (backend)        │
+│  Next.js 14 App Router   │                  │  FastAPI / uvicorn       │
+│  NEXT_PUBLIC_API_URL ───▶│ ◀─────────────── │  PORT, ALLOWED_ORIGINS   │
+│  Postgres via Prisma     │  service token   │  /mcp (OAuth 2.1 + PKCE) │
+│  AgentMail (newsletter)  │  (broadcast)     └──────────────────────────┘
+└──────────────────────────┘
 ```
+
+The backend calls *back* into the Next.js app for one thing only: broadcasting a
+briefing to the newsletter list, authenticated with `CHRONICLE_SERVICE_TOKEN`
+(Phase 4). Everything else flows frontend → backend.
 
 ---
 
@@ -25,8 +31,10 @@ The backend has no platform-specific coupling. Anything that can run a Python AS
 
 1. Code pushed to GitHub
 2. Vercel account (https://vercel.com)
-3. A backend host of your choice (Fly.io setup is tracked separately)
-4. API keys: `OPEN_ROUTER_KEY`, `TAVILY_API_KEY` (optional)
+3. A backend host of your choice (this deployment uses Fly.io; see `fly.toml`)
+4. API keys: `GOOGLE_API_KEY` and `GROQ_API_KEY` (required), `TAVILY_API_KEY`
+   (recommended), `OPEN_ROUTER_KEY` / `ANTHROPIC_API_KEY` / `PERPLEXITY_API_KEY`
+   (optional). `env.example` documents every variable with its free-tier limits.
 
 ---
 
@@ -42,13 +50,22 @@ curl http://localhost:8000/api/health
 
 ### 2. Required environment variables
 
-| Variable          | Purpose                                  | Example                                    |
-| ----------------- | ---------------------------------------- | ------------------------------------------ |
-| `OPEN_ROUTER_KEY` | LLM access via OpenRouter                | `sk-or-...`                                |
-| `TAVILY_API_KEY`  | Web search (optional)                    | `tvly-...`                                 |
-| `PORT`            | Server port (host usually injects)       | `8000`                                     |
-| `ALLOWED_ORIGINS` | Comma-separated CORS allowlist           | `https://your-app.vercel.app`              |
-| `ENVIRONMENT`     | Free-form environment label              | `production`                               |
+| Variable            | Purpose                                       | Example                       |
+| ------------------- | --------------------------------------------- | ----------------------------- |
+| `GOOGLE_API_KEY`    | Analyzer / insight / report stages (Gemini)   | `AIza...`                     |
+| `GROQ_API_KEY`      | Retriever + credibility stages (Llama 3.3)    | `gsk_...`                     |
+| `DATABASE_URL`      | Neon Postgres — research results              | `postgresql://...`            |
+| `TAVILY_API_KEY`    | Web search (recommended)                      | `tvly-...`                    |
+| `OPEN_ROUTER_KEY`   | Invoke-time fallback for any stage (optional) | `sk-or-...`                   |
+| `JWT_SECRET`        | Shared HS256 secret with the Next.js layer    | 32-byte hex                   |
+| `PORT`              | Server port (host usually injects)            | `8080`                        |
+| `ALLOWED_ORIGINS`   | Comma-separated CORS allowlist                | `https://your-app.vercel.app` |
+| `ENVIRONMENT`       | Free-form environment label                   | `production`                  |
+
+Set `OPENROUTER_FALLBACK_MODEL` to a real slug (e.g. `openai/gpt-oss-20b`), never a
+`:free` one — OpenRouter retired those variants and a `:free` slug 404s on every call,
+which makes the fallback silently useless. The app probes it once at startup and logs
+loudly if it is unusable.
 
 `backend/main.py` already accepts `ALLOWED_ORIGINS`, automatically appends any `https://*.vercel.app` previews via regex, and binds to whatever `$PORT` the host provides.
 
@@ -76,22 +93,24 @@ Save the resulting URL — the frontend needs it.
 
 1. https://vercel.com → **Add New Project**
 2. Select your GitHub repo
-3. Vercel auto-detects Vite
+3. Set the Root Directory to `frontend`; Vercel then detects Next.js
 
 ### 2. Build configuration
 
-| Setting          | Value           |
-| ---------------- | --------------- |
-| Framework Preset | Vite            |
-| Root Directory   | `frontend`      |
-| Build Command    | `npm run build` |
-| Output Directory | `dist`          |
-| Install Command  | `npm install`   |
+| Setting          | Value                              |
+| ---------------- | ---------------------------------- |
+| Framework Preset | Next.js                            |
+| Root Directory   | `frontend`                         |
+| Build Command    | `npm run build` (runs `prisma generate` first) |
+| Output Directory | *(leave default — Next.js managed)* |
+| Install Command  | `npm install`                      |
+
+`DATABASE_URL` must be present at **build** time, not just at runtime: the build
+script runs `prisma generate` before `next build`.
 
 ### 3. Environment variables
 
 ```
-VITE_API_URL=https://<your-backend-host>
 NEXT_PUBLIC_API_URL=https://<your-backend-host>
 NEXT_PUBLIC_APP_URL=https://<your-frontend-host>
 DATABASE_URL=<postgres connection string>
@@ -99,6 +118,7 @@ JWT_SECRET=<shared secret with the backend>
 AGENTMAIL_API_KEY=<for transactional + broadcast email>
 AGENTMAIL_FROM_EMAIL=briefing@yourdomain.com
 NEWSLETTER_ADMIN_EMAILS=you@example.com
+CHRONICLE_SERVICE_TOKEN=<same value as on the backend; see Phase 4>
 ```
 
 > **`NEWSLETTER_ADMIN_EMAILS` is a security control, not a convenience.**
@@ -189,9 +209,9 @@ claude.ai → Settings → Connectors → Add custom connector →
 `https://multi-agent-deep-research-api.fly.dev/mcp`
 
 Claude performs dynamic client registration and PKCE automatically; the
-approval screen asks for `CHRONICLE_MCP_ACCESS_KEY`. Five tools should appear:
+approval screen asks for `CHRONICLE_MCP_ACCESS_KEY`. Six tools should appear:
 `research_market`, `get_research_job`, `export_research_markdown`,
-`list_starter_queries`, `chronicle_health`.
+`list_starter_queries`, `broadcast_briefing`, `chronicle_health`.
 
 ### 5. Long-running research from a connector
 
@@ -207,6 +227,60 @@ payload; the browser learns completion from SSE instead.
 > after a restart pays ~13s — that is a restart, not an idle cold start. If a
 > connector handshake fails immediately after a deploy, retry before
 > investigating.
+
+
+---
+
+## Phase 4: Newsletter broadcast from the connector (optional)
+
+`broadcast_briefing` lets an agent mail a finished briefing to the subscriber
+list. Sending is owned by the Next.js app — it holds the list, the template and
+the AgentMail credentials — so the backend has to call *back* into it. A browser
+cookie is not available to a connector, so that call is authenticated with a
+shared service token instead.
+
+### 1. Mint one token, set it in both places
+
+```bash
+TOKEN="$(openssl rand -hex 32)"
+
+flyctl secrets set -a multi-agent-deep-research-api \
+  CHRONICLE_SERVICE_TOKEN="$TOKEN"
+
+vercel env add CHRONICLE_SERVICE_TOKEN production   # paste the same value
+```
+
+The values must match byte for byte; a mismatch surfaces as a 401 from the
+broadcast route. `getServiceIdentity()` in `frontend/src/lib/service-auth.ts` is
+**inert while `CHRONICLE_SERVICE_TOKEN` is unset**, so the service path is closed
+by default and the feature simply stays off until you opt in.
+
+### 2. Point the backend at the frontend
+
+`CHRONICLE_APP_URL` is already set in `fly.toml [env]`. Override it only if your
+frontend lives elsewhere:
+
+```bash
+flyctl secrets set -a multi-agent-deep-research-api \
+  CHRONICLE_APP_URL="https://your-frontend-host"
+```
+
+### 3. What the token does and does not grant
+
+A service token authenticates as **one fixed operator identity**, never an
+arbitrary user, and it is accepted only on the broadcast route. Because it *is*
+the operator, `NEWSLETTER_ADMIN_EMAILS` does not gate it — the allowlist applies
+to interactive sessions only. Treat the token as equivalent to newsletter-send
+rights and rotate it like a password.
+
+### 4. Safety properties worth knowing before you enable it
+
+- The tool is annotated `destructiveHint`. Calling it with `confirm=false`
+  performs a **dry run**: it returns the recipient count and sends nothing.
+- Each report can be broadcast **once, ever**. A second attempt returns
+  `already_broadcast` and sends no mail, so a retried agent run is safe.
+- Dry runs and real sends draw on separate rate-limit budgets (20 and 5 per
+  10-minute window respectively), so probing cannot exhaust the send budget.
 
 
 ## End-to-end verification
@@ -235,12 +309,19 @@ Then open the Vercel URL, run a demo query, and watch the network tab to confirm
 - Some hosts inject `PORT`. Don't hardcode 8000 in the start command — the snippet above respects `$PORT`.
 
 **API key errors**
-- `OPEN_ROUTER_KEY` must start with `sk-or-`.
+- `OPEN_ROUTER_KEY` must start with `sk-or-`; `NVIDIA_API_KEY` with `nvapi-`.
 - Verify locally before pushing to the host.
 
 **Frontend builds but can't reach backend**
-- `VITE_API_URL` must be set at build time on Vercel (Vite inlines env vars during build).
-- After changing it, trigger a redeploy.
+- `NEXT_PUBLIC_*` values are inlined at build time. After changing one, trigger a
+  redeploy — editing it in the dashboard alone changes nothing.
+
+**Build fails on `prisma generate`**
+- `DATABASE_URL` is missing from the build environment, not just from runtime.
+
+**Broadcast from the connector returns 401**
+- `CHRONICLE_SERVICE_TOKEN` must be byte-identical on Fly and on Vercel, and
+  `CHRONICLE_APP_URL` must point at the frontend origin. See Phase 4.
 
 ---
 
@@ -250,13 +331,13 @@ If the production stack is down during a demo:
 
 ```bash
 # Terminal 1
-./run_backend.sh        # or run_backend.bat on Windows
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
 # Terminal 2
-cd frontend && npm run dev
+cd frontend && npm run dev      # http://localhost:3000
 ```
 
-Or run the full stack with Docker:
+Or run the backend in the production container:
 
 ```bash
 docker compose up

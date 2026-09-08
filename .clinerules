@@ -1,32 +1,34 @@
-# Project Rules for Claude Code
+# Project Rules
 
-## Quick Start
-- Read PROJECT_CONTEXT.md for complete project overview
-- This is a multi-agent research system with React frontend + FastAPI backend
-- Three input modes: Type, Speak, Picture (with OCR + AI Vision)
+## Orientation
+- `README.md` — what Chronicle is, how to run it
+- `docs/ARCHITECTURE.md` — how it fits together and why
+- `DEPLOYMENT.md` — Vercel + Fly.io, the MCP connector, the newsletter broadcast
+- `env.example` — authoritative env var reference, with free-tier limits
+- `TODO.md` — open items and known gaps
 
-## Key Implementation Details
-- Picture input uses hybrid OCR + GPT-4 Vision for text extraction
-- Analysis findings display as grouped bullet points (not repeated headings)
-- All result cards have 400px max height with vertical scrolling
-- Backend runs on port 8000, frontend on port 5173
-- Uses OpenRouter for all LLM access (OPEN_ROUTER_KEY in .env)
+## Shape
+- Next.js 14 App Router frontend (`frontend/`, port 3000) + FastAPI backend
+  (`backend/`, port 8000). The frontend is **not** Vite; there is no `dist/`.
+- Five-agent LangGraph pipeline in `agents/` + `orchestration/coordinator.py`,
+  executed inline via asyncio (no ARQ worker in production).
+- Two MCP surfaces — hosted (`backend/mcp_server.py`) and stdio (`mcp/`) — kept
+  in sync by `backend/tests/test_mcp_parity.py`. Change one, change both.
+- Three input modes: Type, Speak (Web Speech API), Picture (Tesseract.js OCR +
+  GPT-4o vision via `POST /api/extract-image-text`).
 
-## Code Patterns to Follow
-- TypeScript strict mode in frontend
-- React functional components with hooks
-- CSS modules for component styling
-- FastAPI with Pydantic models for backend
-- Multi-agent orchestration in backend/orchestration/
+## Conventions
+- TypeScript strict mode; React function components with hooks
+- FastAPI with Pydantic models
+- Model names are `provider/model`; the prefix picks the SDK
+  (`groq/`, `google/`, `anthropic/`, else OpenRouter). See `utils/llm_config.py`.
 
-## Recent Features
-1. Picture input with camera + OCR + GPT-4 Vision
-2. Scrollable result cards (400px max)
-3. Grouped analysis findings with bullets
-4. Two-stage AI processing with progress indicators
-
-## Important Files
-- `frontend/src/components/PictureInput.tsx` - Latest major feature
-- `frontend/src/components/ResearchResults.tsx` - Recent scrolling updates
-- `backend/main.py` - Image text extraction endpoint
-- `PROJECT_CONTEXT.md` - Complete project documentation
+## Traps
+- Don't point analyzer, insight and report at the same Google model — the free
+  tier is 20 requests/day *per model* and the report stage 429s into an empty
+  template.
+- Never set `OPENROUTER_FALLBACK_MODEL` to a `:free` slug; those were retired
+  and now 404 on every call, making the fallback silently useless.
+- `NEWSLETTER_ADMIN_EMAILS` unset means every signed-in user can read and mail
+  the subscriber list. It is a security control, not a convenience.
+- `/mcp` returning 404 means "not configured", not "broken".

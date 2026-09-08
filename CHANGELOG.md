@@ -1,245 +1,79 @@
 # Changelog
 
-## Picture Input Feature + UI Improvements (Latest - 2025-11-11)
+Notable changes, newest first. Dates are commit dates.
 
-### 🎉 Major Features Added
+## 2026-09 — Connector, quotas, and the newsletter lockdown
 
-#### 1. Picture Input Mode
-- **New Tab**: Added "Picture" tab alongside "Type" and "Speak"
-- **Camera Access**: Live webcam preview with paper detection indicator
-- **Hybrid AI Processing**:
-  - Stage 1 (0-45%): OCR text extraction using Tesseract.js
-  - Stage 2 (45-100%): GPT-4 Vision enhancement via OpenRouter
-- **Image Preprocessing**:
-  - 2x image scaling for better resolution
-  - Grayscale conversion with adaptive thresholding
-  - Noise reduction using median filter
-  - High contrast black/white conversion
-- **Smart Corrections**: AI automatically fixes OCR mistakes
-  - Example: "aaa L Tadia on dlekal STAGE" → "India on global STAGE"
-- **Progress Tracking**: Two-stage progress bar with stage descriptions
-- **User Guidance**: Tips for optimal capture results
+- **`broadcast_briefing` MCP tool.** A connector can now mail a finished
+  briefing to the newsletter list. Sending stays owned by the Next.js app (it
+  holds the list, template and AgentMail credentials), so the backend calls back
+  into it authenticated with `CHRONICLE_SERVICE_TOKEN`. The tool dry-runs unless
+  `confirm=true`, refuses to send the same report twice, and draws dry runs and
+  real sends from separate rate-limit budgets.
+- **Hosted claude.ai remote connector** at `/mcp`, fronted by an OAuth 2.1
+  authorization server with PKCE and dynamic client registration. Fails closed:
+  without both a signing secret and `CHRONICLE_MCP_ACCESS_KEY` the endpoint is
+  never mounted. Verified end to end against production.
+- **Repaired a dead LLM fallback.** OpenRouter retired its `:free` model
+  variants, so the configured `:free` fallback slug had been 404ing on every
+  call — the safety net was silently absent. The app now probes the fallback
+  once at startup and logs loudly when it is unusable.
+- **Split the Google quota domain.** The free tier meters 20 requests/day *per
+  model*, so pointing analyzer, insight and report at one Gemini model capped the
+  system at ~6 runs/day, with the report stage 429ing into an empty template.
+- **`NEWSLETTER_ADMIN_EMAILS` activated** across all environments. While unset,
+  `isNewsletterAdmin()` returned `true` for every authenticated user.
+- **Semantic eval layer** (`eval/semantic/`) with an NVIDIA NIM LLM-as-judge,
+  deliberately a different model family from the pipeline's own models. Wired
+  but not yet exercised — see `TODO.md`.
 
-#### 2. Analysis Findings Improvements
-- **Before**: Repeated headings (SUMMARY, SUMMARY, CREDIBILITY, CREDIBILITY...)
-- **After**: Single headings with organized bullet points
-- **Grouping**: Related items consolidated under each heading
-- **Visual Design**:
-  - Green-themed bullet points
-  - Underlined section headings
-  - Subtle borders between items
-  - Proper spacing and padding
+## 2026-07 — Free-tier pipeline and honest failure
 
-#### 3. Scrollable Result Cards
-- **Vertical Scrolling**: Added to all three result sections
-  - 📚 Sources Retrieved
-  - 📊 Analysis Findings
-  - 💡 Emerging Trends
-- **Max Height**: 400px per card with smooth scrolling
-- **Custom Scrollbar**: Styled scrollbar for better UX
-- **Independent Scrolling**: Each card scrolls separately
-- **Smooth Animation**: Expand/collapse with fade-in effect
+- Ran the whole pipeline on provider free tiers with OSS failover, moving stages
+  off exhausted and rate-limited accounts.
+- **Removed every fabricating fallback path** in the agents. Stages that degrade
+  now say so instead of inventing plausible output.
+- Routed Claude natively rather than through OpenRouter.
+- Kept one Fly machine warm (`min_machines_running = 1`): scaling to zero meant a
+  ~60s research POST arriving during boot was dropped by the proxy while the run
+  completed server-side.
+- Eval harness measuring grounding, latency and a single-LLM ablation; E2E tests
+  that assert real analysis rather than just real markup.
 
-### 🔧 Technical Implementation
+## 2026-06/07 — Product surface
 
-#### Frontend Changes
-1. **New Component**: `PictureInput.tsx`
-   - Camera access using MediaDevices API
-   - Paper detection using edge detection algorithm
-   - Image capture to canvas
-   - Integration with backend API
+- **`chronicle-mcp`**: pip-installable stdio MCP server for Cursor and Claude
+  Desktop.
+- **Newsletter**: subscriber list, public sign-up, broadcasts, one-click
+  unsubscribe.
+- **Auth**: custom JWT authentication with password reset and email
+  verification, via AgentMail.
+- **Reports**: email a report from a signed-in account; magazine-style template
+  for PDF and email; shareable-report growth loop and Trust panel.
+- **PWA**: install, offline, and update flows end to end.
+- **Cost optimization**: inline pipeline execution replacing the always-on ARQ
+  worker, plus a 24h query cache and a Groq reporter.
 
-2. **Updated Component**: `ResearchResults.tsx`
-   - Changed analysis rendering from individual items to grouped format
-   - Added `analysisGroups` data structure
-   - Implemented bullet list rendering
+## 2026-05 — Chronicle
 
-3. **New Styles**: `PictureInput.css`
-   - Camera interface styling
-   - Progress indicators
-   - Processing stages
-   - AI badge and labels
+- Rebrand from "Multi-Agent Deep Researcher" to **Chronicle**, repositioned on
+  defensible market sizing for founders.
+- **Frontend rewritten from React + Vite to Next.js 14 (App Router)**; backend
+  moved to Fly.io. Sidebar-first workspace with a command palette, breadcrumbs
+  and keyboard shortcuts.
+- Neon Postgres storage; semantic color palette and shared inline-SVG icon set.
 
-4. **Updated Styles**: `ResearchResults.css`
-   - Added `.card-content` scrolling (max-height: 400px)
-   - Custom scrollbar styling
-   - New `.analysis-group` styles
-   - Bullet point formatting
+## 2025-11 — Original multi-agent system
 
-#### Backend Changes
-1. **New Endpoint**: `POST /api/extract-image-text`
-   - Accepts base64 image + optional OCR text
-   - Uses GPT-4o Vision via OpenRouter
-   - Returns cleaned, corrected text
-   - Includes confidence level
+- Five-agent LangGraph pipeline: retriever, enricher, analyzer, insight, report.
+- Source credibility agent and agent-conversation logging.
+- Parallel retrieval and parallel analysis.
+- D3.js visualizations for research metrics.
+- Three input modes: type, speak (Web Speech API), and picture — camera capture
+  preprocessed on a canvas, OCR'd with Tesseract.js, then corrected by GPT-4o
+  vision.
+- Text-to-speech for reports; Perplexity search fallback; optional RAG.
 
-2. **Updated**: `backend/main.py`
-   - Added `ImageExtractionRequest` model
-   - Added `ImageExtractionResponse` model
-   - Integrated OpenAI client with OpenRouter
-   - Added image text extraction logic
-
-#### Dependencies Added
-- `tesseract.js` - OCR processing in browser
-- No backend dependencies (reused existing OpenAI/OpenRouter setup)
-
-### 📊 Impact
-
-**User Experience**:
-- ✅ Three input methods: Type, Speak, Picture
-- ✅ Much better OCR accuracy with AI enhancement
-- ✅ Cleaner, more organized analysis display
-- ✅ Better content management with scrolling
-- ✅ Professional, polished interface
-
-**Performance**:
-- OCR processing: ~3-5 seconds (client-side)
-- AI enhancement: ~2-3 seconds (server-side)
-- Total processing: ~5-8 seconds for image to query
-
-**Code Quality**:
-- Modular component design
-- Proper error handling and fallbacks
-- TypeScript type safety
-- Responsive CSS with animations
-
-### 🐛 Bug Fixes
-- Fixed OCR text extraction accuracy issues
-- Resolved repeated headings in analysis display
-- Fixed content overflow in result cards
-
-### 📝 Documentation Updates
-- Created `PROJECT_CONTEXT.md` - Complete project overview
-- Created `.clinerules` - Quick reference for Claude Code
-- Updated `CHANGELOG.md` - This file!
-
----
-
-## Model Selection Optimization
-
-### Changes Made
-
-1. **Optimized Model Configuration**
-   - **Retriever Agent**: Changed from GPT-4-Turbo to GPT-4o Mini (96% cost savings)
-   - **Analyzer Agent**: Changed from GPT-4-Turbo to Claude 3.5 Sonnet (better reasoning, 50% cost savings)
-   - **Insight Agent**: Changed from GPT-4-Turbo to GPT-4o (faster, cheaper)
-   - **Report Agent**: Changed from GPT-4-Turbo to Claude 3.5 Haiku (98% cost savings)
-
-2. **Temperature Optimization**
-   - Retriever: 0.1 (low creativity, consistent formatting)
-   - Analyzer: 0.5 (balanced reasoning)
-   - Insight: 0.7 (high creativity for pattern matching)
-   - Report: 0.2 (low creativity, consistent formatting)
-
-3. **Code Updates**
-   - Updated `utils/llm_config.py` with optimized model configurations
-   - Added helper functions: `create_retriever_llm()`, `create_analyzer_llm()`, `create_insight_llm()`, `create_report_llm()`
-   - Updated all agent files to use optimized models and temperatures
-   - Added environment variable support for model and temperature overrides
-
-### Benefits
-
-- **84% Cost Reduction**: From ~$2.80 to ~$0.46 per research query (10 queries demo)
-- **Better Quality**: Claude 3.5 Sonnet provides superior reasoning for analysis tasks
-- **Faster Execution**: Smaller models are faster, improving user experience
-- **Intelligent Selection**: Matches model capability to task cognitive load requirements
-
-### Model Configuration
-
-**New Default Models (OpenRouter format):**
-```python
-RETRIEVER_MODEL = "openai/gpt-4o-mini"
-ANALYZER_MODEL = "anthropic/claude-3-5-sonnet"
-INSIGHT_MODEL = "openai/gpt-4o"
-REPORT_MODEL = "anthropic/claude-3-5-haiku"
-```
-
-**Note:** If specific model versions are needed, check available models at https://openrouter.ai/models
-
-### Cost Comparison
-
-**Before (All GPT-4-Turbo):**
-- 10 queries × ~$0.28 = $2.80
-
-**After (Optimized Models):**
-- Retriever (GPT-4o Mini): 10 × $0.005 = $0.05
-- Analyzer (Claude Sonnet): 10 × $0.03 = $0.30
-- Insight (GPT-4o): 10 × $0.01 = $0.10
-- Report (Haiku): 10 × $0.001 = $0.01
-- **Total: $0.46 (84% savings)**
-
----
-
-## OpenRouter Integration Update
-
-### Changes Made
-
-1. **LLM Configuration**
-   - Created `utils/llm_config.py` for centralized LLM configuration
-   - Switched from direct OpenAI API to OpenRouter API
-   - Supports multiple LLM providers through unified interface
-
-2. **Agent Updates**
-   - Updated `agents/analyzer.py` to use OpenRouter
-   - Updated `agents/insight_generator.py` to use OpenRouter
-   - Updated `agents/report_builder.py` to use OpenRouter
-   - All agents now use `create_llm()` utility function
-
-3. **Configuration Files**
-   - Changed `.env.example` to `env.example` (OpenRouter format)
-   - Updated API key from `OPENAI_API_KEY` to `OPEN_ROUTER_KEY`
-   - Added model configuration in `utils/llm_config.py`
-
-4. **Documentation**
-   - Updated `README.md` with OpenRouter setup instructions
-   - Updated `QUICK_START.md` with OpenRouter API key steps
-   - Created `OPENROUTER_SETUP.md` with detailed setup guide
-   - Updated `setup.py` to use OpenRouter
-   - Updated `test_system.py` to check for OpenRouter key
-
-### Benefits
-
-- **Unified API**: Single API key for multiple LLM providers
-- **Flexibility**: Easy to switch between models (OpenAI, Anthropic, Google, etc.)
-- **Cost Effective**: OpenRouter often has better pricing
-- **Reliability**: Multiple provider fallbacks
-- **Access**: Some models available without waitlists
-
-### Migration Guide
-
-**Before:**
-```bash
-OPENAI_API_KEY=sk-your-key-here
-```
-
-**After:**
-```bash
-OPEN_ROUTER_KEY=sk-or-your-key-here
-```
-
-Get your key from: https://openrouter.ai/keys
-
-### Model Format
-
-**Before:**
-```python
-model = "gpt-4-turbo-preview"
-```
-
-**After:**
-```python
-model = "openai/gpt-4-turbo-preview"  # OpenRouter format
-```
-
-### Configuration
-
-Edit `utils/llm_config.py` to change models:
-- `DEFAULT_MODEL` - Default for all agents
-- `ANALYZER_MODEL` - Analysis agent
-- `INSIGHT_MODEL` - Insight generation
-- `REPORT_MODEL` - Report building
-
----
-
-**Updated**: System now uses OpenRouter for LLM access
-
+> The 2025-11 line also shipped a Streamlit UI (`app.py`) alongside the React
+> app. It was removed in 2026-09 — Streamlit had not been a declared dependency
+> for some time, so the entrypoint no longer imported.

@@ -4,24 +4,17 @@ Open items as of 2026-09-07. Grouped by what blocks what.
 
 ---
 
-## 1. Pending activation — DONE (2026-09-07)
+## 1. Access control — activated, one check outstanding
 
-Both cleared; kept briefly for the record.
-
-- [x] **`NEWSLETTER_ADMIN_EMAILS` is live.** Set for Production, Preview and
-      Development, and the docs push rebuilt production so it is now in effect.
-      `isNewsletterAdmin()` no longer returns `true` for every authenticated
-      user.
-- [x] **`min_machines_running` needed no change** — it was already
-      `= 1` in `fly.toml`. The ~13s first request measured during connector
-      verification was a machine *restart* (from `secrets set` / `deploy`), not
-      an idle cold start. Machine confirmed `started`, checks `1/1 passing`.
-
-Still worth doing:
+Both activations cleared on 2026-09-07 (recorded in §5).
 
 - [ ] Verify the lockdown behaves as intended: `GET /api/subscribers` as a
       signed-in **non-admin** should return 403 rather than subscriber data.
       Needs a second account or a session token — not yet exercised.
+- [ ] Same check for the broadcast route: a signed-in non-admin POSTing to
+      `/api/reports/{jobId}/broadcast` should get 403. The service-token path
+      bypasses the admin allowlist by design, so this only covers the
+      interactive path.
 
 ---
 
@@ -72,9 +65,15 @@ footer CTA is right.
 - [ ] Draft the LinkedIn profile "Featured link" copy
 - [ ] Capture a subscriber-count baseline before any public push
 
+- [ ] Exercise `broadcast_briefing` end to end from a connector with
+      `confirm=false`, and confirm the reported recipient count matches the live
+      list before anything is ever sent for real
+
 Note: broadcasts already pull the live list via `getActiveSubscribers` with
 per-recipient unsubscribe tokens, so no hand-maintained recipient list is
-needed.
+needed. As of 2026-09-07 they can also be triggered from an MCP connector via
+`broadcast_briefing`, authenticated with `CHRONICLE_SERVICE_TOKEN` (live on both
+Fly and Vercel production).
 
 ---
 
@@ -96,6 +95,15 @@ branch changed.
 
 Recorded so it is not re-litigated:
 
+- **`NEWSLETTER_ADMIN_EMAILS` is live** (2026-09-07) in Production, Preview and
+  Development, and production was rebuilt so it is in effect.
+  `isNewsletterAdmin()` no longer returns `true` for every authenticated user.
+- **`min_machines_running` needed no change** — already `= 1` in `fly.toml`. The
+  ~13s first request measured during connector verification was a machine
+  *restart* (from `secrets set` / `deploy`), not an idle cold start. Machine
+  confirmed `started`, checks `1/1 passing`.
+- **`CHRONICLE_SERVICE_TOKEN` is live** on both the Fly backend and Vercel
+  production, so connector-driven broadcast is enabled.
 - `backend/tests/` — **34 passed** against fastmcp 4.0.3, matching the
   `requirements.txt` pin.
 - **Connector verified end-to-end in production** (2026-09-07): DCR 201;
@@ -103,7 +111,7 @@ Recorded so it is not re-litigated:
   with `state` echoed; token exchange rejects a bad PKCE verifier 400
   `invalid_grant` and succeeds 200 on the correct one; an authorization code
   replayed a second time is rejected 400. `initialize` returns
-  `chronicle 1.0.0`; `tools/list` returns all five tools; `chronicle_health`
+  `chronicle 1.0.0`; `tools/list` returns every tool; `chronicle_health`
   reports `database: ok` and `list_starter_queries` returns 6 prompts.
 - Unauthenticated `/mcp` returns 401 with
   `WWW-Authenticate: Bearer resource_metadata="…", scope="chronicle:research"`.
@@ -112,3 +120,37 @@ Recorded so it is not re-litigated:
 - The semantic suite's graceful-skip path works as designed.
 - The 2026-09-06 author rewrite touched only Girish's own commits; Seshagiri's
   and Siddhant's authorship is intact.
+
+---
+
+## 6. Documentation state (2026-09-07 sweep)
+
+The docs were re-baselined against the code on 2026-09-07. What changed, so it
+is not re-discovered:
+
+- `README.md`, `DEPLOYMENT.md` and `QUICK_START.md` all still described the
+  pre-2026-05 **React + Vite** frontend — Vite build preset, `dist/` output
+  directory, `VITE_API_URL`, port 5173. Following them would have produced a
+  failed Vercel build. Now Next.js throughout.
+- `docker-compose.yml` referenced a `Dockerfile.backend` and a
+  `frontend/Dockerfile`, neither of which exists. `docker compose up` was broken
+  and is documented in several places; it now builds the real `Dockerfile`.
+- `PROJECT_CONTEXT.md` (last touched 2025-11-11) was replaced by
+  `docs/ARCHITECTURE.md`. `QUICK_DEPLOY.md` was a duplicate of `DEPLOYMENT.md`
+  and was removed.
+- The MCP surfaces were documented as exposing "five tools"; `broadcast_briefing`
+  makes six.
+- Dead Streamlit-era code was removed: `app.py`, `streamlit_tts_component.py`,
+  `utils/demo_cache.py`, `demo_cache_template.json`, `setup.py`,
+  `test_system.py`. Streamlit had not been in `requirements.txt` for some time,
+  so `app.py` could not import.
+
+Still open:
+
+- [x] `pytest backend/tests/` re-run against this changeset on 2026-09-08:
+      **34 passed**. `tsc --noEmit` clean, and `backend.main`,
+      `orchestration.coordinator`, `utils.llm_config` and `eval.semantic.judge`
+      all still import after the Streamlit-era deletions.
+- [ ] `docs/CONNECTOR_HANDOVER.md` is a completed handover record, not a live
+      document. Consider folding its verification table into `DEPLOYMENT.md` and
+      retiring it.

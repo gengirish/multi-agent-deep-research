@@ -32,18 +32,25 @@ htmlcov
 !env.example
 
 logs
+logs-debug
 *.log
-download.csv
-demo_cache.json
-LinkedIn-Profiles.txt
+chroma_store
+.deepeval
+
+# Not used by the backend image (Dockerfile copies only agents/, orchestration/,
+# utils/ and backend/) — excluded so they never enter the build context.
+eval
+mcp
+team
+design-system
+scripts
+*.pptx
+*.pdf
+*.csv
 
 .DS_Store
 Thumbs.db
 
-streamlit_tts_component.py
-app.py
-test_system.py
-setup.py
 docker-compose.yml
 Dockerfile
 .dockerignore
