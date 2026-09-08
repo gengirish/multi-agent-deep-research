@@ -290,6 +290,7 @@ becomes a published issue rather than a one-off answer.
 | [`QUICK_START.md`](./QUICK_START.md) | Fastest local setup, with troubleshooting |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Vercel + Fly.io, the claude.ai connector, newsletter broadcast |
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | How it fits together and why |
+| [`docs/SCHEDULED_BRIEFINGS.md`](./docs/SCHEDULED_BRIEFINGS.md) | Scheduling unattended briefings, and the prompt to hand the claude.ai scheduler |
 | [`mcp/README.md`](./mcp/README.md) | The local stdio MCP server |
 | [`env.example`](./env.example) | Every environment variable, with free-tier limits |
 | [`TODO.md`](./TODO.md) | Open items and known gaps |

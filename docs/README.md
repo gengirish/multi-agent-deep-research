@@ -3,6 +3,7 @@
 | Document | What it is |
 | -------- | ---------- |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | How the system fits together and why — pipeline, model routing, MCP surfaces, security controls |
+| [`SCHEDULED_BRIEFINGS.md`](./SCHEDULED_BRIEFINGS.md) | Running Chronicle unattended — where the schedule can live, the claude.ai scheduler prompt, and the broadcast safety model |
 | [`CONNECTOR_HANDOVER.md`](./CONNECTOR_HANDOVER.md) | Historical record of shipping the claude.ai remote connector, with end-to-end verification results. Complete; kept as the re-run procedure |
 | [`mtech-demo-runbook.md`](./mtech-demo-runbook.md) | Speaker runbook for the MTech demo |
 | [`chronicle-mcp-slides.md`](./chronicle-mcp-slides.md) | Slide source for the Chronicle MCP presentation |

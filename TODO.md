@@ -154,3 +154,12 @@ Still open:
 - [ ] `docs/CONNECTOR_HANDOVER.md` is a completed handover record, not a live
       document. Consider folding its verification table into `DEPLOYMENT.md` and
       retiring it.
+- [ ] **Scheduling is not set up yet.** The connector works from any MCP client,
+      but Claude Desktop has no scheduler — scheduled jobs are a claude.ai
+      feature, and registering the connector in Desktop does not register it on
+      claude.ai. Pick a home for the schedule; the options and the ready-to-use
+      prompt are in `docs/SCHEDULED_BRIEFINGS.md`.
+- [ ] `scripts/scheduled_research.py` researches but cannot broadcast. A
+      `--broadcast` flag would call the same endpoint the MCP tool uses and
+      reuse `CHRONICLE_SERVICE_TOKEN` and the once-ever guard — making cron a
+      complete unattended path with no model in the send loop.
