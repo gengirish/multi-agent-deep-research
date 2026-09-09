@@ -114,14 +114,44 @@ means "not configured"; a configured endpoint answers 401 with a
 `WWW-Authenticate: Bearer resource_metadata="…"` challenge.
 
 Five of the six tools are read-only. `broadcast_briefing` is annotated
-`destructiveHint`, dry-runs unless `confirm=true`, and refuses to send a report
-twice.
+`destructiveHint`, dry-runs unless `confirm=true`, and refuses to send the same
+report to the same audience twice.
+
+## The subscriber lifecycle
+
+One list, shared by every public capture surface (`/newsletter`, the landing
+anchor, and shared report footers), keyed by the sentinel owner
+`GLOBAL_NEWSLETTER_OWNER_ID` — so there is exactly one newsletter, not one per
+signed-in user. `frontend/src/lib/subscribers.ts` is the only module that writes
+to it.
+
+```
+public sign-up ──► PENDING ──(clicks 48h token)──► ACTIVE ──(unsubscribe)──► UNSUBSCRIBED
+                      │                              ▲                            │
+                      │                              │                            │
+owner add / CSV import ────────────────────────────►─┘◄───(re-subscribe: back to PENDING)
+```
+
+Two invariants hold the design together:
+
+- **Only `ACTIVE` is mailable.** `getActiveSubscribers()` filters on it, so a
+  `PENDING` row cannot receive a broadcast no matter what else goes wrong.
+- **`POST /api/subscribe` reveals nothing.** Pending, already-subscribed and
+  re-subscribing addresses get a byte-identical response; otherwise the public
+  endpoint would answer "is this address on the list?" for anyone who asked.
+
+Segments are a lower-cased `text[]` on the row rather than a join table — a
+handful of short labels per subscriber, never queried independently of their
+subscriber. Targeting a segment is a `tags hasSome` filter, and the send-once
+guard on `Broadcast` is keyed by `(jobId, segment)` so one report can reach
+`investors` today and `beta` next week without either send being repeatable.
 
 ## Security controls worth knowing
 
 | Control | Failure mode if unset |
 | ------- | --------------------- |
 | `NEWSLETTER_ADMIN_EMAILS` | `isNewsletterAdmin()` returns `true` for **every** signed-in user — anyone who can sign in reads the subscriber list (PII) and can mail it |
+| `AGENTMAIL_API_KEY` | `sendEmail()` returns `false` instead of throwing, so sends fail silently: public sign-ups accept an address, stay `PENDING`, and can never confirm. Watch for `PENDING` rows accumulating on `/audience` |
 | `CHRONICLE_MCP_ACCESS_KEY` | `/mcp` is not mounted at all (fails closed) |
 | `CHRONICLE_OAUTH_SECRET` | Falls back to `JWT_SECRET`, so connector tokens and user session tokens share one signing key — one leak forges both |
 | `CHRONICLE_SERVICE_TOKEN` | `getServiceIdentity()` is inert, so connector-driven broadcast is simply off |

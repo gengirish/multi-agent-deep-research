@@ -182,7 +182,9 @@ The repo is platform-agnostic — anything that can run a Python ASGI container 
 ├── frontend/               # Next.js 14 App Router app
 │   ├── app/(app)/          #   research, history, audience, settings, about
 │   ├── app/(auth)/         #   sign-in, sign-up, password reset
-│   ├── app/api/            #   auth, subscribe, subscribers, reports (route handlers)
+│   ├── app/newsletter/     #   public newsletter sign-up page
+│   ├── app/api/            #   auth, subscribe/confirm, subscribers/import,
+│   │                       #   unsubscribe, reports (route handlers)
 │   ├── src/views/          #   page-level React components
 │   ├── src/components/     #   including D3-based visualizations
 │   └── prisma/             #   Postgres schema (users, subscribers, reports)
@@ -290,10 +292,21 @@ Because `research_market` takes 30–90s, ask for `async_mode=true` and poll
 Chronicle can mail a finished briefing to a subscriber list, so a research run
 becomes a published issue rather than a one-off answer.
 
-- **Sign-up** is the `#newsletter` block on the landing page, posting to
-  `POST /api/subscribe`. There is no separate `/subscribe` page — link to
-  `https://deep-research.intelliforge.tech/#newsletter`.
-- **The list** lives in Postgres and is managed at `/audience` in the app.
+- **Sign-up** has a page of its own at
+  [`/newsletter`](https://deep-research.intelliforge.tech/newsletter) — that is
+  the link to share. The landing page also carries the form inline at
+  `#newsletter`, and every shared report footer has a compact version. All three
+  post to `POST /api/subscribe`.
+- **Double opt-in.** A public sign-up is stored `PENDING` and mailed a 48-hour
+  confirmation link; only clicking it makes the address `ACTIVE`. Broadcasts read
+  `ACTIVE` rows only, so an unconfirmed address cannot receive mail. Addresses the
+  owner adds by hand or imports from CSV skip this — the owner is asserting
+  consent. Set `NEWSLETTER_DOUBLE_OPT_IN=false` to disable it locally.
+- **The list** lives in Postgres and is managed at `/audience` in the app: add
+  people, import a CSV, and tag them into segments.
+- **Segments** are free-form tags on a subscriber. Broadcasting takes an optional
+  `segment`, so one report can go to `investors` and later to `beta` — the
+  send-once guard is scoped per (report, segment), not per report.
 - **Sending** goes through AgentMail, with a per-recipient one-click unsubscribe
   token in every message.
 - **Triggering** works from the report view in the UI, or from an agent via the
@@ -309,7 +322,7 @@ becomes a published issue rather than a one-off answer.
 
 - [x] MCP server for Cursor / Claude Desktop (`chronicle-mcp`)
 - [x] Hosted claude.ai remote connector (OAuth 2.1 + PKCE at `/mcp`)
-- [x] Newsletter: subscriber list, broadcast, one-click unsubscribe
+- [x] Newsletter: sign-up page, double opt-in, segments, CSV import, broadcast
 - [ ] Persistent project workspaces (save and revisit research threads)
 - [ ] Direct export to Notion, Google Docs, and Linear
 - [ ] Custom agent definitions (bring your own retrieval source)

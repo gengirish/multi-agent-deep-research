@@ -2,6 +2,36 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-09 — Newsletter: a real front door
+
+- **Dedicated sign-up page at `/newsletter`.** The landing-page anchor was a
+  poor destination for the places a newsletter actually gets shared (a LinkedIn
+  featured link, a bio link, the footer of the briefing itself) — those readers
+  arrive already interested and had to scroll past a product pitch to reach the
+  form. The briefing footer CTA now points here. The landing anchor still works.
+- **Double opt-in.** Public sign-ups land `PENDING` with a 48-hour single-use
+  token and are mailed a confirmation link. `getActiveSubscribers()` reads
+  `ACTIVE` only, so an unconfirmed address cannot receive a broadcast. Owner-added
+  and CSV-imported rows skip it. `POST /api/subscribe` now returns an identical
+  response for pending, already-subscribed and re-subscribing addresses — the old
+  `created` flag made the public endpoint an oracle for list membership.
+- **Segments.** Free-form tags per subscriber, normalized server-side so
+  `Investors` and ` investors ` are one segment. Filter chips and inline tag
+  editing on `/audience`; broadcast takes an optional `segment`. The send-once
+  guard is now scoped per (report, segment).
+- **CSV import.** `POST /api/subscribers/import` plus an import panel, backed by
+  a dependency-free RFC 4180 parser handling quoted fields, embedded newlines,
+  doubled quotes, CRLF and BOM. Header aliases cover the common vendor exports;
+  a bare one-address-per-line list works too. Bad rows are skipped with line
+  numbers rather than failing the batch.
+- **Fixed a latent middleware trap.** `/api/subscribe` sat in the prefix
+  allowlist, where it also matched `/api/subscribers`. Nothing was exposed —
+  those handlers enforce their own session and admin checks — but the overlap
+  would have caught the next route added under that name.
+- Schema: `Subscriber` gained `tags`, `confirmToken`, `confirmExpires`,
+  `confirmedAt`, `source`; `SubscriberStatus` gained `PENDING`; `Broadcast`
+  gained `segment`. All additive — existing rows stayed `ACTIVE`.
+
 ## 2026-09 — Connector, quotas, and the newsletter lockdown
 
 - **`broadcast_briefing` MCP tool.** A connector can now mail a finished
@@ -45,7 +75,8 @@ Notable changes, newest first. Dates are commit dates.
 - **`chronicle-mcp`**: pip-installable stdio MCP server for Cursor and Claude
   Desktop.
 - **Newsletter**: subscriber list, public sign-up, broadcasts, one-click
-  unsubscribe.
+  unsubscribe. (Double opt-in, segments and CSV import came later — see the
+  2026-09-09 entry.)
 - **Auth**: custom JWT authentication with password reset and email
   verification, via AgentMail.
 - **Reports**: email a report from a signed-in account; magazine-style template

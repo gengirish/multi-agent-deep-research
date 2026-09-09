@@ -118,6 +118,7 @@ JWT_SECRET=<shared secret with the backend>
 AGENTMAIL_API_KEY=<for transactional + broadcast email>
 AGENTMAIL_FROM_EMAIL=briefing@yourdomain.com
 NEWSLETTER_ADMIN_EMAILS=you@example.com
+NEWSLETTER_DOUBLE_OPT_IN=true          # default; set false only for local dev
 CHRONICLE_SERVICE_TOKEN=<same value as on the backend; see Phase 4>
 ```
 
@@ -129,8 +130,36 @@ CHRONICLE_SERVICE_TOKEN=<same value as on the backend; see Phase 4>
 > links. Vercel injects env vars at **build** time, so a change only takes
 > effect after a redeploy.
 
-`NEXT_PUBLIC_APP_URL` is also what email footers use to build the subscribe
-CTA (`${NEXT_PUBLIC_APP_URL}/#newsletter`) and per-recipient unsubscribe links.
+`NEXT_PUBLIC_APP_URL` is also what emails use to build the subscribe CTA
+(`${NEXT_PUBLIC_APP_URL}/newsletter`), the double opt-in confirmation link
+(`/api/subscribe/confirm?token=…`) and per-recipient unsubscribe links.
+
+> **Double opt-in is on unless disabled.** A public sign-up stays `PENDING` and
+> unmailable until its confirmation link is clicked, so a deployment with no
+> working `AGENTMAIL_API_KEY` will accept sign-ups that can never confirm —
+> `sendEmail()` degrades to returning `false` rather than throwing. If sign-ups
+> are piling up as `PENDING` on `/audience`, check the mail credentials first.
+
+> **A pulled `AGENTMAIL_API_KEY` is not the live value.** Vercel does not return
+> the plaintext of a sensitive variable, so the value `vercel env pull` writes
+> cannot be used to test the credential locally — it will fail auth even while
+> production sends fine. Verify sending against the deployment, not the pulled
+> file.
+
+### 3b. Push the Prisma schema
+
+The Next.js app owns the `users`, `subscribers`, `broadcasts` and
+`verification_tokens` tables. After a schema change, and before the deploy that
+depends on it:
+
+```bash
+cd frontend && npx prisma db push
+```
+
+Do this **first** — a deploy whose code reads a column the database lacks will
+500 on the affected routes until the push lands. `research_results` is owned by
+SQLAlchemy and must never be migrated from Prisma; if a push proposes changes to
+it, stop.
 
 ### 4. Deploy
 

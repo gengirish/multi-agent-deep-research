@@ -57,7 +57,7 @@ The feature is **built and deployed** — sign-up, subscriber CRUD, one-click
 unsubscribe, and report broadcast all exist and respond correctly in
 production.
 
-**2026-09-09 — four additions, code complete, NOT yet migrated or deployed:**
+**2026-09-09 — four additions, deployed to production and migrated:**
 
   1. **`/newsletter`** — a dedicated public sign-up page. This supersedes the
      earlier note that `/#newsletter` was the right public link; the landing
@@ -73,21 +73,23 @@ production.
   4. **CSV import** — `POST /api/subscribers/import` plus an import panel on
      the Audience page. Imported rows are `ACTIVE` with no opt-in email.
 
-- [ ] **Required before deploy:** run `prisma db push` against the Neon
-      database. The `Subscriber` model gained `tags`, `confirmToken`,
-      `confirmExpires`, `confirmedAt` and `source`, `SubscriberStatus` gained
-      `PENDING`, and `Broadcast` gained `segment`. All additive (new enum
-      value, new nullable/defaulted columns) — existing rows stay `ACTIVE` —
-      but a Postgres enum value cannot be dropped afterwards, so this is
-      one-way.
-- [ ] Send a real double opt-in confirmation to a live inbox and click it —
-      the template has only been verified as HTML, never in a mail client
-- [ ] Verify the footer CTA renders in a real client (Gmail, Apple Mail) — the
-      button is a `bgcolor` table cell, never tested end-to-end
+- [x] `prisma db push` applied to Neon (2026-09-09). Verified against
+      `information_schema`: all five new `subscribers` columns, `broadcasts.segment`
+      and the `PENDING` enum value are present; the five pre-existing rows were
+      untouched and stayed `ACTIVE`.
+- [x] Double opt-in verified end to end in production (2026-09-09) with
+      `hr@intelliforge.tech`: `PENDING` row created from `source=newsletter`,
+      confirmation email **delivered to a real inbox** and rendered fine,
+      the link flipped the row to `ACTIVE` with `confirmedAt` set, and the token
+      + expiry were cleared so the link is genuinely single-use.
+- [ ] Verify the *briefing* footer CTA renders in a real client (Gmail, Apple
+      Mail) — the button is a `bgcolor` table cell, and only the confirmation
+      email has been through a real client so far
 - [ ] Draft the LinkedIn / BuildWithAIGiri subscribe CTA copy (link to
       `/newsletter`, not `/#newsletter`)
 - [ ] Draft the LinkedIn profile "Featured link" copy
-- [ ] Capture a subscriber-count baseline before any public push
+- [ ] Capture a subscriber-count baseline before any public push (6 ACTIVE,
+      0 PENDING as of 2026-09-09)
 
 - [ ] Exercise `broadcast_briefing` end to end from a connector with
       `confirm=false`, and confirm the reported recipient count matches the live
@@ -98,6 +100,12 @@ per-recipient unsubscribe tokens, so no hand-maintained recipient list is
 needed. As of 2026-09-07 they can also be triggered from an MCP connector via
 `broadcast_briefing`, authenticated with `CHRONICLE_SERVICE_TOKEN` (live on both
 Fly and Vercel production).
+
+Gotcha worth not rediscovering: `vercel env pull` does **not** return the
+plaintext of a sensitive variable, so the `AGENTMAIL_API_KEY` in a pulled
+`.env.local` fails auth locally (403 on `inboxes.list`) even while production
+sends perfectly well. Verify mail against the deployment, not the pulled file.
+
 
 ---
 

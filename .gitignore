@@ -61,3 +61,4 @@ fly.toml.bak
 # OS
 .DS_Store
 Thumbs.db
+.env*
