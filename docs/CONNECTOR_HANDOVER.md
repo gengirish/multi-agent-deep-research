@@ -204,6 +204,35 @@ and `FORWARDED_ALLOW_IPS`; neither is duplicated as a secret.
 **Not verified:** the claude.ai registration itself (step 5) — it needs a human
 to paste the access key at the approval screen.
 
+### Re-verified 2026-09-09, Fly release v31 (`broadcast_custom_briefing`)
+
+| Check | Result |
+|---|---|
+| Running image | `sha256:7e9f60a6…b98344` — matches the image the deploy built |
+| `/api/health` | **200** `{"status":"ok"}` |
+| `/.well-known/oauth-protected-resource` | **200**, `resource` = `…fly.dev/mcp` |
+| `/.well-known/oauth-authorization-server` | **200**, `issuer` = `…fly.dev` |
+| `GET /mcp` no token | **401** + `WWW-Authenticate` carrying `resource_metadata=` |
+| `GET /mcp` bogus bearer | **401**, not 500 |
+| `POST /oauth/register` (DCR) | **201**, `client_id` issued |
+| Tool surface | **seven tools**, `broadcast_custom_briefing` present |
+
+The tool surface was read inside the container rather than over the wire:
+
+```bash
+flyctl ssh console -a multi-agent-deep-research-api -C "python -c \"import asyncio; from backend.mcp_server import build_mcp_server; s=build_mcp_server(); print(sorted(t.name for t in asyncio.run(s.list_tools())))\""
+```
+
+That answers "does the deployed process register the tool" without needing an
+access token; the full PKCE dance still needs a human with the access key, as
+above.
+
+**Still unverified:** that Fly's `CHRONICLE_SERVICE_TOKEN` matches Vercel's.
+Nothing in this table exercises it — the OAuth checks authenticate the *caller*
+to the connector, while the service token authenticates the *connector* to the
+frontend. See Phase 4 in [`../DEPLOYMENT.md`](../DEPLOYMENT.md) for the dry run
+that settles it.
+
 **On cold start:** `min_machines_running = 1` is already set in `fly.toml`, as
 step 3 requires. The ~13s first-request latency observed during verification
 was a *restart* (from `flyctl secrets set` and `flyctl deploy`), not an idle

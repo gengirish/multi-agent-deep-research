@@ -284,6 +284,12 @@ broadcast route. `getServiceIdentity()` in `frontend/src/lib/service-auth.ts` is
 **inert while `CHRONICLE_SERVICE_TOKEN` is unset**, so the service path is closed
 by default and the feature simply stays off until you opt in.
 
+It is equally inert for any value **shorter than 24 characters** — the length
+floor is what makes a placeholder fail closed instead of standing in as a weak
+shared secret. Worth knowing because it fails the same way a wrong token does: a
+401 that looks like a mismatch when the real cause is a stub value. `openssl rand
+-hex 32` clears the floor comfortably.
+
 ### 2. Point the backend at the frontend
 
 `CHRONICLE_APP_URL` is already set in `fly.toml [env]`. Override it only if your
@@ -322,11 +328,16 @@ HTML to:
 POST /api/newsletter/broadcast
 ```
 
-That job calls the HTTP endpoint directly — it does not go through the MCP
-connector — so the only deployment prerequisite is that
-`CHRONICLE_SERVICE_TOKEN` is set in the **Chronicle Vercel environment** (the
-Fly secret matters only for the MCP path). Verify it with a dry run, which sends
-no mail:
+That job reaches Chronicle **only through the MCP connector** — it has no way to
+make a direct authenticated POST — so it calls the `broadcast_custom_briefing`
+tool, which posts to that route on its behalf. Both copies of the token
+therefore matter for the daily briefing: Fly's, because the tool reads it
+server-side when composing the request, and Vercel's, because the route compares
+against it.
+
+Verify the Vercel side with a dry run, which sends no mail (the route returns
+before both the send loop and the audit-row write, so no `dedupeKey` is
+consumed):
 
 ```bash
 curl -sS -X POST https://deep-research.intelliforge.tech/api/newsletter/broadcast \
@@ -337,6 +348,17 @@ curl -sS -X POST https://deep-research.intelliforge.tech/api/newsletter/broadcas
 
 A `200` with a `recipientCount` means the token is good. A `401` means it is
 missing or mismatched in Vercel.
+
+To check Fly's copy — the one the MCP tool actually sends — run the same dry run
+from inside the backend container, so the secret never leaves the machine:
+
+```bash
+flyctl ssh console -a multi-agent-deep-research-api -C "python -c \"import asyncio; from backend.mcp_server import _call_newsletter_broadcast as b; print(asyncio.run(b('probe','<p>probe</p>','','','probe:0001',True)))\""
+```
+
+`ok: True` with a `recipientCount` means both copies agree. `http_status: 401`
+means they differ. `error: not_configured` means the process cannot see the
+secret at all.
 
 The endpoint's send-once identity is the caller's `dedupeKey` (stored in the
 `broadcasts` table's `job_id` column), scoped per segment — so a retried
@@ -389,6 +411,9 @@ Then open the Vercel URL, run a demo query, and watch the network tab to confirm
 **Broadcast from the connector returns 401**
 - `CHRONICLE_SERVICE_TOKEN` must be byte-identical on Fly and on Vercel, and
   `CHRONICLE_APP_URL` must point at the frontend origin. See Phase 4.
+- Check the length before hunting for a mismatch: anything under 24 characters
+  is rejected outright, so a placeholder in `.env.local` produces the identical
+  401. See Phase 4 step 1.
 
 ---
 
