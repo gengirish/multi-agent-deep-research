@@ -194,7 +194,7 @@ Observed status codes, not inferred from code.
 | `/.well-known/oauth-protected-resource` | **200**, `resource` = `…fly.dev/mcp` |
 | `/.well-known/oauth-authorization-server` | **200**, `issuer` = `…fly.dev` |
 | `initialize` | `protocolVersion 2025-06-18`, `serverInfo: chronicle 1.0.0` |
-| `tools/list` | all five tools present *(six as of 2026-09-07, after `broadcast_briefing`)* |
+| `tools/list` | all five tools present *(six as of 2026-09-07 with `broadcast_briefing`; seven as of 2026-09-09 with `broadcast_custom_briefing`)* |
 | `chronicle_health` | `mode: hosted`, `status: ok`, `database: ok` |
 | `list_starter_queries` | 6 prompts returned |
 

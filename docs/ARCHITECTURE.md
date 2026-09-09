@@ -113,9 +113,10 @@ deliberate — an unauthenticated research tool spends real LLM credits. A 404
 means "not configured"; a configured endpoint answers 401 with a
 `WWW-Authenticate: Bearer resource_metadata="…"` challenge.
 
-Five of the six tools are read-only. `broadcast_briefing` is annotated
-`destructiveHint`, dry-runs unless `confirm=true`, and refuses to send the same
-report to the same audience twice.
+Five of the seven tools are read-only. `broadcast_briefing` and
+`broadcast_custom_briefing` are annotated `destructiveHint`, dry-run unless
+`confirm=true`, and refuse to send the same identity — a report, or a
+caller-supplied `dedupe_key` — to the same audience twice.
 
 ## The subscriber lifecycle
 

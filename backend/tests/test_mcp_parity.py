@@ -39,6 +39,7 @@ EXPECTED_TOOLS = {
     "get_research_job",
     "export_research_markdown",
     "broadcast_briefing",
+    "broadcast_custom_briefing",
     "list_starter_queries",
     "chronicle_health",
 }
