@@ -73,6 +73,10 @@ enum VerificationTokenType {
 }
 
 enum SubscriberStatus {
+  // Signed up publicly but has not yet clicked the confirmation link. PENDING
+  // subscribers are NEVER included in a broadcast — double opt-in means an
+  // address only becomes mailable once its owner proves they control it.
+  PENDING
   ACTIVE
   UNSUBSCRIBED
 }
@@ -89,11 +93,30 @@ model Subscriber {
   // Opaque per-subscriber token powering one-click unsubscribe links. No PII,
   // safe to embed in an email URL.
   unsubscribeToken String           @unique @map("unsubscribe_token")
+
+  // Free-form segment labels ("investors", "beta", "yc"). Stored lower-cased
+  // and de-duplicated by the data layer so filtering is a plain `hasSome`.
+  // A Postgres text[] rather than a join table: segments are a handful of
+  // short labels per row, never queried independently of their subscriber.
+  tags             String[]         @default([])
+
+  // Double opt-in. `confirmToken` is the opaque secret mailed to a public
+  // signup; it is cleared once consumed, so a live token means "still
+  // PENDING". Owner-added and CSV-imported rows skip this and land ACTIVE.
+  confirmToken     String?          @unique @map("confirm_token")
+  confirmExpires   DateTime?        @map("confirm_expires")
+  confirmedAt      DateTime?        @map("confirmed_at")
+
+  // Where the address came from: landing | report | newsletter | manual | import.
+  // Purely for the owner's own attribution reporting.
+  source           String?          @db.VarChar(16)
+
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
   @@unique([ownerId, email])
   @@index([ownerId])
+  @@index([ownerId, status])
   @@map("subscribers")
 }
 
@@ -103,6 +126,10 @@ model Broadcast {
   ownerId        String   @map("owner_id")
   jobId          String   @map("job_id")
   subject        String
+  // Segment tag this broadcast targeted, or null for "the whole list". Part of
+  // the send-once identity: the same report may go to `investors` and later to
+  // `beta`, but never twice to the same audience.
+  segment        String?  @db.VarChar(32)
   recipientCount Int      @default(0) @map("recipient_count")
   sentCount      Int      @default(0) @map("sent_count")
   status         String   @default("sent") @db.VarChar(16)

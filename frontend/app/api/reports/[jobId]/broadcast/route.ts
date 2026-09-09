@@ -8,6 +8,7 @@ import {
   getActiveSubscribers,
   buildUnsubscribeUrl,
   isNewsletterAdmin,
+  normalizeTag,
   GLOBAL_NEWSLETTER_OWNER_ID,
 } from "@/lib/subscribers";
 import { rateLimit } from "@/lib/rate-limit";
@@ -67,6 +68,11 @@ export async function POST(req: Request, { params }: RouteContext) {
       );
     }
     const { note, dryRun } = parsed.data;
+    // "" (no segment) means the whole list. Normalized here so the value used
+    // for filtering is byte-identical to the one recorded on the audit row —
+    // the send-once check below compares against it.
+    const segment = parsed.data.segment ? normalizeTag(parsed.data.segment) : "";
+    const audience = segment ? `segment "${segment}"` : "the whole list";
 
     // Per-user rate limit only — broadcasts are owner-scoped and already gated
     // by the small subscriber list, so a per-IP guard adds little here.
@@ -138,10 +144,14 @@ export async function POST(req: Request, { params }: RouteContext) {
       );
     }
 
-    const subscribers = await getActiveSubscribers(GLOBAL_NEWSLETTER_OWNER_ID);
+    const subscribers = await getActiveSubscribers(GLOBAL_NEWSLETTER_OWNER_ID, {
+      segment,
+    });
     if (subscribers.length === 0) {
       return errorResponse(
-        "The newsletter has no active subscribers yet. Add some on the Audience page.",
+        segment
+          ? `No confirmed subscribers are tagged "${segment}". Tag some on the Audience page, or broadcast to the whole list.`
+          : "The newsletter has no confirmed subscribers yet. Add some on the Audience page.",
         400,
       );
     }
@@ -151,8 +161,14 @@ export async function POST(req: Request, { params }: RouteContext) {
     // able to mail the list again. One successful broadcast per report, ever.
     // Checked for every caller, not just service tokens — a double-click in
     // the UI is the same mistake.
+    // Scoped by segment: the same report may legitimately go to `investors`
+    // today and `beta` next week, but never twice to the same audience.
     const priorBroadcast = await prisma.broadcast.findFirst({
-      where: { jobId, status: { in: ["sent", "partial"] } },
+      where: {
+        jobId,
+        segment: segment || null,
+        status: { in: ["sent", "partial"] },
+      },
       select: { id: true, createdAt: true, sentCount: true },
       orderBy: { createdAt: "desc" },
     });
@@ -163,8 +179,8 @@ export async function POST(req: Request, { params }: RouteContext) {
           error: "already_broadcast",
           message:
             `This report was already broadcast to ${priorBroadcast.sentCount} ` +
-            `subscribers on ${priorBroadcast.createdAt.toISOString()}. ` +
-            `Reports can only be broadcast once.`,
+            `subscribers in ${audience} on ${priorBroadcast.createdAt.toISOString()}. ` +
+            `Each report can only be broadcast once per audience.`,
           broadcastAt: priorBroadcast.createdAt.toISOString(),
           sentCount: priorBroadcast.sentCount,
         },
@@ -180,9 +196,11 @@ export async function POST(req: Request, { params }: RouteContext) {
         dryRun: true,
         recipientCount: subscribers.length,
         query: report.query,
+        segment: segment || null,
         message:
-          `Would send "${report.query}" to ${subscribers.length} active ` +
-          `subscriber(s). Nothing was sent. Call again with confirm to send.`,
+          `Would send "${report.query}" to ${subscribers.length} confirmed ` +
+          `subscriber(s) in ${audience}. Nothing was sent. Call again with ` +
+          `confirm to send.`,
       });
     }
 
@@ -226,6 +244,7 @@ export async function POST(req: Request, { params }: RouteContext) {
         ownerId: session.sub,
         jobId,
         subject,
+        segment: segment || null,
         recipientCount: subscribers.length,
         sentCount,
         status:
@@ -248,7 +267,8 @@ export async function POST(req: Request, { params }: RouteContext) {
       ok: true,
       sentCount,
       recipientCount: subscribers.length,
-      message: `Briefing sent to ${sentCount} of ${subscribers.length} subscribers.`,
+      segment: segment || null,
+      message: `Briefing sent to ${sentCount} of ${subscribers.length} subscribers in ${audience}.`,
     });
   } catch (err) {
     return serverError(err, "POST /api/reports/:jobId/broadcast");

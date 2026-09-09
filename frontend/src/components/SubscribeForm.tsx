@@ -9,6 +9,12 @@ interface Props {
   title?: string;
   subtitle?: string;
   className?: string;
+  /** Capture surface, recorded on the subscriber row for attribution. */
+  source?: "landing" | "report" | "newsletter";
+  /** Also collect a name. Off by default — one field converts better. */
+  showName?: boolean;
+  /** Rendered under the form, e.g. the double opt-in reassurance line. */
+  footnote?: React.ReactNode;
 }
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -18,8 +24,12 @@ export const SubscribeForm: React.FC<Props> = ({
   title = "Get the Chronicle briefing",
   subtitle = "Cited, defensible research delivered to your inbox. No spam — unsubscribe in one click.",
   className,
+  source = "landing",
+  showName = false,
+  footnote,
 }) => {
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string>("");
 
@@ -32,10 +42,15 @@ export const SubscribeForm: React.FC<Props> = ({
     setStatus("submitting");
     setMessage("");
     try {
+      const trimmedName = name.trim();
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed }),
+        body: JSON.stringify({
+          email: trimmed,
+          source,
+          ...(trimmedName ? { name: trimmedName } : {}),
+        }),
       });
       const json = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -50,6 +65,7 @@ export const SubscribeForm: React.FC<Props> = ({
       setStatus("success");
       setMessage(json.message ?? "You're subscribed.");
       setEmail("");
+      setName("");
     } catch {
       setStatus("error");
       setMessage("Network error. Please try again in a moment.");
@@ -86,6 +102,18 @@ export const SubscribeForm: React.FC<Props> = ({
         </div>
       ) : (
         <form className="subscribe__form" onSubmit={handleSubmit} noValidate>
+          {showName && (
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name (optional)"
+              className="subscribe__input subscribe__input--name"
+              aria-label="Your name"
+              autoComplete="name"
+              disabled={status === "submitting"}
+            />
+          )}
           <div className="subscribe__row">
             <input
               type="email"
@@ -111,6 +139,7 @@ export const SubscribeForm: React.FC<Props> = ({
               {message}
             </p>
           )}
+          {footnote && <div className="subscribe__footnote">{footnote}</div>}
         </form>
       )}
     </div>

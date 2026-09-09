@@ -65,3 +65,71 @@ test.describe("Newsletter subscribe form", () => {
     await expect(page.locator(".subscribe__error")).toContainText(/valid email/i);
   });
 });
+
+test.describe("Dedicated /newsletter page", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/newsletter");
+  });
+
+  test("is public and renders the sign-up form", async ({ page }) => {
+    // No redirect to sign-in — the page has to be reachable anonymously,
+    // since it is the destination for every shared subscribe link.
+    await expect(page).toHaveURL(/\/newsletter$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: /put in front of a partner/i }),
+    ).toBeVisible();
+    await expect(page.locator(".subscribe__form")).toBeVisible();
+  });
+
+  test("collects an optional name alongside the email", async ({ page }) => {
+    await expect(page.getByLabel("Your name")).toBeVisible();
+    await expect(page.getByLabel("Email address")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /^Subscribe$/i }),
+    ).toBeDisabled();
+  });
+
+  test("tells the subscriber to confirm by email", async ({ page }) => {
+    let posted: Record<string, unknown> | null = null;
+    await page.route("**/api/subscribe", async (route) => {
+      posted = route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          pending: true,
+          message:
+            "Almost there — check your inbox and click the confirmation link.",
+        }),
+      });
+    });
+
+    await page.getByLabel("Your name").fill("Ada Lovelace");
+    await page.getByLabel("Email address").fill("e2e-optin@example.com");
+    await page.getByRole("button", { name: /^Subscribe$/i }).click();
+
+    await expect(page.locator(".subscribe__success")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.locator(".subscribe__success")).toContainText(
+      /check your inbox/i,
+    );
+
+    // The capture surface is recorded so sign-ups can be attributed.
+    expect(posted).toMatchObject({
+      email: "e2e-optin@example.com",
+      name: "Ada Lovelace",
+      source: "newsletter",
+    });
+  });
+
+  test("landing page links here for the full pitch", async ({ page }) => {
+    await page.goto("/");
+    await page.locator(".newsletter").scrollIntoViewIfNeeded();
+    const link = page.locator(".newsletter__more");
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/\/newsletter$/);
+  });
+});

@@ -31,10 +31,11 @@ const APP_URL = (
   .trim()
   .replace(/<[^>]*>/g, "");
 
-// Public signup deep-link for the footer CTA. The landing page exposes the
-// SubscribeForm inside <section id="newsletter">, so /#newsletter jumps the
-// reader straight to the form — turning every forwarded briefing into a loop.
-const SUBSCRIBE_URL = `${APP_URL.replace(/\/$/, "")}/#newsletter`;
+// Public signup deep-link for the footer CTA. Points at the dedicated
+// /newsletter page rather than the landing page's #newsletter anchor: a reader
+// who clicks "subscribe" from inside a forwarded briefing wants the form, not
+// a product pitch to scroll past.
+const SUBSCRIBE_URL = `${APP_URL.replace(/\/$/, "")}/newsletter`;
 
 // Gmail clips messages above ~102KB. Keep the rendered report well under that
 // so the recipient sees the whole thing inline. The "View full report" CTA
@@ -175,8 +176,8 @@ export function buildReportEmail(
 
   // ---- Subscribe CTA (rendered in every email) ------------------------------
   // The daily briefing / weekly Spotlight are the biggest warm surface we have —
-  // every forward should carry a way to get on the list. Links to the landing
-  // page's newsletter section, which drops the reader straight on the form.
+  // every forward should carry a way to get on the list. Links to /newsletter,
+  // the dedicated sign-up page, which is the form and nothing else.
   const subscribeCtaHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 0 6px;">
         <tr>
           <td bgcolor="${C.accent}" style="border-radius:8px;">

@@ -55,13 +55,37 @@ passes while measuring nothing.
 
 The feature is **built and deployed** — sign-up, subscriber CRUD, one-click
 unsubscribe, and report broadcast all exist and respond correctly in
-production. Resolved: there is no `/subscribe` page (it is `POST
-/api/subscribe`), so `/#newsletter` is the correct public link and the email
-footer CTA is right.
+production.
 
+**2026-09-09 — four additions, code complete, NOT yet migrated or deployed:**
+
+  1. **`/newsletter`** — a dedicated public sign-up page. This supersedes the
+     earlier note that `/#newsletter` was the right public link; the landing
+     anchor still works, but the email footer CTA and any shared link should
+     now use `/newsletter`.
+  2. **Segments** — lower-cased tags on each subscriber, a filter on the
+     Audience page, and an optional `segment` on the broadcast endpoint. The
+     send-once check is now scoped per (report, segment).
+  3. **Double opt-in** — public sign-ups land `PENDING` and are mailed a 48h
+     confirmation link. `getActiveSubscribers` only ever returns `ACTIVE`, so
+     an unconfirmed address cannot receive a broadcast. Disable locally with
+     `NEWSLETTER_DOUBLE_OPT_IN=false`.
+  4. **CSV import** — `POST /api/subscribers/import` plus an import panel on
+     the Audience page. Imported rows are `ACTIVE` with no opt-in email.
+
+- [ ] **Required before deploy:** run `prisma db push` against the Neon
+      database. The `Subscriber` model gained `tags`, `confirmToken`,
+      `confirmExpires`, `confirmedAt` and `source`, `SubscriberStatus` gained
+      `PENDING`, and `Broadcast` gained `segment`. All additive (new enum
+      value, new nullable/defaulted columns) — existing rows stay `ACTIVE` —
+      but a Postgres enum value cannot be dropped afterwards, so this is
+      one-way.
+- [ ] Send a real double opt-in confirmation to a live inbox and click it —
+      the template has only been verified as HTML, never in a mail client
 - [ ] Verify the footer CTA renders in a real client (Gmail, Apple Mail) — the
       button is a `bgcolor` table cell, never tested end-to-end
-- [ ] Draft the LinkedIn / BuildWithAIGiri subscribe CTA copy
+- [ ] Draft the LinkedIn / BuildWithAIGiri subscribe CTA copy (link to
+      `/newsletter`, not `/#newsletter`)
 - [ ] Draft the LinkedIn profile "Featured link" copy
 - [ ] Capture a subscriber-count baseline before any public push
 

@@ -39,6 +39,13 @@ export const sendReportSchema = z.object({
     .optional(),
 });
 
+// Segment labels. The data layer normalizes these (lower-case, spaces to
+// hyphens, unknown characters dropped), so this only bounds the raw input.
+const tagsSchema = z
+  .array(z.string().trim().min(1).max(24))
+  .max(10, "At most 10 segments per subscriber")
+  .optional();
+
 export const addSubscriberSchema = z.object({
   email: z.email(),
   name: z
@@ -46,6 +53,39 @@ export const addSubscriberSchema = z.object({
     .trim()
     .max(100, "Name must be at most 100 characters")
     .optional(),
+  tags: tagsSchema,
+});
+
+// Public sign-up. Same shape as the owner-facing add, plus the capture surface
+// the address came from. `source` is attribution only — it never affects
+// delivery — but it is still an enum so a hostile client can't write arbitrary
+// text into the column.
+export const publicSubscribeSchema = z.object({
+  email: z.email(),
+  name: z
+    .string()
+    .trim()
+    .max(100, "Name must be at most 100 characters")
+    .optional(),
+  source: z.enum(["landing", "report", "newsletter"]).optional(),
+});
+
+// PATCH /api/subscribers/{id} — segments are the only mutable field for now.
+export const updateSubscriberSchema = z.object({
+  tags: z
+    .array(z.string().trim().min(1).max(24))
+    .max(10, "At most 10 segments per subscriber"),
+});
+
+export const importSubscribersSchema = z.object({
+  // Raw CSV text. 1MB is far beyond any realistic contact export and keeps a
+  // pathological payload from tying up the parser.
+  csv: z
+    .string()
+    .min(1, "Paste or upload a CSV first.")
+    .max(1_000_000, "That file is too large (1MB max)."),
+  // Segments applied to every imported row, on top of any per-row tags column.
+  tags: tagsSchema,
 });
 
 export const broadcastReportSchema = z.object({
@@ -59,9 +99,14 @@ export const broadcastReportSchema = z.object({
   // first so a human (or the model's own confirmation step) sees the recipient
   // count before any irreversible mail goes out.
   dryRun: z.boolean().optional().default(false),
+  // Send to one segment instead of the whole list. Omit for everyone.
+  segment: z.string().trim().max(24).optional(),
 });
 
 export type AddSubscriberInput = z.infer<typeof addSubscriberSchema>;
+export type PublicSubscribeInput = z.infer<typeof publicSubscribeSchema>;
+export type UpdateSubscriberInput = z.infer<typeof updateSubscriberSchema>;
+export type ImportSubscribersInput = z.infer<typeof importSubscribersSchema>;
 export type BroadcastReportInput = z.infer<typeof broadcastReportSchema>;
 
 export type SignInInput = z.infer<typeof signInSchema>;

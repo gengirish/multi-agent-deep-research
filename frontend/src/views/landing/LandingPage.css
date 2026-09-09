@@ -755,3 +755,15 @@
 .landing__footer-links a:hover {
   color: var(--c-text-strong);
 }
+
+/* Link from the landing sign-up panel to the dedicated /newsletter page, for
+   readers who want the pitch before handing over an address. */
+.newsletter__more {
+  color: var(--c-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.newsletter__more:hover {
+  text-decoration: underline;
+}

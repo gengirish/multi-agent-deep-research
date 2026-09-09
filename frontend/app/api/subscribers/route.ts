@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { addSubscriberSchema } from "@/lib/validations";
 import {
   listSubscribers,
+  listSegments,
   addSubscriber,
   isNewsletterAdmin,
   GLOBAL_NEWSLETTER_OWNER_ID,
@@ -17,7 +18,7 @@ export const runtime = "nodejs";
 const PER_USER_LIMIT = 60;
 const WINDOW_MS = 5 * 60 * 1000;
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getSession();
     if (!session?.sub) {
@@ -27,8 +28,16 @@ export async function GET() {
       return errorResponse("You don't have access to the newsletter list.", 403);
     }
 
-    const subscribers = await listSubscribers(GLOBAL_NEWSLETTER_OWNER_ID);
-    return NextResponse.json({ subscribers });
+    // `?tag=` narrows the list to one segment. Segment counts are always
+    // returned for the whole list, so the filter UI keeps its full set of
+    // options even while a filter is applied.
+    const tag = new URL(req.url).searchParams.get("tag")?.trim() || undefined;
+
+    const [subscribers, segments] = await Promise.all([
+      listSubscribers(GLOBAL_NEWSLETTER_OWNER_ID, { tag }),
+      listSegments(GLOBAL_NEWSLETTER_OWNER_ID),
+    ]);
+    return NextResponse.json({ subscribers, segments });
   } catch (err) {
     return serverError(err, "GET /api/subscribers");
   }
@@ -66,6 +75,7 @@ export async function POST(req: Request) {
       GLOBAL_NEWSLETTER_OWNER_ID,
       parsed.data.email,
       parsed.data.name,
+      { tags: parsed.data.tags, source: "manual" },
     );
 
     return NextResponse.json(

@@ -1,5 +1,5 @@
 .audience-page {
-  max-width: 860px;
+  max-width: 980px;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
   color: var(--c-text);
@@ -122,6 +122,21 @@
   cursor: not-allowed;
 }
 
+.audience-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.83rem;
+  line-height: 1.55;
+  color: var(--c-text-dim);
+}
+
+.audience-hint code {
+  padding: 0.08rem 0.3rem;
+  border-radius: 5px;
+  background: var(--c-surface-4);
+  font-size: 0.92em;
+  color: var(--c-text-subtle);
+}
+
 .audience-inline-error {
   margin-top: 0.75rem;
   padding: 0.55rem 0.75rem;
@@ -198,7 +213,7 @@
 
 .audience-row {
   display: grid;
-  grid-template-columns: 1.3fr 1.8fr 0.9fr 0.9fr auto;
+  grid-template-columns: 1.1fr 1.6fr 1.2fr 0.85fr 0.8fr auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.8rem 1rem;
@@ -260,6 +275,11 @@
   color: var(--c-success-text);
 }
 
+.audience-badge--pending {
+  background: var(--c-warning-bg);
+  color: var(--c-warning-text);
+}
+
 .audience-badge--unsub {
   background: var(--c-surface-4);
   color: var(--c-text-muted);
@@ -307,6 +327,264 @@
   border: 0;
 }
 
+/* CSV import ------------------------------------------------------------- */
+.audience-import {
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  background: var(--c-bg);
+  margin-bottom: 1.4rem;
+  overflow: hidden;
+}
+
+.audience-import-toggle {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--c-text-strong);
+  cursor: pointer;
+  text-align: left;
+}
+
+/* accessibility.css sets `button:hover:not(:disabled)` to the accent fill.
+   That outranks a bare `.class:hover`, so every button hover here has to match
+   its specificity — same workaround as .audience-remove-btn below. */
+.audience-import-toggle:hover:not(:disabled) {
+  background: var(--c-surface-2);
+}
+
+.audience-import-toggle:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--c-border-focus);
+}
+
+.audience-import-chevron {
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--c-text-dim);
+}
+
+.audience-import-body {
+  padding: 0 1.1rem 1.1rem;
+  border-top: 1px solid var(--c-border);
+}
+
+.audience-textarea {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  background: var(--c-bg-elev);
+  color: var(--c-text-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.audience-textarea::placeholder {
+  color: var(--c-text-muted);
+}
+
+.audience-textarea:focus {
+  outline: none;
+  border-color: var(--c-accent-2);
+  box-shadow: 0 0 0 3px var(--c-border-focus);
+}
+
+.audience-import-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* The native file input is replaced by its own label for styling, but stays
+   in the DOM (not display:none) so it remains keyboard-reachable. */
+.audience-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.audience-file-label {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--c-border-hi);
+  border-radius: 10px;
+  background: var(--c-bg-elev);
+  color: var(--c-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.audience-file-label:hover {
+  border-color: var(--c-accent-2);
+  background: var(--c-surface-3);
+}
+
+.audience-file-input:focus-visible + .audience-file-label {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-border-focus);
+}
+
+.audience-input--inline {
+  flex: 1 1 200px;
+  min-width: 0;
+  width: auto;
+}
+
+.audience-import-result {
+  margin-top: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--c-success-border);
+  background: var(--c-success-bg);
+  border-radius: 10px;
+}
+
+.audience-import-summary {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--c-text);
+}
+
+.audience-import-summary strong {
+  color: var(--c-text-strong);
+}
+
+.audience-skip-list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--c-text-dim);
+}
+
+/* Segment filter chips --------------------------------------------------- */
+.audience-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.audience-chip {
+  /* Overrides the global 44px button minimum — these are dense filter chips,
+     not tap targets in a form. */
+  min-height: 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--c-border-hi);
+  border-radius: 999px;
+  background: var(--c-bg-elev);
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.audience-chip:hover:not(:disabled) {
+  border-color: var(--c-accent-2);
+  background: var(--c-surface-3);
+  color: var(--c-text-strong);
+}
+
+.audience-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-border-focus);
+}
+
+.audience-chip--on {
+  border-color: var(--c-accent-2);
+  background: var(--c-accent-bg-hi);
+  color: var(--c-text-strong);
+}
+
+.audience-chip-count {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--c-surface-5);
+  font-size: 0.75rem;
+  color: var(--c-text-muted);
+}
+
+.audience-chip--on .audience-chip-count {
+  background: var(--c-accent-border);
+  color: var(--c-text-strong);
+}
+
+/* Per-row segment tags --------------------------------------------------- */
+.audience-tags-btn {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.2rem 0.3rem;
+  margin: -0.2rem -0.3rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.audience-tags-btn:hover:not(:disabled) {
+  border-color: var(--c-border-hi);
+  background: var(--c-surface-2);
+}
+
+.audience-tags-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-border-focus);
+}
+
+.audience-tag {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-border);
+  color: var(--c-accent-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.audience-tag-empty {
+  font-size: 0.79rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.audience-input--tags {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
 /* Responsive ------------------------------------------------------------- */
 @media (max-width: 640px) {
   .audience-form {
@@ -322,11 +600,25 @@
     width: 100%;
   }
 
+  .audience-import-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .audience-file-label {
+    text-align: center;
+  }
+
+  .audience-input--inline {
+    flex: 1 1 auto;
+  }
+
   .audience-row {
     grid-template-columns: 1fr auto;
     grid-template-areas:
       "name action"
       "email email"
+      "tags tags"
       "status date";
     gap: 0.4rem 0.75rem;
   }
@@ -342,6 +634,10 @@
   .audience-col--email {
     grid-area: email;
     font-size: 0.86rem;
+  }
+
+  .audience-col--tags {
+    grid-area: tags;
   }
 
   .audience-col--status {

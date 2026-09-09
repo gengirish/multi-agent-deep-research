@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/research",
   "/about",
+  "/newsletter",
   "/settings",
   "/offline",
   "/manifest.webmanifest",
@@ -39,9 +40,20 @@ const PUBLIC_API_PREFIXES = [
   "/api/rag/",
   // Recipients clicking unsubscribe are anonymous — must stay public.
   "/api/unsubscribe",
-  // Public newsletter sign-up form (landing + shared report pages).
-  "/api/subscribe",
+  // Double opt-in confirmation, clicked straight out of a mail client.
+  "/api/subscribe/confirm",
 ];
+
+/**
+ * Public API routes matched exactly rather than by prefix.
+ *
+ * `/api/subscribe` has to be here, not in the prefix list: as a prefix it would
+ * also match `/api/subscribers`, quietly making the owner-only subscriber CRUD
+ * routes "public" as far as middleware is concerned. Those handlers enforce
+ * their own session + admin checks, so nothing was ever exposed, but the
+ * overlap is a trap for the next route added under that name.
+ */
+const PUBLIC_API_EXACT = ["/api/subscribe"];
 
 /**
  * Pages that require auth. Anonymous hits redirect to /sign-in?redirect=...
@@ -62,7 +74,10 @@ function isPublicPrefix(pathname: string): boolean {
 }
 
 function isPublicApi(pathname: string): boolean {
-  return PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return (
+    PUBLIC_API_EXACT.includes(pathname) ||
+    PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
 }
 
 function isGatedPage(pathname: string): boolean {

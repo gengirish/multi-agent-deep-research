@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
-import { addSubscriberSchema } from "@/lib/validations";
-import { addPublicSubscriber } from "@/lib/subscribers";
+import { publicSubscribeSchema } from "@/lib/validations";
+import {
+  addPublicSubscriber,
+  buildConfirmUrl,
+  isDoubleOptInEnabled,
+} from "@/lib/subscribers";
+import { sendSubscribeConfirmationEmail } from "@/lib/subscriber-email";
 import { rateLimit } from "@/lib/rate-limit";
 import { errorResponse, serverError, getClientIp } from "@/lib/api-utils";
 
@@ -10,6 +15,16 @@ export const runtime = "nodejs";
 // flood the list. Generous enough for a human filling the form a couple times.
 const PER_IP_LIMIT = 5;
 const WINDOW_MS = 10 * 60 * 1000;
+
+// One message for every outcome that isn't an outright error.
+//
+// This is deliberate. Saying "you're already subscribed" would turn the
+// endpoint into an oracle for whether a given address is on the list, which is
+// exactly the probe a scraper wants. Pending, already-active and re-subscribing
+// addresses all get the same sentence; only the recipient's own inbox reveals
+// which one happened.
+const CONFIRM_MESSAGE =
+  "Almost there — check your inbox and click the confirmation link.";
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +37,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => null);
-    const parsed = addSubscriberSchema.safeParse(body);
+    const parsed = publicSubscribeSchema.safeParse(body);
     if (!parsed.success) {
       return errorResponse(
         parsed.error.issues[0]?.message ?? "Enter a valid email.",
@@ -30,19 +45,42 @@ export async function POST(req: Request) {
       );
     }
 
-    const { created } = await addPublicSubscriber(
-      parsed.data.email,
-      parsed.data.name,
-    );
+    const { email, name, source } = parsed.data;
+    const result = await addPublicSubscriber(email, name, {
+      source: source ?? "landing",
+    });
 
-    // Don't leak whether the email was already on the list beyond a soft flag —
-    // both cases are a success from the visitor's perspective.
+    if (result.outcome === "pending" && result.confirmToken) {
+      const sent = await sendSubscribeConfirmationEmail(
+        email,
+        result.confirmToken,
+        result.subscriber.name,
+      );
+      if (!sent) {
+        // AgentMail unconfigured (local dev / preview without secrets). Surface
+        // the link on the server console so the flow stays completable — never
+        // in the response, which is public.
+        // eslint-disable-next-line no-console
+        console.log(
+          `\n=== [DEV] SUBSCRIBE CONFIRM LINK ===\nTo: ${email}\n${buildConfirmUrl(result.confirmToken)}\n====================================\n`,
+        );
+      }
+    }
+
+    // Double opt-in off (dev escape hatch) means the address is already live,
+    // so telling them to check their inbox would be a lie.
+    if (result.outcome === "confirmed") {
+      return NextResponse.json({
+        ok: true,
+        pending: false,
+        message: "You're subscribed — watch your inbox for the next briefing.",
+      });
+    }
+
     return NextResponse.json({
       ok: true,
-      created,
-      message: created
-        ? "You're subscribed — watch your inbox for the next briefing."
-        : "You're already on the list.",
+      pending: true,
+      message: CONFIRM_MESSAGE,
     });
   } catch (err) {
     return serverError(err, "POST /api/subscribe");

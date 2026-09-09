@@ -280,8 +280,17 @@ export const LandingPage: React.FC = () => {
         >
           <SubscribeForm
             variant="panel"
+            source="landing"
             title="Get the Chronicle briefing"
             subtitle="Founder-grade market research — cited, defensible, and delivered to your inbox. No spam, unsubscribe in one click."
+            footnote={
+              <>
+                We&rsquo;ll send a confirmation link first.{" "}
+                <Link href="/newsletter" className="newsletter__more">
+                  What&rsquo;s in an issue &rarr;
+                </Link>
+              </>
+            }
           />
         </section>
 

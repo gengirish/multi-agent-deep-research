@@ -150,3 +150,27 @@
     width: 100%;
   }
 }
+
+/* Optional name field, shown only on the dedicated /newsletter page where the
+   extra field costs less than it does on a landing-page footer. */
+.subscribe__input--name {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.55rem;
+}
+
+/* The panel variant centers its input row at 440px, so the name field and the
+   footnote have to match that column or they hang past the row on both sides. */
+.subscribe--panel .subscribe__input--name,
+.subscribe--panel .subscribe__footnote {
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.subscribe__footnote {
+  margin-top: 0.7rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--c-text-dim);
+}

@@ -112,6 +112,7 @@ export const ShareableReport: React.FC<Props> = ({ id }) => {
         <footer className="share__footer">
           <SubscribeForm
             variant="inline"
+            source="report"
             title="Get briefings like this in your inbox"
             subtitle="Subscribe to the Chronicle newsletter — cited research, no spam, unsubscribe anytime."
             className="share__subscribe"
