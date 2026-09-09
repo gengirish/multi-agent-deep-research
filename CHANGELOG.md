@@ -2,6 +2,31 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-09 — Newsletter: broadcast an arbitrary briefing
+
+- **New endpoint `POST /api/newsletter/broadcast`.** Until now the only way to
+  mail the list was `POST /api/reports/[jobId]/broadcast`, which needs a
+  `ResearchResult` and renders its markdown. The daily "IntelliForge Morning
+  Briefing" is a news digest built by a scheduled job outside Chronicle and
+  arrives as finished HTML, so it had nowhere to go. The new route takes
+  `subject` + `html` (plus optional `text`, `segment`, `dryRun`) and reuses the
+  existing machinery unchanged: the same auth, the same active-subscriber query,
+  the same rate-limit budgets, the same `broadcasts` audit table.
+- **`dedupeKey` is the send-once identity.** With no report ID to key on, the
+  caller names the issue (`^[a-z0-9:_-]{3,64}$`, e.g. `daily-briefing:2026-09-09`)
+  and it is stored in `Broadcast.jobId` — no new model, no migration. Scoped per
+  (`dedupeKey`, `segment`), so a retried scheduled run gets `409
+  already_broadcast` and mails no one twice.
+- Each recipient's own unsubscribe link is stamped into the body inside the send
+  loop, before `</body>` when the briefing is a full document and appended when
+  it is a fragment. That placement lives in `src/lib/briefing-email.ts` so it is
+  unit-testable without a request.
+- **First unit tests in the frontend.** Added Vitest (`npm test`) alongside the
+  Playwright e2e suite, covering the new route's auth, dry run, send, audit row,
+  per-recipient links, repeat-send and empty-list paths, plus the footer helper.
+  Also added the `.eslintrc.json` the repo never had — `npm run lint` previously
+  dropped into ESLint's interactive setup prompt.
+
 ## 2026-09-09 — Security: spoofable identity headers
 
 - **Fixed an authentication bypass that was live in production.** `getSession()`

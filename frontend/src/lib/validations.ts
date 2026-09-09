@@ -103,11 +103,46 @@ export const broadcastReportSchema = z.object({
   segment: z.string().trim().max(24).optional(),
 });
 
+// POST /api/newsletter/broadcast — an arbitrary, externally-composed briefing
+// (the daily "IntelliForge Morning Briefing" digest) sent to the newsletter
+// list. Unlike broadcastReportSchema this carries the whole email body, because
+// there is no ResearchResult behind it to render.
+export const newsletterBroadcastSchema = z.object({
+  subject: z
+    .string()
+    .trim()
+    .min(1, "Subject is required")
+    .max(200, "Subject must be at most 200 characters"),
+  // Ready-made HTML body. The route appends a per-recipient unsubscribe footer
+  // before sending; nothing else is added or rewritten.
+  html: z.string().trim().min(1, "html body is required"),
+  // Plaintext alternative. Optional — AgentMail is happy with HTML only.
+  text: z.string().optional(),
+  // Send to one segment instead of the whole list. Omit for everyone.
+  segment: z.string().trim().max(24).optional(),
+  // When true, report what a send would do and send nothing.
+  dryRun: z.boolean().optional().default(false),
+  // Caller-supplied send-once identity, stored in Broadcast.jobId. There is no
+  // report id to key idempotency on here, so the caller names the issue itself
+  // (e.g. "daily-briefing:2026-09-09"). Charset is restricted so it stays a
+  // safe, readable database key.
+  dedupeKey: z
+    .string()
+    .trim()
+    .regex(
+      /^[a-z0-9:_-]{3,64}$/,
+      "dedupeKey must be 3-64 chars of a-z, 0-9, ':', '_' or '-'",
+    ),
+});
+
 export type AddSubscriberInput = z.infer<typeof addSubscriberSchema>;
 export type PublicSubscribeInput = z.infer<typeof publicSubscribeSchema>;
 export type UpdateSubscriberInput = z.infer<typeof updateSubscriberSchema>;
 export type ImportSubscribersInput = z.infer<typeof importSubscribersSchema>;
 export type BroadcastReportInput = z.infer<typeof broadcastReportSchema>;
+export type NewsletterBroadcastInput = z.infer<
+  typeof newsletterBroadcastSchema
+>;
 
 export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
