@@ -146,6 +146,26 @@ subscriber. Targeting a segment is a `tags hasSome` filter, and the send-once
 guard on `Broadcast` is keyed by `(jobId, segment)` so one report can reach
 `investors` today and `beta` next week without either send being repeatable.
 
+## How identity is established
+
+One path, deliberately: a request carries the `chronicle-session` cookie, and
+`getSession()` in `frontend/src/lib/auth.ts` verifies that JWT — signature and
+expiry — on every call. Route handlers do their own authorization on top
+(`isNewsletterAdmin()` for the newsletter surfaces).
+
+`middleware.ts` lives at the **project root**, not under `src/`. Next.js only
+picks up `src/middleware.ts` when the app itself lives under `src/`, and here
+`app/` is at the root — a middleware file in the wrong place is not an error,
+it simply never runs. Verify with `sortedMiddleware` in
+`.next/server/middleware-manifest.json` after a build; an empty array means it
+is not wired up.
+
+Middleware gates pages and evicts stale cookies. It does **not** hand identity
+downstream: it strips inbound `x-user-*` headers rather than injecting them.
+An earlier design had it inject verified claims that `getSession()` then
+trusted, which meant anyone could send those headers and be treated as any
+user — see the 2026-09-09 entry in `CHANGELOG.md`.
+
 ## Security controls worth knowing
 
 | Control | Failure mode if unset |
@@ -155,6 +175,7 @@ guard on `Broadcast` is keyed by `(jobId, segment)` so one report can reach
 | `CHRONICLE_MCP_ACCESS_KEY` | `/mcp` is not mounted at all (fails closed) |
 | `CHRONICLE_OAUTH_SECRET` | Falls back to `JWT_SECRET`, so connector tokens and user session tokens share one signing key — one leak forges both |
 | `CHRONICLE_SERVICE_TOKEN` | `getServiceIdentity()` is inert, so connector-driven broadcast is simply off |
+| `JWT_SECRET` (frontend) | `getSession()` returns null for everyone, so gated routes fail closed — but middleware also logs and falls through, so pages render an unauthenticated shell |
 | `FORWARDED_ALLOW_IPS` | Fly terminates TLS upstream; without it Uvicorn reports `scheme="http"` and the wrong scheme leaks into the advertised OAuth issuer |
 
 ## Theming

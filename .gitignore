@@ -62,3 +62,6 @@ fly.toml.bak
 .DS_Store
 Thumbs.db
 .env*
+
+# Stray Next.js build output if a build is run from the repo root
+.next/

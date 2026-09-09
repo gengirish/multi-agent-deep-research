@@ -100,23 +100,35 @@ function getJwtSecret(): Uint8Array | null {
   return new TextEncoder().encode(secret);
 }
 
-interface ChronicleClaims {
-  sub?: string;
-  email?: string;
-  name?: string;
-  orgId?: string;
-  orgRole?: string;
-}
+/**
+ * Identity headers this middleware refuses to forward.
+ *
+ * Nothing downstream reads these any more — `getSession()` verifies the session
+ * cookie itself — but they were previously trusted as an authenticated identity,
+ * and a client can set them freely. Stripping them on the way in means a future
+ * reader of `x-user-*` cannot silently reintroduce that hole.
+ */
+const SPOOFABLE_IDENTITY_HEADERS = [
+  "x-user-id",
+  "x-user-email",
+  "x-user-name",
+  "x-user-org-id",
+  "x-user-org-role",
+];
 
-function applyClaimsToHeaders(
-  headers: Headers,
-  payload: ChronicleClaims,
-): void {
-  if (payload.sub) headers.set("x-user-id", payload.sub);
-  if (payload.email) headers.set("x-user-email", payload.email);
-  if (payload.name) headers.set("x-user-name", payload.name);
-  if (payload.orgId) headers.set("x-user-org-id", payload.orgId);
-  if (payload.orgRole) headers.set("x-user-org-role", payload.orgRole);
+function withIdentityHeadersStripped(request: NextRequest): NextResponse {
+  const headers = new Headers(request.headers);
+  let found = false;
+  for (const name of SPOOFABLE_IDENTITY_HEADERS) {
+    if (headers.has(name)) {
+      headers.delete(name);
+      found = true;
+    }
+  }
+  // Only pay for a rewritten request when there was something to remove.
+  return found
+    ? NextResponse.next({ request: { headers } })
+    : NextResponse.next();
 }
 
 function unauthorizedJson(): NextResponse {
@@ -153,12 +165,11 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     if (isGatedApiRoute) return unauthorizedJson();
     if (isGatedPageRoute) return redirectToSignIn(request, false);
-    return NextResponse.next();
+    return withIdentityHeadersStripped(request);
   }
 
-  // Token present — try to verify. We need the secret regardless of
-  // whether the route is gated, because verified claims power the
-  // downstream `x-user-*` headers (used by /api/auth/me, etc.).
+  // Token present — verify it so an expired or forged cookie is evicted rather
+  // than left to fail on every subsequent request.
   const secret = getJwtSecret();
   if (!secret) {
     console.error("JWT_SECRET not configured");
@@ -172,10 +183,11 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const { payload } = await jwtVerify(token, secret);
-    const requestHeaders = new Headers(request.headers);
-    applyClaimsToHeaders(requestHeaders, payload as ChronicleClaims);
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    // Verified only to decide whether a gated route may proceed. The claims are
+    // deliberately NOT forwarded downstream — route handlers call getSession(),
+    // which re-verifies the cookie itself.
+    await jwtVerify(token, secret);
+    return withIdentityHeadersStripped(request);
   } catch {
     // Invalid / expired token. For gated routes we evict the cookie
     // and bounce to sign-in; for everything else we silently fall
@@ -191,11 +203,11 @@ export async function middleware(request: NextRequest) {
     if (isPublic || isApi) {
       // Public route with bad cookie — clear it to stop hammering verify
       // on every request, but still allow the request through.
-      const response = NextResponse.next();
+      const response = withIdentityHeadersStripped(request);
       response.cookies.set(COOKIE_NAME, "", { maxAge: 0, path: "/" });
       return response;
     }
-    return NextResponse.next();
+    return withIdentityHeadersStripped(request);
   }
 }
 

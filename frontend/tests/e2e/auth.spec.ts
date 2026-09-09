@@ -114,3 +114,51 @@ test.describe("Auth gating (when JWT middleware is active)", () => {
     }
   });
 });
+
+test.describe("Identity headers cannot be spoofed", () => {
+  // Regression guard for a live vulnerability: `getSession()` used to trust
+  // `x-user-id` / `x-user-email` / `x-user-name` request headers, on the
+  // premise that middleware had already verified the JWT and injected them.
+  // Nothing stopped a client from sending those headers itself, and the
+  // middleware was not even being compiled (it sat at src/middleware.ts while
+  // app/ lives at the project root). Three headers and no cookie were enough
+  // to read the full subscriber list. Identity now comes only from the signed
+  // session cookie.
+  const FORGED = {
+    "x-user-id": "forged-user-id",
+    "x-user-email": "attacker@example.com",
+    "x-user-name": "Attacker",
+  };
+
+  test("forged x-user-* headers do not authenticate an API request", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/subscribers", { headers: FORGED });
+    // 401 = not authenticated. A 403 would mean the forged session was
+    // accepted and only the admin allowlist turned it away, and a 200 would
+    // mean the list leaked outright.
+    expect(res.status()).toBe(401);
+    expect(await res.json()).toMatchObject({ error: expect.any(String) });
+  });
+
+  test("forged x-user-* headers do not authenticate a write", async ({
+    request,
+  }) => {
+    const res = await request.post("/api/subscribers", {
+      headers: FORGED,
+      data: { email: "spoof-probe@example.com" },
+    });
+    expect(res.status()).toBe(401);
+  });
+
+  test("gated page still redirects when identity headers are supplied", async ({
+    request,
+  }) => {
+    const res = await request.get("/audience", {
+      headers: FORGED,
+      maxRedirects: 0,
+    });
+    expect(res.status()).toBe(307);
+    expect(res.headers()["location"]).toContain("/sign-in");
+  });
+});

@@ -95,37 +95,18 @@ export function clearAuthCookie(response: NextResponse): void {
   });
 }
 
-// Reads identity headers injected by middleware after it has already
-// validated the JWT (signature + expiry + tokenVersion). Callers can trust
-// these without re-verifying.
-export async function getSessionFromHeaders(): Promise<SessionPayload | null> {
-  const hdrs = await headers();
-  const userId = hdrs.get("x-user-id");
-  const email = hdrs.get("x-user-email");
-  const name = hdrs.get("x-user-name");
-  if (!userId || !email || !name) return null;
-
-  const orgId = hdrs.get("x-user-org-id") ?? undefined;
-  const orgRoleRaw = hdrs.get("x-user-org-role");
-  const orgRole: OrgRole | undefined =
-    orgRoleRaw === "OWNER" || orgRoleRaw === "ADMIN" || orgRoleRaw === "MEMBER"
-      ? orgRoleRaw
-      : undefined;
-
-  return {
-    sub: userId,
-    email,
-    name,
-    orgId,
-    orgRole,
-    tokenVersion: 0,
-  };
-}
-
 export async function getSession(): Promise<SessionPayload | null> {
-  const fromHeaders = await getSessionFromHeaders();
-  if (fromHeaders?.sub) return fromHeaders;
-
+  // Identity comes from ONE place: the signed session cookie, verified here on
+  // every call (signature, expiry, and the claims inside it).
+  //
+  // This used to try `x-user-*` request headers first, on the premise that
+  // middleware had already validated the JWT and injected them. That was
+  // exploitable: nothing stopped a client from simply sending those headers
+  // itself, and middleware — which was never being compiled, since it sat at
+  // `src/middleware.ts` while `app/` lives at the project root — did not strip
+  // inbound copies even when it did run. A plain curl with three headers and no
+  // cookie was enough to be treated as any user. Verifying the cookie is cheap;
+  // there is no reason to have a path that skips it.
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;

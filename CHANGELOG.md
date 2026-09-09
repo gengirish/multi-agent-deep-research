@@ -2,6 +2,26 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-09 — Security: spoofable identity headers
+
+- **Fixed an authentication bypass that was live in production.** `getSession()`
+  trusted `x-user-id` / `x-user-email` / `x-user-name` request headers, on the
+  premise that middleware had already verified the JWT and injected them. A
+  client can set those headers itself, and the middleware was never running:
+  it sat at `src/middleware.ts` while `app/` lives at the project root, so
+  Next.js never compiled it (`sortedMiddleware` was empty in the build
+  manifest). An unauthenticated `curl` with three headers returned the full
+  subscriber list — names, emails, tags, sign-up source. Every route behind
+  `getSession()` was reachable the same way, including broadcast and subscriber
+  deletion. `NEWSLETTER_ADMIN_EMAILS` behaved correctly and bought nothing,
+  because the operator address is not a secret.
+- Identity now comes from the signed session cookie and nowhere else;
+  `getSessionFromHeaders()` is gone. Middleware moved to the project root, so
+  page gating (`/history`, `/audience`) actually runs for the first time, and it
+  strips inbound `x-user-*` headers as defence in depth.
+- Regression tests assert 401 — not 403, which would mean the forged session was
+  accepted and merely un-privileged — for forged headers on a read and a write.
+
 ## 2026-09-09 — Newsletter: a real front door
 
 - **Dedicated sign-up page at `/newsletter`.** The landing-page anchor was a

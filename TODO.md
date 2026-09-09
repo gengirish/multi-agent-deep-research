@@ -4,17 +4,39 @@ Open items as of 2026-09-07. Grouped by what blocks what.
 
 ---
 
-## 1. Access control — activated, one check outstanding
+## 1. Access control — activated and verified
 
 Both activations cleared on 2026-09-07 (recorded in §5).
 
-- [ ] Verify the lockdown behaves as intended: `GET /api/subscribers` as a
-      signed-in **non-admin** should return 403 rather than subscriber data.
-      Needs a second account or a session token — not yet exercised.
+- [x] `GET /api/subscribers` as a signed-in **non-admin** returns 403, verified
+      2026-09-09 with a minted session token rather than a second account.
+      The allowlisted address returns 200 with the full list, so the control
+      discriminates rather than simply failing closed.
 - [ ] Same check for the broadcast route: a signed-in non-admin POSTing to
       `/api/reports/{jobId}/broadcast` should get 403. The service-token path
       bypasses the admin allowlist by design, so this only covers the
-      interactive path.
+      interactive path. (Not exercised — a POST here mails the live list if the
+      check is wrong, so it needs a throwaway report id.)
+
+### Fixed 2026-09-09 — spoofable identity headers (was live in production)
+
+`getSession()` trusted `x-user-id` / `x-user-email` / `x-user-name` request
+headers, on the premise that middleware had verified the JWT and injected them.
+Two problems compounded: a client can send those headers itself, and the
+middleware was never compiled at all — it sat at `src/middleware.ts` while
+`app/` lives at the project root, so Next.js never picked it up (which also
+explains `/audience` serving 200 to anonymous requests instead of redirecting).
+
+An unauthenticated `curl` with three headers returned the entire subscriber
+list. `NEWSLETTER_ADMIN_EMAILS` was working correctly and bought nothing, since
+the operator address is not a secret. Every route behind `getSession()` was
+reachable the same way, including broadcast and subscriber deletion.
+
+Fix: identity now comes only from the verified session cookie;
+`getSessionFromHeaders()` is deleted; middleware moved to the project root and
+strips inbound `x-user-*` so a future reader cannot reintroduce the hole.
+Regression tests in `tests/e2e/auth.spec.ts` assert 401 (not 403, not 200) for
+forged headers on both a read and a write.
 
 ---
 
