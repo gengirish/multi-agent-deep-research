@@ -238,6 +238,53 @@ recipient count, then again with `confirm=true` only on an explicit human go-ahe
 given report can be broadcast once, ever — a repeat returns `already_broadcast` and
 sends nothing, so a retried agent run is safe.
 
+### Broadcasting an externally-composed briefing
+
+`broadcast_briefing` mails a *Chronicle research report* — it needs a job ID and
+renders that report's markdown. The daily "IntelliForge Morning Briefing" is not
+a research report: it is a news digest assembled by a scheduled job outside
+Chronicle, which arrives as finished HTML. That send has its own endpoint:
+
+```
+POST /api/newsletter/broadcast
+```
+
+| Field | | |
+| ----- | - | - |
+| `subject` | required | 1–200 characters |
+| `html` | required | the finished body; a per-recipient unsubscribe footer is appended before sending |
+| `text` | optional | plaintext alternative |
+| `segment` | optional | one segment tag; omit for the whole list |
+| `dryRun` | default `false` | returns the recipient count and sends nothing |
+| `dedupeKey` | required | `^[a-z0-9:_-]{3,64}$`, e.g. `daily-briefing:2026-09-09` |
+
+Authentication is the same as the report broadcast: a browser session (gated by
+`NEWSLETTER_ADMIN_EMAILS`) or a `CHRONICLE_SERVICE_TOKEN` bearer token, which is
+how the scheduled job calls it. Set that token in the Chronicle Vercel
+environment before the first run — see [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+
+Because there is no report ID to key on, **`dedupeKey` is the send-once
+identity**. It is stored in the same `broadcasts` audit table the report route
+uses, scoped per (`dedupeKey`, `segment`) — so a retried scheduled run returns
+`409 already_broadcast` and mails no one twice. Dating the key
+(`daily-briefing:YYYY-MM-DD`) gives one issue per day for free.
+
+```bash
+# Dry run first — reports the recipient count, sends nothing.
+curl -sS -X POST https://deep-research.intelliforge.tech/api/newsletter/broadcast \
+  -H "Authorization: Bearer $CHRONICLE_SERVICE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "subject": "IntelliForge Morning Briefing — 9 Sep 2026",
+        "html": "<html><body><h1>Today in AI</h1><p>…</p></body></html>",
+        "dedupeKey": "daily-briefing:2026-09-09",
+        "dryRun": true
+      }'
+# {"ok":true,"dryRun":true,"recipientCount":7,"segment":null,...}
+
+# Then the real send: same call with "dryRun": false.
+```
+
 ```bash
 pip install -e mcp/
 ```
@@ -310,7 +357,9 @@ becomes a published issue rather than a one-off answer.
 - **Sending** goes through AgentMail, with a per-recipient one-click unsubscribe
   token in every message.
 - **Triggering** works from the report view in the UI, or from an agent via the
-  `broadcast_briefing` MCP tool.
+  `broadcast_briefing` MCP tool. A briefing composed *outside* Chronicle (the
+  daily news digest) posts its finished HTML to `POST /api/newsletter/broadcast`
+  instead, with a caller-supplied `dedupeKey` as its send-once identity.
 
 > **`NEWSLETTER_ADMIN_EMAILS` is a security control, not a convenience.** When it
 > is unset, `isNewsletterAdmin()` returns `true` for *every* authenticated user —

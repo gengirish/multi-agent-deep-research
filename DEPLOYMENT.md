@@ -311,6 +311,44 @@ rights and rotate it like a password.
 - Dry runs and real sends draw on separate rate-limit budgets (20 and 5 per
   10-minute window respectively), so probing cannot exhaust the send budget.
 
+### 5. The same token also drives the daily briefing
+
+`CHRONICLE_SERVICE_TOKEN` is not MCP-specific. It authenticates any machine
+caller on the broadcast routes, including the scheduled job that composes the
+daily "IntelliForge Morning Briefing" outside Chronicle and posts the finished
+HTML to:
+
+```
+POST /api/newsletter/broadcast
+```
+
+That job calls the HTTP endpoint directly — it does not go through the MCP
+connector — so the only deployment prerequisite is that
+`CHRONICLE_SERVICE_TOKEN` is set in the **Chronicle Vercel environment** (the
+Fly secret matters only for the MCP path). Verify it with a dry run, which sends
+no mail:
+
+```bash
+curl -sS -X POST https://deep-research.intelliforge.tech/api/newsletter/broadcast \
+  -H "Authorization: Bearer $CHRONICLE_SERVICE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"subject":"probe","html":"<p>probe</p>","dedupeKey":"probe:0001","dryRun":true}'
+```
+
+A `200` with a `recipientCount` means the token is good. A `401` means it is
+missing or mismatched in Vercel.
+
+The endpoint's send-once identity is the caller's `dedupeKey` (stored in the
+`broadcasts` table's `job_id` column), scoped per segment — so a retried
+scheduled run returns `409 already_broadcast` rather than mailing the list
+twice. Date the key, e.g. `daily-briefing:2026-09-09`.
+
+> **Check your AgentMail plan before the first real send.** The route mails
+> recipients one at a time, so a broadcast to *N* subscribers is *N* sends
+> against your quota. Confirm the sender domain is verified and the plan allows
+> the volume — an unverified sender degrades to `sentCount: 0` and a `502`,
+> since `sendEmail()` returns `false` rather than throwing.
+
 
 ## End-to-end verification
 

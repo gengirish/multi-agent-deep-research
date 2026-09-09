@@ -8,6 +8,8 @@
     "postinstall": "prisma generate",
     "generate:icons": "node scripts/generate-icons.mjs",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "next lint",
     "test:e2e": "playwright test",
     "test:e2e:local": "cross-env BASE_URL=http://localhost:3000 playwright test",
@@ -43,6 +45,7 @@
     "eslint-config-next": "^14.2.15",
     "prisma": "^6.19.3",
     "sharp": "^0.35.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^2.1.9"
   }
 }
