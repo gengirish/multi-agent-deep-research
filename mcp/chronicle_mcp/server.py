@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Annotated, Any, Literal, Optional
 
 from fastmcp import FastMCP
@@ -23,6 +24,7 @@ from pydantic import Field
 from chronicle_mcp import __version__
 from chronicle_mcp.api import (
     broadcast,
+    broadcast_newsletter,
     DEFAULT_API_URL,
     ChronicleAPIError,
     create_job,
@@ -94,6 +96,9 @@ def _format_result(payload: dict[str, Any], *, job_id: Optional[str] = None) -> 
     lines.extend(["", "--- Report ---", "", report or "(no report generated)"])
     return "\n".join(lines)
 
+
+
+DEDUPE_KEY_RE = re.compile(r"^[a-z0-9:_-]{3,64}$")
 
 
 def _app_url() -> str:
@@ -277,6 +282,95 @@ def broadcast_briefing(
 
     try:
         result = broadcast(_app_url(), job_id, note.strip(), dry_run=not confirm)
+    except ChronicleAPIError as exc:
+        return json.dumps(
+            {"ok": False, "error": "request_failed", "message": str(exc)[:300]},
+            indent=2,
+        )
+
+    if not confirm and result.get("ok"):
+        result["sent"] = False
+        result["next_step"] = (
+            "Nothing was sent. Report the recipient count to the user and ask "
+            "them to confirm before calling again with confirm=true."
+        )
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool(
+    tags={"newsletter"},
+    annotations={"readOnlyHint": False, "destructiveHint": True},
+)
+def broadcast_custom_briefing(
+    subject: str,
+    html: str,
+    dedupe_key: str,
+    text: str = "",
+    segment: str = "",
+    confirm: bool = False,
+) -> str:
+    """Email an arbitrary, externally-composed briefing (e.g. the daily
+    IntelliForge Morning Briefing) to the Chronicle newsletter list.
+
+    THIS SENDS REAL EMAIL TO REAL PEOPLE AND CANNOT BE UNDONE.
+
+    Always call once with confirm=false first and report the recipient count
+    to the user before sending.
+
+    Each dedupe_key can be broadcast once per audience, ever; a repeat returns
+    already_broadcast and sends nothing, so a retried scheduled run is safe.
+    """
+    subject = (subject or "").strip()
+    html = (html or "").strip()
+    dedupe_key = (dedupe_key or "").strip()
+
+    if not subject:
+        return json.dumps(
+            {"ok": False, "error": "invalid", "message": "subject is required."},
+            indent=2,
+        )
+    if not html:
+        return json.dumps(
+            {"ok": False, "error": "invalid", "message": "html is required."},
+            indent=2,
+        )
+    if not DEDUPE_KEY_RE.match(dedupe_key):
+        return json.dumps(
+            {
+                "ok": False,
+                "error": "invalid",
+                "message": (
+                    "dedupe_key must be 3-64 chars of a-z, 0-9, ':', '_' or '-'."
+                ),
+            },
+            indent=2,
+        )
+
+    # Sending is owned by the Next.js app (subscriber list, unsubscribe links,
+    # AgentMail credentials). Local mode has no route to it.
+    if _mode() == "local":
+        return json.dumps(
+            {
+                "ok": False,
+                "error": "unavailable",
+                "message": (
+                    "Broadcasting requires remote mode — the subscriber list "
+                    "and mail credentials live in the Chronicle web app."
+                ),
+            },
+            indent=2,
+        )
+
+    try:
+        result = broadcast_newsletter(
+            _app_url(),
+            subject,
+            html,
+            (text or "").strip(),
+            (segment or "").strip(),
+            dedupe_key,
+            dry_run=not confirm,
+        )
     except ChronicleAPIError as exc:
         return json.dumps(
             {"ok": False, "error": "request_failed", "message": str(exc)[:300]},

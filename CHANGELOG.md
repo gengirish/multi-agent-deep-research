@@ -2,6 +2,28 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-09 — MCP: `broadcast_custom_briefing`
+
+- **New MCP tool `broadcast_custom_briefing`**, on both servers
+  (`backend/mcp_server.py` for the claude.ai connector, `mcp/chronicle_mcp/`
+  for stdio). The route shipped above is reachable over HTTP, but the scheduled
+  job that composes the daily "IntelliForge Morning Briefing" reaches Chronicle
+  only through MCP and cannot POST to the web app directly — so the route had no
+  caller. This tool is that caller: subject + HTML in, `POST
+  /api/newsletter/broadcast` out.
+- Mirrors `broadcast_briefing` deliberately — same `destructiveHint`
+  annotation, same confirm→`dryRun` gate (`confirm=false` returns the recipient
+  count and sends nothing), same pass-the-answer-through contract, so
+  `already_broadcast` and the empty-list 400 reach the model verbatim.
+  `dedupe_key` is validated against the route's own charset before the call, so
+  a typo comes back as a local `invalid` rather than a round trip.
+- The service token is read server-side from `CHRONICLE_SERVICE_TOKEN` and never
+  requested from the caller; unset, the tool answers `not_configured` and sends
+  nothing.
+- Tests: the parity suite now expects the tool on both servers, and
+  `backend/tests/test_newsletter_broadcast_tool.py` pins the target URL, the
+  bearer header, the payload shape and the fail-closed path.
+
 ## 2026-09-09 — Newsletter: broadcast an arbitrary briefing
 
 - **New endpoint `POST /api/newsletter/broadcast`.** Until now the only way to

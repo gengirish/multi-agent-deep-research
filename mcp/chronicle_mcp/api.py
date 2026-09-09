@@ -187,3 +187,72 @@ def broadcast(
     except URLError as exc:
         return {"ok": False, "error": "unreachable",
                 "message": f"Network error: {exc.reason}"}
+
+
+def broadcast_newsletter(
+    app_url: str,
+    subject: str,
+    html: str,
+    text: str = "",
+    segment: str = "",
+    dedupe_key: str = "",
+    dry_run: bool = True,
+) -> dict[str, Any]:
+    """Send (or preview) an externally-composed briefing to the newsletter list.
+
+    Sibling of `broadcast`: same app, same auth, same relay-the-answer
+    contract, but the caller supplies the finished email instead of naming a
+    stored report, and names its own send-once key.
+    """
+    token = (os.getenv("CHRONICLE_SERVICE_TOKEN") or "").strip()
+    if not token:
+        return {
+            "ok": False,
+            "error": "not_configured",
+            "message": (
+                "Set CHRONICLE_SERVICE_TOKEN to the value configured in the "
+                "Chronicle web app to enable broadcasting."
+            ),
+        }
+
+    payload: dict[str, Any] = {
+        "subject": subject,
+        "html": html,
+        "dedupeKey": dedupe_key,
+        "dryRun": dry_run,
+    }
+    if text:
+        payload["text"] = text
+    if segment:
+        payload["segment"] = segment
+
+    url = f"{app_url.rstrip('/')}/api/newsletter/broadcast"
+    req = Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+    )
+    try:
+        with urlopen(req, timeout=120.0) as resp:
+            body = resp.read().decode("utf-8")
+            data = json.loads(body) if body else {}
+            data.setdefault("ok", True)
+            data["http_status"] = resp.status
+            return data
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace")
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            data = {"message": raw[:300]}
+        data.setdefault("ok", False)
+        data["http_status"] = exc.code
+        return data
+    except URLError as exc:
+        return {"ok": False, "error": "unreachable",
+                "message": f"Network error: {exc.reason}"}

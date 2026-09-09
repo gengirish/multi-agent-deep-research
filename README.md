@@ -229,13 +229,14 @@ are kept in sync by `backend/tests/test_mcp_parity.py`.
 | `get_research_job` | Fetch a job by ID (use to poll an `async_mode=true` run) |
 | `export_research_markdown` | Export a completed job as markdown |
 | `list_starter_queries` | Founder-style example queries |
-| `broadcast_briefing` | Email a finished briefing to the newsletter list |
+| `broadcast_briefing` | Email a finished Chronicle report to the newsletter list |
+| `broadcast_custom_briefing` | Email an externally-composed briefing (subject + HTML) to the list |
 | `chronicle_health` | API + database connectivity check |
 
-Every tool but `broadcast_briefing` is read-only. That one is marked
-`destructiveHint` and **sends real email**: call it with `confirm=false` first to get a
-recipient count, then again with `confirm=true` only on an explicit human go-ahead. A
-given report can be broadcast once, ever — a repeat returns `already_broadcast` and
+Every tool but the two `broadcast_*` ones is read-only. Those two are marked
+`destructiveHint` and **send real email**: call with `confirm=false` first to get a
+recipient count, then again with `confirm=true` only on an explicit human go-ahead. Each
+send identity can be broadcast once, ever — a repeat returns `already_broadcast` and
 sends nothing, so a retried agent run is safe.
 
 ### Broadcasting an externally-composed briefing
@@ -248,6 +249,12 @@ Chronicle, which arrives as finished HTML. That send has its own endpoint:
 ```
 POST /api/newsletter/broadcast
 ```
+
+An agent reaches that endpoint through `broadcast_custom_briefing`, which takes
+the same fields (`subject`, `html`, optional `text` and `segment`, plus a
+`dedupe_key`) behind the same confirm-first gate. The scheduled job that writes
+the digest talks to Chronicle only over MCP, so the tool — not a direct POST —
+is how the daily send actually happens.
 
 | Field | | |
 | ----- | - | - |
@@ -358,8 +365,9 @@ becomes a published issue rather than a one-off answer.
   token in every message.
 - **Triggering** works from the report view in the UI, or from an agent via the
   `broadcast_briefing` MCP tool. A briefing composed *outside* Chronicle (the
-  daily news digest) posts its finished HTML to `POST /api/newsletter/broadcast`
-  instead, with a caller-supplied `dedupeKey` as its send-once identity.
+  daily news digest) goes out through `broadcast_custom_briefing` / `POST
+  /api/newsletter/broadcast` instead, with a caller-supplied `dedupeKey` as its
+  send-once identity.
 
 > **`NEWSLETTER_ADMIN_EMAILS` is a security control, not a convenience.** When it
 > is unset, `isNewsletterAdmin()` returns `true` for *every* authenticated user —

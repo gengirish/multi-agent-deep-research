@@ -26,6 +26,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 from typing import Annotated, Any, Optional
 from urllib.parse import quote
 
@@ -174,6 +175,67 @@ async def _call_broadcast(job_id: str, note: str, dry_run: bool) -> dict[str, An
             )
     except Exception as exc:
         logger.exception("broadcast call failed")
+        return {"ok": False, "error": "unreachable", "message": str(exc)[:300]}
+
+    try:
+        body = resp.json()
+    except Exception:
+        body = {"message": resp.text[:300]}
+    body.setdefault("ok", resp.is_success)
+    body["http_status"] = resp.status_code
+    return body
+
+
+DEDUPE_KEY_RE = re.compile(r"^[a-z0-9:_-]{3,64}$")
+
+
+async def _call_newsletter_broadcast(
+    subject: str,
+    html: str,
+    text: str,
+    segment: str,
+    dedupe_key: str,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """POST the newsletter broadcast route with the service token.
+
+    Sibling of `_call_broadcast`: same thin authenticated proxy, but the body
+    is composed by the caller rather than rendered from a stored report, so
+    there is no job id in the path and the payload carries the email itself.
+    """
+    token = (os.getenv("CHRONICLE_SERVICE_TOKEN") or "").strip()
+    if not token:
+        return {
+            "ok": False,
+            "error": "not_configured",
+            "message": (
+                "Broadcasting is not configured on this server. Set "
+                "CHRONICLE_SERVICE_TOKEN on the backend and the frontend to "
+                "the same value."
+            ),
+        }
+
+    url = f"{CHRONICLE_APP_URL}/api/newsletter/broadcast"
+    payload: dict[str, Any] = {
+        "subject": subject,
+        "html": html,
+        "dedupeKey": dedupe_key,
+        "dryRun": dry_run,
+    }
+    if text:
+        payload["text"] = text
+    if segment:
+        payload["segment"] = segment
+
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                url,
+                json=payload,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    except Exception as exc:
+        logger.exception("newsletter broadcast call failed")
         return {"ok": False, "error": "unreachable", "message": str(exc)[:300]}
 
     try:
@@ -339,6 +401,82 @@ def build_mcp_server():
 
         result = await _call_broadcast(job_id, (note or "").strip(),
                                        dry_run=not confirm)
+
+        # Make the not-yet-sent case unmistakable to the model.
+        if not confirm and result.get("ok"):
+            result["sent"] = False
+            result["next_step"] = (
+                "Nothing was sent. Report the recipient count to the user and "
+                "ask them to confirm before calling again with confirm=true."
+            )
+        return json.dumps(result, indent=2)
+
+    @mcp.tool(
+        tags={"newsletter"},
+        annotations={"readOnlyHint": False, "destructiveHint": True},
+    )
+    async def broadcast_custom_briefing(
+        subject: str = Field(description="Email subject line."),
+        html: str = Field(
+            description="Full, ready-to-send HTML body of the briefing."
+        ),
+        dedupe_key: str = Field(
+            description=(
+                "Send-once identity, e.g. 'daily-briefing:2026-09-09'. "
+                "3-64 chars of a-z, 0-9, ':', '_' or '-'."
+            )
+        ),
+        text: str = Field(
+            default="", description="Optional plain-text alternative."
+        ),
+        segment: str = Field(
+            default="",
+            description="Optional segment tag; omit for the whole list.",
+        ),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Must be true to actually send. When false (default) this "
+                "returns the recipient count and sends nothing."
+            ),
+        ),
+    ) -> str:
+        """Email an arbitrary, externally-composed briefing (e.g. the daily
+        IntelliForge Morning Briefing) to the Chronicle newsletter list.
+
+        THIS SENDS REAL EMAIL TO REAL PEOPLE AND CANNOT BE UNDONE.
+
+        Always call once with confirm=false first and report the recipient
+        count to the user before sending.
+
+        Each dedupe_key can be broadcast once per audience, ever; a repeat
+        returns already_broadcast and sends nothing, so a retried scheduled
+        run is safe.
+        """
+        subject = (subject or "").strip()
+        html = (html or "").strip()
+        dedupe_key = (dedupe_key or "").strip()
+
+        if not subject:
+            return json.dumps({"ok": False, "error": "invalid",
+                               "message": "subject is required."}, indent=2)
+        if not html:
+            return json.dumps({"ok": False, "error": "invalid",
+                               "message": "html is required."}, indent=2)
+        if not DEDUPE_KEY_RE.match(dedupe_key):
+            return json.dumps({
+                "ok": False,
+                "error": "invalid",
+                "message": (
+                    "dedupe_key must be 3-64 chars of a-z, 0-9, ':', '_' "
+                    "or '-'."
+                ),
+            }, indent=2)
+
+        result = await _call_newsletter_broadcast(
+            subject, html, (text or "").strip(), (segment or "").strip(),
+            dedupe_key, dry_run=not confirm,
+        )
 
         # Make the not-yet-sent case unmistakable to the model.
         if not confirm and result.get("ok"):

@@ -3,7 +3,7 @@
 How to run Chronicle unattended: research a topic on a cadence, then email the
 result to the newsletter list.
 
-_Last verified against the code: 2026-09-08._
+_Last verified against the code: 2026-09-09._
 
 ---
 
@@ -112,6 +112,30 @@ the same `CHRONICLE_SERVICE_TOKEN` and once-ever guard. Not implemented yet.
 
 ---
 
+## Sending a briefing Chronicle did not write
+
+The prompt above researches a topic and mails the *report Chronicle produced*.
+The daily "IntelliForge Morning Briefing" is the other shape: a news digest the
+scheduled job composes itself and hands over as finished HTML. That goes out
+through `broadcast_custom_briefing`, not `broadcast_briefing`:
+
+```text
+1. Compose the briefing HTML.
+2. Call broadcast_custom_briefing with subject, html, and
+   dedupe_key="daily-briefing:<YYYY-MM-DD>" (today's date in IST), confirm=false.
+   Report the recipientCount it returns. Nothing is sent.
+3. If that returned ok:true with recipientCount > 0, call it again with the
+   identical subject, html and dedupe_key, and confirm=true.
+4. If either call returns "already_broadcast", stop and report success — that
+   day's briefing has already gone out. Do not change the dedupe_key to
+   force a second send.
+```
+
+The `dedupe_key` is what makes a retried run safe here, so it must be derived
+from the day, not generated fresh per attempt.
+
+---
+
 ## Safety model
 
 Broadcasting is guarded in the server, not in the prompt — prompt wording is
@@ -120,7 +144,7 @@ advisory, and an unattended caller has nobody to ask.
 | Guard | Behaviour |
 | --- | --- |
 | `confirm` defaults to `false` | Reports the recipient count and sends nothing |
-| One broadcast per report, ever | A second attempt returns `409 already_broadcast` and sends nothing |
+| One broadcast per identity, ever | A second attempt on the same report — or the same `dedupe_key` — returns `409 already_broadcast` and sends nothing |
 | Separate dry-run rate limit | A model looping previews cannot `429` the real send behind it |
 | Service token | One fixed operator identity, never an arbitrary user; unset means broadcasting is unavailable |
 
