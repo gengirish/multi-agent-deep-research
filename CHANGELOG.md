@@ -2,6 +2,143 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-10 — Credibility: bibliographic signals from OpenAlex
+
+- **The credibility agent can now see how a paper was received.** It scored a
+  source from three things: URL patterns (`.edu`, `.gov`, `arxiv.org`), the
+  source type, and a model's opinion of the title and snippet. None of those
+  distinguish a 400-citation paper from a preprint nobody read, and none of them
+  can see a retraction. `utils/openalex.py` adds citation count, venue and venue
+  type, publication year, and the retraction flag from [OpenAlex](https://openalex.org)
+  — free, no API key, no account.
+- **Blended at `OPENALEX_WEIGHT` (0.25), not added.** The first version added a
+  bonus and a test caught that it did nothing: the existing heuristic already
+  saturates, since an arXiv paper scores 0.5 base + 0.3 academic domain + 0.2
+  paper type + author and title bonuses and is clamped to 1.0. A bonus had
+  nowhere to go, so the exact distinction this exists to draw would have stayed
+  invisible. A blend pulls an uncited preprint off the ceiling while leaving a
+  well-cited journal paper at the top. Sources OpenAlex does not know score
+  exactly as before.
+- **Retraction is not blended.** It floors the score at 0.05 and says so in the
+  reasoning string, because a retracted paper is not a slightly-less-credible
+  paper. This is the one signal none of the previous inputs could produce: a
+  retracted arXiv paper with 5,000 citations scored high on every heuristic the
+  agent had.
+- Three rules keep a third-party call out of harm's way on a stage that
+  previously made none. It **never blocks a run** — timeouts, 5xx, rate limits
+  and malformed payloads all return no signal and leave the score untouched, and
+  nothing in the module raises. It **never mis-attributes** — crediting a source
+  with another paper's citations is worse than having no signal, so title
+  matches must clear a token-overlap floor, and web or news items are only
+  looked up when they carry a DOI or arXiv id, because title-searching a blog
+  post against a bibliographic index produces confident-looking mismatches. And
+  it **pays the network cost once** — TTL cache including misses, plus a
+  concurrent prefetch before the credibility agent's serial per-source loop, so
+  N papers is one batch rather than N sequential timeouts.
+- On by default (`OPENALEX_ENABLED=false` to disable). Set `OPENALEX_MAILTO` to
+  enter OpenAlex's polite pool; anonymous callers are rate-limited first, and a
+  429 is retried once.
+- **Verified in production**, run `1e644543`: all 5 papers resolved, 4 through
+  the arXiv-minted DOI and 1 through the title-search fallback. The 18-citation
+  paper now scores above the 0-citation ones (0.74 vs 0.66–0.68) — the
+  discrimination that was impossible before. All 6 web sources were correctly
+  never looked up, scores untouched. Retraction remains covered only by tests;
+  no retracted source has come up in a real run.
+- Worth knowing: arXiv only began minting DOIs in 2022, so the id lookup 404s
+  for older papers and the title search is what resolves them.
+  `tests/test_openalex_live.py` pins these API shapes against the real service
+  and is skipped unless `OPENALEX_LIVE_TESTS=1`.
+- **Known flaw, not yet fixed.** A paper published this year cannot have
+  citations yet, so the citation signal conflates "new" with "ignored": in the
+  verification run the 2026 preprints scored *below* a 2024 paper with 18
+  citations. For a founder asking what the latest techniques are, that is
+  backwards. The fix is to damp the citation component for papers under roughly
+  18 months old, so recency is neutral rather than punished.
+- `agents/credibility_enhanced.py` does not get the signal — only the standard
+  agent, which is the default.
+
+## 2026-09-10 — Retrieval: iterative research loop, off by default
+
+- **The retriever no longer has to get it right on the first try.** It fired one
+  query at three channels, took five results each, and everything downstream was
+  bounded by that single shot: if the first search missed the angle the question
+  actually needed, no later stage could recover it.
+  `agents/research_loop.py` wraps it in the search → reflect → follow-up →
+  search-again loop from LangChain's
+  [open_deep_research](https://github.com/langchain-ai/open_deep_research) (MIT),
+  then merges, de-duplicates and compresses.
+- **Two departures from upstream, both about cost.** Reflection is the only LLM
+  step; upstream also summarizes each source with a model call, which multiplies
+  token spend by the source count and is untenable when Google's free tier is 20
+  requests per day *per model*. Compression here is structural — de-duplicate,
+  rank, cap — not generative. And every dimension is capped, so the worst case is
+  knowable: `RESEARCH_LOOP_MAX_ITERATIONS` model calls plus
+  `MAX_ITERATIONS × FOLLOW_UPS × 3` searches, which at the defaults is 2 extra
+  model calls and 12 extra searches per run.
+- De-duplication normalizes URLs — scheme, `www.`, trailing slash, tracking
+  parameters — so the same document found by two queries is stored once. Every
+  source carries `_query` and `_iteration`, so the report and the eval harness
+  can tell which question surfaced it. Each iteration is written to the agent log
+  like any other agent action; a loop that silently ran three extra searches
+  would break the claim that every step the agents take is visible.
+- The loop stops early when the model reports the sources are sufficient, when it
+  returns no follow-up queries, when its response cannot be parsed, or when
+  nothing was retrieved at all. That last case is deliberate: a total retrieval
+  failure is a provider problem, and rewording the query cannot fix it.
+- **Off by default.** `RESEARCH_LOOP_ENABLED=true` turns it on, and
+  `ResearchWorkflow(enable_research_loop=…)` overrides the flag, which is what
+  lets one process measure both arms. Leaving it off restores the previous
+  behaviour exactly — the retriever itself is untouched either way.
+- **`eval/run_eval.py --research-loop {env,on,off,ab}`.** `ab` runs both arms
+  over the same queries in one process, same models, same query list, so the only
+  difference is the retrieval strategy; it requires `--mode local`, because
+  `RESEARCH_LOOP_ENABLED` is read when the workflow is constructed and a deployed
+  API serves whichever arm it booted with. The comparison table marks each metric
+  by whether it moved in the better direction, with latency inverted — a loop that
+  takes twice as long is not a win. Two metrics carry no verdict on purpose:
+  search queries issued is the loop's cost rather than a result, and a longer
+  report is not a better one.
+- Also fixed while wiring the A/B: the harness built a fresh `ResearchWorkflow`
+  per query — six agents and their model clients — which put seconds of setup
+  inside every latency measurement. One workflow per arm is now cached and
+  reused, so the numbers describe the pipeline rather than the harness.
+- **The A/B has not been run.** Two arms against live search and LLM providers is
+  real spend on a daily-capped free tier, so whether the loop earns its extra
+  searches is still an open question. Grounding rate is the number that decides
+  it, mean credibility second — more sources retrieved is what you are paying,
+  not what you are buying.
+
+## 2026-09-10 — Observability: Langfuse tracing, off unless keys are set
+
+- **A span per pipeline stage, with per-call token counts and cost.** Five agents
+  on provider free tiers with per-model daily caps are hard to debug from logs
+  alone: the log can say a run was slow or degraded, not which stage burned the
+  quota or what a retry cost. `utils/tracing.py` records the run as a
+  [Langfuse](https://github.com/langfuse/langfuse) trace, and `create_llm` now
+  attaches the LangChain callback handler to every model, which is what supplies
+  the token and cost numbers rather than just timings.
+- **Written so it cannot cost anything it observes.** No keys, no `langfuse`
+  package, an unreachable host or an SDK change all disable tracing for the
+  process after one logged warning, and every span object degrades to a no-op
+  callers can still call `.update()` on. A tracing backend that can take down the
+  pipeline it watches is worse than no tracing.
+- **Version detection is by capability, not `__version__`.** Langfuse has renamed
+  this API twice: v2 `client.trace()`, v3 `client.start_as_current_span()`, v4
+  `client.start_as_current_observation()`. The first version of the shim called
+  the v3 name, which against the installed v4.15.2 raised `AttributeError` — the
+  safety net caught it and self-disabled exactly as designed, which also meant it
+  would have recorded nothing at all. There is now a test per branch, because
+  that failure is silent by construction.
+- `langfuse` is a hard requirement so enabling tracing in production is an
+  env-var change rather than an image rebuild; it is unused at runtime without
+  `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Its OpenTelemetry dependencies
+  left the deployed image at 142 MB.
+- Because Langfuse batches and Fly can stop a container before the background
+  flush fires, a finished run flushes explicitly.
+- Not yet enabled in production — no keys are set. The first production run after
+  this deploy took 7m08s against an exhausted Gemini daily quota, and attributing
+  that time precisely is exactly what a trace would have answered.
+
 ## 2026-09-09 — MCP: `broadcast_custom_briefing`
 
 - **New MCP tool `broadcast_custom_briefing`**, on both servers
