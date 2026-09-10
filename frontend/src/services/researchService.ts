@@ -206,16 +206,28 @@ export async function performResearch(query: string): Promise<ResearchData> {
  */
 export async function streamResearchJob(
   query: string,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
+  signal?: AbortSignal
 ): Promise<void> {
   const API_URL = getApiUrl();
 
+  // Caller gave up before we even enqueued.
+  if (signal?.aborted) return;
+
   // 1. Enqueue
-  const createRes = await fetch(`${API_URL}/api/research/jobs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
+  let createRes: Response;
+  try {
+    createRes = await fetch(`${API_URL}/api/research/jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+      signal,
+    });
+  } catch (e) {
+    // An abort mid-flight is a deliberate cancel, not a failure to report.
+    if (signal?.aborted) return;
+    throw e;
+  }
 
   if (!createRes.ok) {
     throw new Error(
@@ -224,6 +236,7 @@ export async function streamResearchJob(
   }
 
   const { job_id: jobId } = (await createRes.json()) as { job_id: string };
+  if (signal?.aborted) return;
   callbacks.onJobId?.(jobId);
 
   // 2. Open SSE stream. EventSource handles reconnection automatically;
@@ -235,21 +248,39 @@ export async function streamResearchJob(
   return new Promise<void>((resolve, reject) => {
     const es = new EventSource(streamUrl, { withCredentials: false });
     let settled = false;
+
+    // There is no server-side cancel endpoint: aborting detaches this client
+    // from the stream, and the worker still writes its result to Postgres.
+    const onAbort = () => {
+      if (settled) return;
+      settled = true;
+      es.close();
+      resolve();
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+
+    const detach = () => signal?.removeEventListener("abort", onAbort);
+
     const finishOk = () => {
       if (settled) return;
       settled = true;
+      detach();
       es.close();
       resolve();
     };
     const finishErr = (err: Error) => {
       if (settled) return;
       settled = true;
+      detach();
       es.close();
       callbacks.onError?.(err);
       reject(err);
     };
 
     es.onmessage = async (ev) => {
+      // A late event after cancel/completion must not reach the callbacks.
+      if (settled) return;
+
       let parsed: StreamEvent;
       try {
         parsed = JSON.parse(ev.data) as StreamEvent;
@@ -277,6 +308,7 @@ export async function streamResearchJob(
           // Server didn't inline the data — fetch the final row.
           try {
             const final = await fetchJobResult(jobId);
+            if (settled) return;
             callbacks.onComplete?.(final);
           } catch (e) {
             return finishErr(e instanceof Error ? e : new Error(String(e)));
@@ -291,6 +323,8 @@ export async function streamResearchJob(
     };
 
     es.onerror = async () => {
+      if (settled) return;
+
       // EventSource's `error` fires for both transient blips and final close.
       // Check readyState: if CLOSED, treat as terminal; if CONNECTING, the
       // browser will reconnect on its own.
@@ -298,6 +332,7 @@ export async function streamResearchJob(
         // Last-chance: the worker may have already finished — poll the row.
         try {
           const final = await fetchJobResult(jobId);
+          if (settled) return;
           callbacks.onComplete?.(final);
           return finishOk();
         } catch (e) {

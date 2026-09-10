@@ -28,6 +28,66 @@
   letter-spacing: -0.01em;
 }
 
+.progress-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Elapsed clock + expectation-setting hint. Framing the wait matters more
+   here than precision: a 30-90s run with no clock reads as a hang. */
+.progress-elapsed {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  color: var(--c-text-dim);
+}
+
+.progress-elapsed__clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.progress-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.progress-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  min-height: 34px;
+  border: 1px solid var(--c-border-hi);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.progress-stop:hover {
+  color: var(--c-text-strong);
+  border-color: var(--c-error, #ef4444);
+  background: color-mix(in srgb, var(--c-error, #ef4444) 10%, transparent);
+}
+
+.progress-stop:focus-visible {
+  outline: 2px solid var(--c-border-focus);
+  outline-offset: 2px;
+}
+
 .overall-progress {
   font-size: 1.5rem;
   font-weight: 800;
@@ -285,8 +345,10 @@
     gap: 10px;
     align-items: flex-start;
   }
-  .overall-progress {
-    align-self: flex-end;
+  .progress-header-actions {
+    align-self: stretch;
+    justify-content: space-between;
+    width: 100%;
   }
   .stage-header {
     flex-direction: column;

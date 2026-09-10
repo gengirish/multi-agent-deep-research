@@ -1,202 +1,113 @@
 # Design System Master File
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
-> If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
+> **SOURCE OF TRUTH:** `frontend/src/App.css` is the token layer. This file
+> documents it; it does not define it. If the two disagree, App.css wins and
+> this file is stale — fix it here.
+>
+> When building a specific page, first check `design-system/pages/[page-name].md`.
+> If that file exists, its rules **override** this file.
 
 ---
 
 **Project:** Chronicle
-**Generated:** 2026-05-08 13:47:32
-**Category:** SaaS (General)
+**Category:** SaaS — AI research copilot
+**Last reconciled against code:** 2026-09-10
 
 ---
 
-## Global Rules
+## How the palette is structured
 
-### Color Palette
+Chronicle ships **two complete palettes** (dark default, light via
+`[data-theme="light"]`), and the light one is **not a mechanical inversion**.
+Three things change character between them, which is the single most important
+thing to understand before touching color:
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
-| Secondary | `#334155` | `--color-secondary` |
-| CTA/Accent | `#0369A1` | `--color-cta` |
-| Background | `#F8FAFC` | `--color-background` |
-| Text | `#020617` | `--color-text` |
+1. **Elevated surfaces flip from translucent to opaque.** On dark,
+   `--c-surface-*` are white washes that lift a surface off the background. A
+   white wash over white is invisible, so on light they become solid slate
+   tints that get *darker* as they rise — the opposite direction.
+2. **Text darkens past the naive mirror.** The muted greys that read fine on
+   dark fail WCAG AA on white. Body text on light is `#334155` (~10:1).
+3. **Accents deepen.** `#818cf8` carries a dark ground but reaches only ~2.6:1
+   on white, so light mode uses the 500/600 steps.
 
-**Color Notes:** Professional navy + blue CTA
+**The rule this implies:** components pick a surface step by **meaning** ("how
+raised is this?"), never by copying an alpha value. Hardcoding
+`rgba(255,255,255,0.03)` is what breaks light mode.
 
-### Typography
+### Brand accents
 
-- **Heading Font:** Plus Jakarta Sans
-- **Body Font:** Plus Jakarta Sans
-- **Mood:** friendly, modern, saas, clean, approachable, professional
-- **Google Fonts:** [Plus Jakarta Sans + Plus Jakarta Sans](https://fonts.google.com/share?selection.family=Plus+Jakarta+Sans:wght@300;400;500;600;700)
+| Role | Dark | Light | Token |
+|------|------|-------|-------|
+| Accent | `#818cf8` | `#4f46e5` | `--c-accent` |
+| Accent 2 | `#38bdf8` | `#0369a1` | `--c-accent-2` |
+| Accent strong | `#6366f1` | `#4338ca` | `--c-accent-strong` |
+| Accent deep | `#0ea5e9` | `#0369a1` | `--c-accent-deep` |
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-```
+Brand gradient: indigo → sky, via `--c-gradient-brand` (surfaces) and
+`--c-gradient-brand-text` (clipped text). Never rebuild these inline.
 
-### Spacing Variables
+### Surfaces and text
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
+Elevation ladder `--c-surface-1` … `--c-surface-7`. App chrome (sidebar, top
+bar) uses `--c-bg-chrome`; sunken wells (code blocks, dialog bodies) use
+`--c-bg-sunken`. Text runs `--c-text-strong` / `--c-text` / `--c-text-subtle` /
+`--c-text-muted` / `--c-text-dim`, plus `--c-text-on-accent`.
 
-### Shadow Depths
+Borders are `--c-border` / `--c-border-hi`, with `--c-border-focus` reserved
+for focus rings. On light these are **solid**, not alpha — an alpha-white
+border is invisible on white.
 
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+### Semantic colors
 
----
-
-## Component Specs
-
-### Buttons
-
-```css
-/* Primary Button */
-.btn-primary {
-  background: #0369A1;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #F8FAFC;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #0F172A;
-  outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
+`--c-success`, `--c-warning`, `--c-error`, `--c-info`, each with matching
+`-text`, `-bg` and `-border` variants. Use the trio together rather than
+tinting a semantic hue by hand.
 
 ---
 
-## Style Guidelines
+## Typography
 
-**Style:** Flat Design
-
-**Keywords:** 2D, minimalist, bold colors, no shadows, clean lines, simple shapes, typography-focused, modern, icon-heavy
-
-**Best For:** Web apps, mobile apps, cross-platform, startup MVPs, user-friendly, SaaS, dashboards, corporate
-
-**Key Effects:** No gradients/shadows, simple hover (color/opacity shift), fast loading, clean transitions (150-200ms ease), minimal icons
-
-### Page Pattern
-
-**Pattern Name:** Hero + Features + CTA
-
-- **CTA Placement:** Above fold
-- **Section Order:** Hero > Features > CTA
+- **Headings & body:** Plus Jakarta Sans, via `var(--font-jakarta)` with a
+  `var(--font-inter)` → Inter → system fallback chain.
+- **Mono:** JetBrains Mono, via `var(--font-jetbrains-mono)`.
+- Fonts are loaded through `next/font` in `frontend/app/layout.tsx`. Do **not**
+  add a Google Fonts `@import` — it would fetch a second copy and cost a
+  render-blocking round trip.
 
 ---
 
-## Anti-Patterns (Do NOT Use)
+## Spacing
 
-- ❌ Excessive animation
-- ❌ Dark mode by default
+There is **no `--space-*` token scale** in this codebase. Spacing is written as
+literal `rem`/`px` values in component CSS. Do not write `var(--space-md)` —
+it resolves to nothing.
 
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
+If a scale is wanted later, it must be added to `App.css` first, then adopted;
+until then, follow the values already used by neighbouring components
+(commonly `4 / 8 / 12 / 14 / 18 / 20 / 24px`).
 
 ---
 
-## Pre-Delivery Checklist
+## Motion and accessibility
 
-Before delivering any UI code, verify:
+- Every animation must have a `@media (prefers-reduced-motion: reduce)` escape.
+  27 stylesheets already honor this; a new one without it is a regression.
+- Interactive controls carry a visible `:focus-visible` ring built from
+  `--c-border-focus`.
+- Touch targets: `min-height` of at least 34px on compact controls, 44px on
+  primary actions.
+- Live regions (`aria-live`) must not contain per-second updates — a ticking
+  clock inside one drowns out the messages that matter. Mark such elements
+  `aria-hidden` and let the semantic text carry the meaning.
+- Light-mode text tokens are chosen to clear 4.5:1 on `--c-bg`. Introducing a
+  new light-mode text color means checking that ratio.
 
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+---
+
+## Components
+
+Component CSS lives next to the component (`Foo.tsx` + `Foo.css`) and consumes
+tokens only. Buttons, cards, inputs and dialogs already have established
+treatments in `App.css` and the per-component files — read the nearest existing
+example before inventing a new one.

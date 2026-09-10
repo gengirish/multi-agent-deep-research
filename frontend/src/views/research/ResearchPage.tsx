@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { ResearchForm } from "../../components/ResearchForm";
@@ -31,11 +32,16 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
   const [results, setResults] = useState<ResearchData | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [shareId, setShareId] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const urlQuery = searchParams?.get("q") ?? "";
   const seededRef = useRef(false);
+  // The query actually in flight — `initialQuery` is a prop and goes stale as
+  // soon as the user edits the form, so Retry cannot rely on it.
+  const lastQueryRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
   const {
     stages,
     startStage,
@@ -56,10 +62,17 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
   const startedStages = new Set<number>();
 
   const handleStreamingResearch = async (q: string) => {
+    // Detach any previous run before starting a new one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    lastQueryRef.current = q;
     setLoading(true);
     setResults(null);
     setError(null);
     setShareId(null);
+    setCancelled(false);
     resetStages();
     startedStages.clear();
 
@@ -89,6 +102,7 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
           }
         },
         onComplete: (data) => {
+          if (controller.signal.aborted) return;
           completeStage(0, "✓ Retrieved sources");
           completeStage(1, "✓ Enrichment complete");
           completeStage(2, "✓ Analysis complete");
@@ -99,6 +113,7 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
           setLoading(false);
         },
         onError: (err) => {
+          if (controller.signal.aborted) return;
           if (startedStages.size > 0) {
             const lastStartedIndex = Math.max(...Array.from(startedStages));
             errorStage(lastStartedIndex, err.message);
@@ -107,8 +122,9 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
           setError(err);
           setLoading(false);
         },
-      });
+      }, controller.signal);
     } catch (err) {
+      if (controller.signal.aborted) return;
       const errorObj = err instanceof Error ? err : new Error("Unknown error");
       setError(errorObj);
       setLoading(false);
@@ -116,10 +132,28 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
   };
 
   const handleRetry = () => {
-    if (initialQuery) {
-      handleStreamingResearch(initialQuery);
+    const q = lastQueryRef.current || initialQuery;
+    if (q.trim()) {
+      handleStreamingResearch(q);
     }
   };
+
+  // Stop watching the stream. There is no server-side cancel, so the worker
+  // finishes and the report still lands in History.
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setLoading(false);
+    setCancelled(true);
+  };
+
+  // Close the stream if the user navigates away mid-run.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (seededRef.current) return;
@@ -161,7 +195,17 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({
         onQueryChange={onQueryChange}
       />
 
-      {loading && <ResearchProgress stages={stages} />}
+      {loading && (
+        <ResearchProgress stages={stages} onCancel={handleCancel} />
+      )}
+
+      {cancelled && !loading && (
+        <p className="research-cancelled" role="status">
+          Stopped watching this run. The agents keep working — the finished
+          report will show up in{" "}
+          <Link href="/history">History</Link>.
+        </p>
+      )}
 
       {results && !loading && (
         <ResearchResults data={results} shareId={shareId ?? undefined} />

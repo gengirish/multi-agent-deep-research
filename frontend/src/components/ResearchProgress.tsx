@@ -1,15 +1,36 @@
 "use client";
 
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { ProgressStage } from '../hooks/useResearchProgress'
 import { Icon } from './icons'
 import './ResearchProgress.css'
 
 interface Props {
   stages: ProgressStage[]
+  /** Detach from the stream. Omit to hide the stop control. */
+  onCancel?: () => void
 }
 
-export const ResearchProgress: React.FC<Props> = ({ stages }) => {
+/**
+ * Observed median for a five-agent run. Used only to frame the wait — we
+ * never show a countdown, because overrunning a promised number reads worse
+ * than showing no number at all.
+ */
+const TYPICAL_RUN_SECONDS = 60
+
+export const ResearchProgress: React.FC<Props> = ({ stages, onCancel }) => {
+  // Elapsed clock. The panel mounts when the run starts and unmounts when it
+  // ends, so mount time is the run's start time.
+  const startedAtRef = useRef<number>(Date.now())
+  const [elapsedMs, setElapsedMs] = useState(0)
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setElapsedMs(Date.now() - startedAtRef.current)
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
   const getStatusColor = (status: ProgressStage['status']) => {
     switch (status) {
       case 'complete':
@@ -45,6 +66,16 @@ export const ResearchProgress: React.FC<Props> = ({ stages }) => {
     return `${seconds}s`
   }
 
+  const formatClock = (ms: number) => {
+    const total = Math.floor(ms / 1000)
+    const mins = Math.floor(total / 60)
+    const secs = total % 60
+    return `${mins}:${String(secs).padStart(2, '0')}`
+  }
+
+  const elapsedSeconds = Math.floor(elapsedMs / 1000)
+  const runningLong = elapsedSeconds > TYPICAL_RUN_SECONDS * 2
+
   return (
     <section
       className="research-progress"
@@ -53,12 +84,40 @@ export const ResearchProgress: React.FC<Props> = ({ stages }) => {
       aria-live="polite"
     >
       <div className="progress-header">
-        <h2>Research in Progress</h2>
-        <span className="overall-progress">
-          {Math.round(
-            stages.reduce((acc, s) => acc + s.progress, 0) / stages.length
-          )}%
-        </span>
+        <div className="progress-heading">
+          <h2>Research in Progress</h2>
+          <p className="progress-elapsed">
+            {/* Ticks every second inside an aria-live region — announcing it
+                would drown out the stage messages, so keep it visual. */}
+            <span className="progress-elapsed__clock" aria-hidden="true">
+              {formatClock(elapsedMs)}
+            </span>
+            <span className="progress-elapsed__hint">
+              {runningLong
+                ? 'longer than usual — still running'
+                : `most runs finish in about ${TYPICAL_RUN_SECONDS}s`}
+            </span>
+          </p>
+        </div>
+
+        <div className="progress-header-actions">
+          <span className="overall-progress">
+            {Math.round(
+              stages.reduce((acc, s) => acc + s.progress, 0) / stages.length
+            )}%
+          </span>
+          {onCancel && (
+            <button
+              type="button"
+              className="progress-stop"
+              onClick={onCancel}
+              title="Stop watching. The agents keep working and the report lands in History."
+            >
+              <Icon name="close" size={13} />
+              Stop
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="stages-container">

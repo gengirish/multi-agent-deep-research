@@ -724,3 +724,22 @@ button[disabled] {
     transition: none !important;
   }
 }
+
+/* Shown after the user stops watching a run from ResearchProgress. The job
+   itself keeps going server-side, so this reads as an FYI, not an error. */
+.research-cancelled {
+  margin: 1.5rem 0;
+  padding: 0.875rem 1.125rem;
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-accent);
+  border-radius: 10px;
+  background: var(--c-surface-2);
+  color: var(--c-text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.research-cancelled a {
+  color: var(--c-accent);
+  font-weight: 600;
+}
