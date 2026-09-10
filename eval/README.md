@@ -11,10 +11,58 @@ pip install requests python-dotenv
 python eval/run_eval.py                          # live API, 6 default queries
 python eval/run_eval.py --queries 3 --check-urls # also verify each cited URL resolves
 python eval/run_eval.py --mode local --baseline  # in-process, plus single-LLM ablation
+python eval/run_eval.py --mode local --research-loop ab   # A/B the iterative retriever
 ```
 
 Results land in `eval/results/eval-<label>.json` (full per-query detail) and
 `eval/results/eval-<label>.md` (summary tables).
+
+## A/B: single-shot vs the iterative retrieval loop
+
+`--research-loop` decides how the retriever runs:
+
+| Value | Behaviour |
+| --- | --- |
+| `env` (default) | Honours `RESEARCH_LOOP_ENABLED` — existing behaviour, unchanged |
+| `off` / `on` | Forces single-shot or iterative for this sweep |
+| `ab` | Runs **both** arms over the same queries and prints a comparison |
+
+```bash
+python eval/run_eval.py --mode local --research-loop ab --queries 3
+```
+
+`ab` requires `--mode local`. `RESEARCH_LOOP_ENABLED` is read when the workflow
+is constructed, so a deployed API serves whichever arm it was started with and
+cannot be switched per request.
+
+Both arms run in one process against the same query list with the same models,
+so the only thing that differs is the retrieval strategy. One workflow is built
+per arm and reused across queries — constructing one builds six agents and their
+model clients, and doing that per query made the latency figures describe the
+harness as much as the pipeline.
+
+**It doubles the sweep's cost.** Every query runs twice, and the iterative arm
+itself issues extra searches and model calls. On free tiers with daily caps,
+start with `--queries 2`.
+
+The comparison table marks each metric ✅ or ⚠️ by whether it moved in the
+better direction — with latency inverted, since a loop that takes twice as long
+is not a win. Two metrics carry no verdict on purpose: **search queries issued**
+is the loop's cost rather than a result, and **report length** is not better for
+being longer.
+
+The number that decides it is **grounding rate**, with mean credibility second.
+More sources retrieved is not on its own a reason to ship the loop — it is what
+you are paying for, not what you are buying. If grounding and credibility are
+flat while latency and query count double, the loop is not earning its cost on
+your query mix.
+
+Per-run loop detail is recorded in the JSON under `research_loop`: iterations,
+queries issued, gaps identified, why it stopped, and how many sources were found
+before compression trimmed the set (`sources_merged` vs `sources_kept`) — so a
+run that gathered 30 and kept 12 is distinguishable from one that only ever
+found 12. Captures written with `--save-payloads` are arm-prefixed, so the
+second arm does not overwrite the first.
 
 ## Metrics
 
@@ -28,6 +76,7 @@ Results land in `eval/results/eval-<label>.json` (full per-query detail) and
 | Credibility | `overall_credibility` from the credibility agent (mean score, high/medium/low counts) |
 | Contradictions | Length of `analysis.contradictions` |
 | Claim lines | Report lines of ≥8 words outside headings and the sources section |
+| Loop iterations / queries issued | `research_loop` trace from the retriever; 0 / 1 on a single-shot run |
 
 The single-LLM baseline (`--baseline`) asks one model, one prompt, no retrieval
 and no verification, for the same cited report. Its citations are scored against
