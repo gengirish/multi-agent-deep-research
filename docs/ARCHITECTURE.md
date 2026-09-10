@@ -52,6 +52,122 @@ cost audit (~$5.70/mo always-on for a single-user workload). The ARQ shim
 survives in `backend/queue/tasks.py`, so restoring a worker means adding a
 process group back to `fly.toml` and scaling it, not rewriting anything.
 
+## Retrieval: single-shot, or the iterative loop
+
+The retriever's default behaviour is one query fanned out at three channels,
+five results each. Everything downstream is bounded by that single shot: if the
+first search misses the angle the question actually needed, no later stage can
+recover it.
+
+`agents/research_loop.py` wraps the retriever in the search/reflect/search-again
+loop from LangChain's [open_deep_research](https://github.com/langchain-ai/open_deep_research)
+(MIT):
+
+```
+retrieve → reflect on what is missing → follow-up queries → retrieve
+         → merge and de-duplicate → compress to a bounded source set
+```
+
+It is **off by default**; `RESEARCH_LOOP_ENABLED=true` turns it on, and
+`ResearchWorkflow(enable_research_loop=…)` overrides the flag so both paths can
+be A/B'd in one process against the eval fixtures.
+
+Two departures from the upstream design, both about cost:
+
+- **One model call per iteration.** Reflection is the only LLM step.
+  Upstream also summarizes each source with a model call, which multiplies
+  token spend by the source count — untenable when Google's free tier is 20
+  requests/day per model. Compression here is structural (de-duplicate, rank,
+  cap), not generative.
+- **Everything is capped**, so the worst case is knowable:
+  `RESEARCH_LOOP_MAX_ITERATIONS` model calls plus
+  `MAX_ITERATIONS × FOLLOW_UPS × 3` searches. At the defaults that is 2 extra
+  model calls and 12 extra searches.
+
+De-duplication normalizes URLs (scheme, `www.`, trailing slash, tracking
+parameters) so the same document found by two queries is stored once. Every
+source carries `_query` and `_iteration`, so the report and the eval harness can
+tell which question surfaced it. Each iteration is written to the agent log like
+any other agent action — a loop that silently ran three extra searches would
+break the claim that every step is visible.
+
+The loop stops early when the model reports the sources are sufficient, when it
+returns no follow-up queries, when its response cannot be parsed, or when
+nothing was retrieved at all. That last case is deliberate: a total retrieval
+failure is a provider problem, and rewording the query cannot fix it.
+
+## Source credibility: heuristics, a model, and OpenAlex
+
+`agents/credibility.py` scored a source from three things: URL patterns
+(`.edu`, `.gov`, `arxiv.org`), the source type, and a model's opinion of the
+title and snippet. None of that can tell a 400-citation paper from a preprint
+nobody read, and none of it can see a retraction.
+
+`utils/openalex.py` adds the missing input from [OpenAlex](https://openalex.org),
+a free, key-less bibliographic index: citation count, venue and venue type,
+publication year, and the retraction flag.
+
+It is **blended, not added**. The existing heuristics already saturate — an
+arXiv paper scores 0.5 base + 0.3 academic domain + 0.2 paper type + author and
+title bonuses, clamped to 1.0 — so an additive bonus would have nowhere to go
+and the very distinction this exists to draw would stay invisible. Instead
+`OPENALEX_WEIGHT` (default 0.25) of the final score comes from the
+bibliometric score when OpenAlex has a record, which pulls an uncited preprint
+off the ceiling while leaving a well-cited journal paper at the top. Sources
+OpenAlex does not know score exactly as before. **Retraction is not a blend**:
+it floors the score outright and says so in the reasoning string.
+
+Three rules keep it from doing harm:
+
+- **Never block a run.** Timeouts, 5xx, malformed payloads and rate limits all
+  return no signal and leave the score untouched. Nothing in the module raises.
+- **Never mis-attribute.** Crediting a source with another paper's 4,000
+  citations is worse than no signal, so title matches must clear a token-overlap
+  floor. DOI and arXiv-id matches are exact and skip the check. Web and news
+  items are only looked up when they carry a DOI or an arXiv id — title-searching
+  a blog post against a bibliographic index produces confident-looking
+  mismatches.
+- **Pay the network cost once.** Lookups are cached with a TTL (misses too), and
+  the credibility agent warms them concurrently before its serial per-source
+  loop, so N papers is one batch rather than N sequential timeouts.
+
+Worth knowing: arXiv only began minting DOIs in 2022, so the id lookup 404s for
+older papers and the title search is what resolves them. Set `OPENALEX_MAILTO`
+to enter OpenAlex's polite pool — anonymous callers are rate-limited first.
+`tests/test_openalex_live.py` pins these API shapes against the real service
+and is skipped unless `OPENALEX_LIVE_TESTS=1`.
+
+## Tracing
+
+`utils/tracing.py` records a [Langfuse](https://github.com/langfuse/langfuse)
+span per pipeline stage, with per-call token counts and cost supplied by the
+LangChain callback handler that `create_llm` attaches to every model. That last
+number is the one that matters here: every default provider sits on a free tier
+with a daily cap, and logs alone can tell you a run was slow or degraded but not
+which stage burned the quota.
+
+It is off unless **both** `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are
+set. Beyond that, the module is written so it cannot cost anything it observes:
+missing package, unreachable host, or an SDK change all disable tracing for the
+process after one logged warning, and every span object degrades to a no-op that
+callers can still call `.update()` on.
+
+Langfuse has renamed the span API twice, so version detection is by capability
+rather than `__version__`:
+
+| SDK | Entry point |
+| --- | --- |
+| v2 | `client.trace(...)` → `trace.span(...)` |
+| v3 | `client.start_as_current_span(...)` |
+| v4 | `client.start_as_current_observation(name=…, as_type=…)` |
+
+Calling the v3 name against a v4 client raises `AttributeError`, which the shim
+would absorb — silently losing every trace. `tests/test_tracing.py` covers each
+branch for that reason.
+
+Because Langfuse batches and Fly can stop a container before the background
+flush fires, a finished run flushes explicitly.
+
 ## Model routing
 
 `utils/llm_config.py` owns provider selection. A model is named

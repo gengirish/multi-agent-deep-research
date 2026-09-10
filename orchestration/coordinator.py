@@ -6,8 +6,9 @@ Manages the multi-agent workflow.
 import logging
 import asyncio
 import concurrent.futures
-from typing import TypedDict, Dict, Any, List
+from typing import TypedDict, Dict, Any, List, Optional
 from langgraph.graph import StateGraph, END
+from agents.research_loop import IterativeResearchLoop, is_enabled as research_loop_enabled
 from agents.retriever import ContextualRetrieverAgent
 from agents.enrichment import DataEnrichmentAgent
 from agents.analyzer import CriticalAnalysisAgent
@@ -15,6 +16,7 @@ from agents.insight_generator import InsightGenerationAgent
 from agents.report_builder import ReportBuilderAgent
 from agents.credibility import SourceCredibilityAgent
 from agents.credibility_enhanced import EnhancedCredibilityAgent
+from utils import tracing
 from utils.agent_logger import get_agent_logger
 from utils.degraded import detect_degradation
 
@@ -57,12 +59,21 @@ MAX_STEPS = 15
 class ResearchWorkflow:
     """Orchestrates the multi-agent research workflow using LangGraph."""
     
-    def __init__(self, use_enhanced_credibility: bool = False, enable_rag: bool = False):
+    def __init__(
+        self,
+        use_enhanced_credibility: bool = False,
+        enable_rag: bool = False,
+        enable_research_loop: Optional[bool] = None,
+    ):
         """Initialize agents and build workflow graph.
         
         Args:
             use_enhanced_credibility: Use multi-dimensional credibility scoring
             enable_rag: Enable RAG indexing and semantic search
+            enable_research_loop: Route retrieval through the iterative
+                search/reflect/search-again loop. Defaults to the
+                RESEARCH_LOOP_ENABLED environment variable, which is what lets
+                the eval harness A/B the loop against single-shot retrieval.
         """
         logger.info("Initializing Research Workflow")
         
@@ -72,6 +83,25 @@ class ResearchWorkflow:
         # Initialize agents
         self.retriever = ContextualRetrieverAgent()
         self.enricher = DataEnrichmentAgent()
+
+        # Iterative retrieval. The loop wraps the retriever rather than
+        # replacing it, so turning it off restores the previous behaviour
+        # exactly — the retriever itself is untouched either way.
+        if enable_research_loop is None:
+            enable_research_loop = research_loop_enabled()
+        self.enable_research_loop = enable_research_loop
+        if self.enable_research_loop:
+            self.research_loop = IterativeResearchLoop(
+                retriever=self.retriever,
+                on_event=self._on_research_loop_event,
+            )
+            logger.info(
+                f"Iterative research loop enabled "
+                f"(max {self.research_loop.max_iterations} iteration(s), "
+                f"{self.research_loop.max_follow_ups} follow-up quer(ies) each)"
+            )
+        else:
+            self.research_loop = None
         
         # Choose credibility agent
         self.use_enhanced_credibility = use_enhanced_credibility
@@ -150,6 +180,17 @@ class ResearchWorkflow:
             logger.error(msg)
             state["error"] = msg
 
+    def _on_research_loop_event(self, event: str, payload: Dict[str, Any]) -> None:
+        """Write research-loop iterations into the visible agent trace.
+
+        The product's claim is that every step the agents take is visible and
+        replayable; a loop that silently ran three extra searches would break
+        that, so each iteration is logged like any other agent action.
+        """
+        self.agent_logger.log_agent_action(
+            "retriever", f"research_loop_{event}", output_data=payload
+        )
+
     def _retriever_node(self, state: ResearchState) -> ResearchState:
         """Retriever agent node."""
         self._bump_step(state, "retriever")
@@ -159,7 +200,24 @@ class ResearchWorkflow:
                 "retriever", "retrieve", 
                 input_data={"query": state["query"]}
             )
-            sources = self.retriever.retrieve(state["query"])
+            with tracing.span(
+                "retrieval",
+                {"iterative": bool(self.research_loop), "query": state["query"]},
+                as_type="retriever",
+            ) as retrieval_span:
+                if self.research_loop is not None:
+                    sources = self.research_loop.run(state["query"])
+                else:
+                    sources = self.retriever.retrieve(state["query"])
+                retrieval_span.update(
+                    output={
+                        "counts": {
+                            channel: len(sources.get(channel, []))
+                            for channel in ("web", "papers", "news")
+                        },
+                        "research_loop": sources.get("research_loop"),
+                    }
+                )
             state["sources"] = sources
             self.agent_logger.log_agent_action(
                 "retriever", "retrieve",
@@ -183,7 +241,8 @@ class ResearchWorkflow:
         try:
             logger.info("Workflow: Running Enricher")
             self.agent_logger.log_agent_action("enricher", "enrich_sources")
-            enriched_sources = self.enricher.enrich_sources(state["sources"])
+            with tracing.span("enrichment"):
+                enriched_sources = self.enricher.enrich_sources(state["sources"])
             state["sources"] = enriched_sources
             self.agent_logger.log_agent_action("enricher", "enrich_sources", output_data={"status": "success"})
             logger.info("Workflow: Enricher completed")
@@ -270,17 +329,18 @@ class ResearchWorkflow:
             
             # Run the async parallel execution
             # Check if there's already an event loop running
-            try:
-                loop = asyncio.get_running_loop()
-                # If loop exists, we need to use a different approach
-                # Create a new event loop in a thread
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, run_parallel())
-                    credibility_results, analysis_results = future.result()
-            except RuntimeError:
-                # No event loop running, safe to use asyncio.run
-                credibility_results, analysis_results = asyncio.run(run_parallel())
-            
+            with tracing.span("credibility+analysis"):
+                try:
+                    loop = asyncio.get_running_loop()
+                    # If loop exists, we need to use a different approach
+                    # Create a new event loop in a thread
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(asyncio.run, run_parallel())
+                        credibility_results, analysis_results = future.result()
+                except RuntimeError:
+                    # No event loop running, safe to use asyncio.run
+                    credibility_results, analysis_results = asyncio.run(run_parallel())
+
             # Update state with results
             state["credibility"] = credibility_results
             state["analysis"] = analysis_results
@@ -328,10 +388,11 @@ class ResearchWorkflow:
         try:
             logger.info("Workflow: Running Insight Generator")
             self.agent_logger.log_agent_action("insight_generator", "generate")
-            insights = self.insight_generator.generate(
-                state["analysis"],
-                state["query"]
-            )
+            with tracing.span("insight"):
+                insights = self.insight_generator.generate(
+                    state["analysis"],
+                    state["query"]
+                )
             state["insights"] = insights
             self.agent_logger.log_agent_action(
                 "insight_generator", "generate",
@@ -359,12 +420,13 @@ class ResearchWorkflow:
         try:
             logger.info("Workflow: Running Report Builder")
             self.agent_logger.log_agent_action("report_builder", "compile")
-            report = self.report_builder.compile(
-                state["query"],
-                state["sources"],
-                state["analysis"],
-                state["insights"]
-            )
+            with tracing.span("report"):
+                report = self.report_builder.compile(
+                    state["query"],
+                    state["sources"],
+                    state["analysis"],
+                    state["insights"]
+                )
             state["report"] = report
             self.agent_logger.log_agent_action(
                 "report_builder", "compile",
@@ -392,7 +454,38 @@ class ResearchWorkflow:
         
         # Start conversation logging
         self.agent_logger.start_conversation(query)
-        
+
+        with tracing.research_trace(
+            "chronicle.research",
+            query,
+            metadata={
+                "research_loop": bool(self.research_loop),
+                "enhanced_credibility": self.use_enhanced_credibility,
+                "rag": self.enable_rag,
+            },
+        ) as run_span:
+            result = self._execute(query)
+            run_span.update(
+                output={
+                    "report_chars": len(result.get("report") or ""),
+                    "degraded": result.get("degraded") or [],
+                    "error": result.get("error") or "",
+                    "research_loop": (result.get("sources") or {}).get("research_loop"),
+                }
+            )
+
+        # Langfuse batches events in the background and Fly can stop a
+        # container before that batch is sent, so a finished run pushes
+        # explicitly rather than hoping the process lives long enough.
+        tracing.flush()
+        return result
+
+    def _execute(self, query: str) -> Dict[str, Any]:
+        """Run the compiled graph and assemble the result dict.
+
+        Split out of `run()` so the trace wraps the whole execution — including
+        the failure path — without another level of nesting inside it.
+        """
         initial_state: ResearchState = {
             "query": query,
             "sources": {},

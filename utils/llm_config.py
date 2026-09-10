@@ -358,6 +358,36 @@ def _with_free_fallback(
         return llm
 
 
+def _with_tracing(llm: Any, model: str):
+    """Attach the Langfuse callback handler, when tracing is configured.
+
+    This is the layer that turns spans into *useful* spans: the handler is what
+    records prompt/completion tokens and computed cost per call, which is the
+    number that matters when every default provider sits on a free tier with a
+    daily cap. No keys or no `langfuse` package means `get_callback_handler()`
+    returns None and the model is returned untouched.
+
+    Applied after fallbacks are attached so that a fallback invocation is
+    traced too — otherwise the runs that cost the most are the ones missing
+    from the dashboard.
+    """
+    if llm is None:
+        return llm
+    try:
+        from utils.tracing import get_callback_handler
+
+        handler = get_callback_handler()
+        if handler is None:
+            return llm
+        return llm.with_config(
+            {"callbacks": [handler], "metadata": {"chronicle_model": model}}
+        )
+    except Exception as e:
+        # Observability is never allowed to cost us the model.
+        logger.warning(f"Could not attach tracing to {model}: {e}")
+        return llm
+
+
 def _with_error_logging(fallback: Any, model: str):
     """Make the fallback's own failures visible.
 
@@ -443,11 +473,13 @@ def create_llm(
     if builder is not None:
         llm = builder(native_name, temperature, max_tokens)
         if llm is not None:
-            return _with_free_fallback(llm, model_name_full, temperature, max_tokens)
+            llm = _with_free_fallback(llm, model_name_full, temperature, max_tokens)
+            return _with_tracing(llm, model_name_full)
         # Fall through to OpenRouter with the fully-qualified name
 
     llm = _build_openrouter(model_name_full, temperature, max_tokens)
-    return _with_free_fallback(llm, model_name_full, temperature, max_tokens)
+    llm = _with_free_fallback(llm, model_name_full, temperature, max_tokens)
+    return _with_tracing(llm, model_name_full)
 
 
 # ---------------------------------------------------------------------------

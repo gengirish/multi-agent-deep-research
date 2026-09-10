@@ -13,6 +13,7 @@ from utils.llm_config import (
     TEMPERATURES,
     message_text,
 )
+from utils import openalex
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,14 @@ class SourceCredibilityAgent:
             "news": [],
             "overall_credibility": {}
         }
-        
+
+        # Warm the OpenAlex cache before the serial loops below. Each source is
+        # evaluated one at a time, so without this an N-paper run pays N
+        # sequential round-trips on the critical path instead of one concurrent
+        # batch. Only sources OpenAlex can plausibly resolve are included: every
+        # paper, plus any web or news item carrying a DOI or arXiv id.
+        self._prefetch_bibliographic_signals(sources)
+
         # Evaluate web sources
         if sources.get("web"):
             for source in sources["web"]:
@@ -102,6 +110,49 @@ class SourceCredibilityAgent:
         
         return credibility_results
     
+    def _prefetch_bibliographic_signals(self, sources: Dict[str, Any]) -> None:
+        """Concurrently warm OpenAlex lookups for resolvable sources."""
+        if not openalex.is_enabled():
+            return
+
+        candidates: List[Dict[str, Any]] = list(sources.get("papers") or [])
+        for source_type in ("web", "news"):
+            for source in sources.get(source_type) or []:
+                url = source.get("url", "")
+                if openalex.extract_doi(url) or openalex.extract_arxiv_id(url):
+                    candidates.append(source)
+
+        if not candidates:
+            return
+        warmed = openalex.prefetch(candidates)
+        logger.info(f"Credibility Agent: warmed {warmed} OpenAlex lookup(s)")
+
+    def _bibliographic_work(
+        self, source: Dict[str, Any], source_type: str, **kwargs
+    ) -> Optional[Dict[str, Any]]:
+        """Look this source up in OpenAlex, if it is the kind that resolves.
+
+        A paper is looked up by title; a web or news item only when it carries
+        a DOI or arXiv id, because title-searching a blog post against a
+        bibliographic index produces confident-looking mismatches rather than
+        signal.
+        """
+        if not openalex.is_enabled():
+            return None
+
+        url = kwargs.get("url", source.get("url", ""))
+        resolvable = source_type == "paper" or bool(
+            openalex.extract_doi(url) or openalex.extract_arxiv_id(url)
+        )
+        if not resolvable:
+            return None
+
+        return openalex.lookup(
+            title=kwargs.get("title", source.get("title", "")),
+            url=url,
+            extra_text=kwargs.get("summary") or kwargs.get("snippet") or "",
+        )
+
     def _evaluate_source(self, source: Dict[str, Any], source_type: str, **kwargs) -> Dict[str, Any]:
         """Evaluate a single source's credibility.
         
@@ -129,7 +180,19 @@ class SourceCredibilityAgent:
             # rather than being averaged against a placeholder, which used to
             # drag every source into a narrow band around 0.5.
             final_score = heuristic_score
-        
+
+        # Bibliographic evidence, where OpenAlex has any. This is the only
+        # input to the score that is neither a URL pattern nor a model's
+        # opinion: citation count, venue type and the retraction flag are
+        # facts about how the work was received. It is blended in at
+        # OPENALEX_WEIGHT rather than added, because the heuristic above
+        # saturates at 1.0 for anything on an academic domain and an additive
+        # bonus would leave a 400-citation paper indistinguishable from a
+        # preprint nobody read.
+        pre_openalex_score = final_score
+        work = self._bibliographic_work(source, source_type, **kwargs)
+        final_score, openalex_reasons, retracted = openalex.apply_to_score(final_score, work)
+
         # Determine credibility level
         if final_score >= 0.8:
             level = "High"
@@ -140,6 +203,10 @@ class SourceCredibilityAgent:
         else:
             level = "Very Low"
         
+        reasoning = self._generate_reasoning(source, source_type, final_score, level)
+        if openalex_reasons:
+            reasoning = "; ".join([reasoning, *openalex_reasons])
+
         return {
             "source": source,
             "score": round(final_score, 2),
@@ -147,7 +214,10 @@ class SourceCredibilityAgent:
             "heuristic_score": round(heuristic_score, 2),
             "llm_score": round(llm_score, 2) if llm_score is not None else None,
             "llm_scored": llm_score is not None,
-            "reasoning": self._generate_reasoning(source, source_type, final_score, level),
+            "openalex": work,
+            "score_before_openalex": round(pre_openalex_score, 2) if work else None,
+            "retracted": retracted,
+            "reasoning": reasoning,
             "source_type": source_type
         }
     

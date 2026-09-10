@@ -50,6 +50,12 @@ python-dotenv>=1.0.0
 typing-extensions>=4.8.0
 openai>=1.40.0
 
+# Observability (optional at runtime — utils/tracing degrades to a no-op
+# without it, and stays off entirely unless LANGFUSE_* keys are set. Installed
+# by default so enabling tracing in production is an env-var change rather
+# than an image rebuild.)
+langfuse>=2.0.0
+
 # Optional: RAG and vector search features
 # Uncomment to enable semantic search capabilities
 # chromadb>=0.4.0
