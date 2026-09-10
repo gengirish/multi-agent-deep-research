@@ -11,6 +11,7 @@ Run:  pytest tests/test_openalex.py
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -299,7 +300,9 @@ def test_citations_raise_the_bibliometric_score_on_a_log_scale():
         work = openalex._parse_work(_work(cited_by_count=count, primary_location={}), "doi")
         return openalex.bibliometric_score(work)[0]
 
-    assert score_for(0) == 0.5
+    # _work() defaults to 2017, well past the grace period, so nought citations
+    # there is a real signal and costs the uncited penalty.
+    assert score_for(0) == pytest.approx(0.5 - openalex.OPENALEX_UNCITED_PENALTY)
     assert 0.5 < score_for(10) < score_for(100) < score_for(1000)
 
     # A log scale pays roughly the same per decade, which is the intent: the
@@ -390,3 +393,128 @@ def test_the_blend_weight_bounds_how_far_the_signal_can_move_a_score():
             primary_location={"source": {"display_name": "Nature", "type": "journal"}}), "doi")
     )[0]
     assert best_case <= openalex.OPENALEX_WEIGHT + 1e-9
+
+
+# -- citation age (the preprint-penalty fix) ---------------------------------
+
+def _dated(months_ago: float, citations: int = 0, venue_type: str = "repository"):
+    """A work whose publication_date is `months_ago` months in the past."""
+    published = datetime.now(timezone.utc) - timedelta(days=months_ago * 30.44)
+    return openalex._parse_work(
+        _work(
+            cited_by_count=citations,
+            publication_year=published.year,
+            publication_date=published.strftime("%Y-%m-%d"),
+            primary_location={"source": {"display_name": "arXiv", "type": venue_type}},
+        ),
+        "doi",
+    )
+
+
+def test_a_brand_new_uncited_paper_is_not_penalised_for_it():
+    """A paper published two months ago is uncited by arithmetic, not neglect."""
+    score, reasons = openalex.bibliometric_score(_dated(2))
+
+    assert "too recent to judge by citations" in " ".join(reasons)
+    # Neutral on the citation axis: only the preprint deduction applies.
+    assert score == pytest.approx(0.5 - 0.05)
+
+
+def test_a_paper_that_had_time_and_was_ignored_is_penalised():
+    score, reasons = openalex.bibliometric_score(_dated(48))
+
+    # Month count is not asserted exactly: the age is computed from a real
+    # timestamp and truncated, so 48 months back reads as 47 or 48.
+    assert "no citations after" in " ".join(reasons)
+    assert score == pytest.approx(0.5 - 0.05 - openalex.OPENALEX_UNCITED_PENALTY)
+
+
+def test_new_and_ignored_are_no_longer_the_same_thing():
+    """The regression this fixes.
+
+    Before, both of these scored identically — the 2-month-old preprint was
+    marked down exactly as hard as one that had four years to be read and
+    wasn't. For a product whose users ask what the *latest* techniques are,
+    that ranked the newest work last.
+    """
+    fresh = openalex.apply_to_score(1.0, _dated(2))[0]
+    ignored = openalex.apply_to_score(1.0, _dated(48))[0]
+
+    assert fresh > ignored
+    # And the gap survives the 2dp rounding the credibility agent applies.
+    assert round(fresh, 2) > round(ignored, 2)
+
+
+def test_citations_still_beat_being_new_at_any_age():
+    """Positive evidence of reception outranks absence of evidence. A brand-new
+    paper is unproven, not proven good."""
+    fresh = openalex.apply_to_score(1.0, _dated(2))[0]
+    cited = openalex.apply_to_score(1.0, _dated(30, citations=50))[0]
+
+    assert cited > fresh
+
+
+def test_citations_count_at_any_age():
+    """Age gates the absence of citations, never their presence — a well-cited
+    new paper must not be damped for being new."""
+    score, reasons = openalex.bibliometric_score(_dated(1, citations=40))
+
+    assert "40 citations" in " ".join(reasons)
+    assert score > 0.5
+
+
+@pytest.mark.parametrize("months,expect_penalty", [(1, False), (17, False), (19, True), (60, True)])
+def test_the_grace_period_boundary(months, expect_penalty):
+    score, reasons = openalex.bibliometric_score(_dated(months))
+    penalised = "no citations after" in " ".join(reasons)
+    assert penalised is expect_penalty
+
+
+def test_an_undated_record_is_judged_neither_way():
+    work = openalex._parse_work(
+        _work(cited_by_count=0, publication_year=None, primary_location={}), "doi"
+    )
+    score, reasons = openalex.bibliometric_score(work)
+
+    assert "undated" in " ".join(reasons)
+    assert score == pytest.approx(0.5)
+
+
+def test_a_year_only_record_falls_back_to_mid_year():
+    """Taking January would age a December paper by a year; December would make
+    a January paper look brand new."""
+    year = datetime.now(timezone.utc).year - 3
+    work = openalex._parse_work(_work(publication_year=year, publication_date=None), "doi")
+    age = openalex._age_months(work)
+
+    assert age is not None
+    # Three years back, assumed mid-year: between 2.5 and 3.5 years.
+    assert 30 <= age <= 42
+
+
+def test_publication_date_wins_over_the_year():
+    recent = (datetime.now(timezone.utc) - timedelta(days=40)).strftime("%Y-%m-%d")
+    work = openalex._parse_work(
+        _work(publication_year=1999, publication_date=recent), "doi"
+    )
+    assert openalex._age_months(work) < 3
+
+
+def test_a_malformed_date_falls_back_to_the_year():
+    work = openalex._parse_work(
+        _work(publication_year=datetime.now(timezone.utc).year, publication_date="not-a-date"),
+        "doi",
+    )
+    age = openalex._age_months(work)
+    assert age is not None and age < 13
+
+
+def test_a_future_dated_record_is_treated_as_brand_new():
+    """Forthcoming issues exist; they must not come out negatively aged."""
+    future = (datetime.now(timezone.utc) + timedelta(days=200)).strftime("%Y-%m-%d")
+    work = openalex._parse_work(
+        _work(publication_date=future, publication_year=None, cited_by_count=0), "doi"
+    )
+
+    assert openalex._age_months(work) == 0.0
+    assert "too recent to judge" in " ".join(openalex.bibliometric_score(work)[1])

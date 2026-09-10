@@ -90,7 +90,9 @@ def test_citations_and_a_peer_reviewed_venue_separate_two_identical_papers(agent
     assert cited["score_before_openalex"] == ignored["score_before_openalex"] == pytest.approx(1.0)
     assert cited["score"] > ignored["score"]
     assert "800 citations" in cited["reasoning"]
-    assert "no recorded citations" in ignored["reasoning"]
+    # _work() defaults to 2023, past the grace period, so having no citations is
+    # a real signal here rather than a paper that is merely new.
+    assert "no citations after" in ignored["reasoning"]
 
 
 def test_an_uncited_preprint_is_pulled_off_the_ceiling(agent, monkeypatch):
@@ -98,7 +100,7 @@ def test_an_uncited_preprint_is_pulled_off_the_ceiling(agent, monkeypatch):
     preprint = _score_paper(agent, monkeypatch, _work(cited_by_count=0, venue_type="repository"))
 
     assert preprint["score"] < unknown["score"]
-    assert "no recorded citations" in preprint["reasoning"]
+    assert "no citations after" in preprint["reasoning"]
 
 
 def test_the_score_stays_in_range(agent, monkeypatch):
