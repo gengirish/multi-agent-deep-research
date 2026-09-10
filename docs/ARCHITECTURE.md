@@ -117,6 +117,23 @@ off the ceiling while leaving a well-cited journal paper at the top. Sources
 OpenAlex does not know score exactly as before. **Retraction is not a blend**:
 it floors the score outright and says so in the reasoning string.
 
+**Citations are read against the paper's age.** Their presence is evidence at
+any age, but their *absence* only means something once a paper has had time to
+be read. Without that split — and the first version did not have it — a preprint
+from last month scores below a mediocre paper from three years ago purely for
+being new, which is backwards for a product whose users ask what the *latest*
+techniques are. Below `OPENALEX_CITATION_GRACE_MONTHS` (18) an uncited paper
+stays neutral on that axis and the reasoning string says "too recent to judge by
+citations"; above it, the absence costs `OPENALEX_UNCITED_PENALTY` and reads "no
+citations after Nmo". So a well-cited paper still outranks a brand-new one —
+proven beats unproven — but unproven no longer scores the same as ignored.
+
+Age comes from `publication_date`, which all three match paths return; a record
+carrying only a year falls back to mid-year, since assuming January would age a
+December paper by a year and December would make a January paper look brand new.
+Future-dated records (a forthcoming issue) are treated as brand new rather than
+negatively aged.
+
 Three rules keep it from doing harm:
 
 - **Never block a run.** Timeouts, 5xx, malformed payloads and rate limits all

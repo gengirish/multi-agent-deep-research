@@ -68,5 +68,23 @@ def test_a_pre_2022_arxiv_paper_falls_through_to_title_search():
     assert work["cited_by_count"] > 1000
 
 
+def test_every_match_path_returns_a_publication_date():
+    """The citation grace period needs month precision, so a missing or
+    year-only date would silently change how new papers are scored. A year alone
+    cannot tell January from December."""
+    for kwargs in (
+        {"title": "", "url": "https://doi.org/10.1038/s41586-021-03819-2"},
+        {"title": "Mixtral of Experts", "url": "https://arxiv.org/abs/2401.04088"},
+        {"title": "Attention Is All You Need"},
+    ):
+        openalex.clear_cache()
+        work = openalex.lookup(**kwargs)
+        assert work is not None, kwargs
+        date = work.get("publication_date")
+        assert date and len(date) >= 10, f"no usable publication_date for {kwargs}: {date!r}"
+        assert openalex._age_months(work) is not None
+        time.sleep(1.0)
+
+
 def test_an_unpublished_business_question_matches_nothing():
     assert openalex.lookup(title="Market sizing for vertical SaaS in India 2026") is None

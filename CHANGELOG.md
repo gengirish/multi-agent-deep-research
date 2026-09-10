@@ -2,6 +2,41 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-10 — Credibility: judge citations against a paper's age
+
+- **Fixed a flaw introduced by the entry below.** The citation signal treated
+  "no citations" as evidence of being ignored, regardless of when the paper was
+  published. A paper published two months ago has no citations because nobody
+  has had time to cite it — so the newest work was marked down exactly as hard
+  as work that had years to be read and wasn't. In the production verification
+  run the 2026 preprints scored *below* a 2024 paper, purely for being new. For
+  a product whose users ask what the **latest** techniques are, that ranked the
+  answer last.
+- **Citations now count at any age; their absence only counts once the paper has
+  had time.** Below `OPENALEX_CITATION_GRACE_MONTHS` (18) an uncited paper stays
+  neutral on that axis and the reasoning reads "too recent to judge by
+  citations". Above it, the absence costs `OPENALEX_UNCITED_PENALTY` (0.08) and
+  reads "no citations after Nmo". Presence of citations was never gated — a
+  well-cited new paper must not be damped for being new.
+- The ordering this produces, on the five papers from run `1e644543`: well-cited
+  work on top (proven beats unproven), brand-new work in the middle (unproven,
+  but no longer punished), and long-ignored work at the bottom. Holding the
+  pre-OpenAlex score constant, a 2-month-old preprint now scores 0.68 where an
+  identical paper from 2019 scores 0.66; before this change both scored 0.66.
+  The gap survives the 2dp rounding the credibility agent applies.
+- **Age comes from `publication_date`, not the year.** A year alone cannot tell
+  January from December, which is half the grace period. The field is now
+  requested explicitly, and a live contract test asserts all three match paths
+  (DOI, arXiv id, title search) return it — a silent regression to year-only
+  precision would quietly change how every new paper scores. Records carrying
+  only a year fall back to mid-year, the least-wrong single point: January would
+  age a December paper by a year, December would make a January paper look brand
+  new. Future-dated records — a journal's forthcoming issue — are treated as
+  brand new rather than negatively aged.
+- 14 new tests, including the regression itself (new and ignored must not score
+  alike), the grace boundary at 17 vs 19 months, and that citations still beat
+  recency so the fix does not over-correct into rewarding novelty.
+
 ## 2026-09-10 — Credibility: bibliographic signals from OpenAlex
 
 - **The credibility agent can now see how a paper was received.** It scored a
@@ -48,12 +83,9 @@ Notable changes, newest first. Dates are commit dates.
   for older papers and the title search is what resolves them.
   `tests/test_openalex_live.py` pins these API shapes against the real service
   and is skipped unless `OPENALEX_LIVE_TESTS=1`.
-- **Known flaw, not yet fixed.** A paper published this year cannot have
-  citations yet, so the citation signal conflates "new" with "ignored": in the
-  verification run the 2026 preprints scored *below* a 2024 paper with 18
-  citations. For a founder asking what the latest techniques are, that is
-  backwards. The fix is to damp the citation component for papers under roughly
-  18 months old, so recency is neutral rather than punished.
+- **Known flaw, fixed the same day** — see the entry above. A paper published
+  this year cannot have citations yet, so the first version of the citation
+  signal conflated "new" with "ignored".
 - `agents/credibility_enhanced.py` does not get the signal — only the standard
   agent, which is the default.
 

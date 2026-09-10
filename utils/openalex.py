@@ -5,7 +5,11 @@ The credibility agent scores a source from the URL, the title and a model's
 opinion of them. None of that can tell a paper with 400 citations apart from a
 preprint nobody read, and none of it can see a retraction. OpenAlex can: it is
 a free, key-less bibliographic index (~250M works) that returns citation
-counts, venue, open-access status and a retraction flag.
+counts, venue, publication date, open-access status and a retraction flag.
+
+Citations are read against the paper's age: their absence is only evidence
+once a paper has had time to be read (`OPENALEX_CITATION_GRACE_MONTHS`),
+because a preprint from last month is uncited by arithmetic, not by neglect.
 
 Design constraints this module exists under:
 
@@ -221,6 +225,9 @@ def _parse_work(raw: Dict[str, Any], matched_by: str) -> Optional[Dict[str, Any]
         # "not known to be retracted" rather than as a failure.
         "is_retracted": bool(raw.get("is_retracted")),
         "publication_year": raw.get("publication_year"),
+        # Month-level precision matters for the citation grace period; a year
+        # alone cannot tell January from December.
+        "publication_date": raw.get("publication_date"),
         "venue": venue.get("display_name"),
         # "journal" | "conference" | "repository" | "ebook platform" | ...
         "venue_type": venue.get("type"),
@@ -264,7 +271,8 @@ def _lookup_uncached(
             "per-page": "3",
             "select": (
                 "id,doi,title,display_name,cited_by_count,is_retracted,"
-                "publication_year,primary_location,open_access,referenced_works"
+                "publication_year,publication_date,primary_location,"
+                "open_access,referenced_works"
             ),
         },
     )
@@ -372,13 +380,63 @@ def clear_cache() -> None:
 OPENALEX_WEIGHT = float(os.getenv("OPENALEX_WEIGHT", "0.25"))
 RETRACTED_SCORE = 0.05
 
+# How long a paper is given to accumulate citations before their absence counts
+# as evidence of anything. A paper published two months ago has no citations
+# because nobody has had time to cite it, not because it was ignored — and this
+# product's users ask what the *latest* techniques are, so penalising the newest
+# work is backwards. Below this age "uncited" reads as no information; above it,
+# as a real signal.
+OPENALEX_CITATION_GRACE_MONTHS = float(
+    os.getenv("OPENALEX_CITATION_GRACE_MONTHS", "18")
+)
+# Applied only to work that has had the grace period and still has no citations.
+OPENALEX_UNCITED_PENALTY = float(os.getenv("OPENALEX_UNCITED_PENALTY", "0.08"))
+
+_DAYS_PER_MONTH = 30.44
+
+
+def _age_months(work: Dict[str, Any]) -> Optional[float]:
+    """How old the work is, in months. None when the record does not say.
+
+    Prefers `publication_date`; falls back to mid-year when only the year is
+    known, which is the least-wrong single point to assume — taking January
+    would age a December paper by a year, and December would make a January
+    paper look brand new.
+    """
+    published: Optional[datetime] = None
+
+    date_str = work.get("publication_date")
+    if isinstance(date_str, str) and date_str:
+        try:
+            published = datetime.strptime(date_str[:10], "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
+        except ValueError:
+            published = None
+
+    if published is None:
+        year = work.get("publication_year")
+        if not isinstance(year, int):
+            return None
+        try:
+            published = datetime(year, 7, 1, tzinfo=timezone.utc)
+        except ValueError:
+            return None
+
+    days = (datetime.now(timezone.utc) - published).days
+    # Future-dated records exist (a journal's forthcoming issue). Treat those as
+    # brand new rather than negatively aged.
+    return max(0.0, days / _DAYS_PER_MONTH)
+
 
 def bibliometric_score(work: Dict[str, Any]) -> Tuple[float, List[str]]:
     """Score a work on its bibliographic record alone, 0.0-1.0.
 
     0.5 is "indexed, but the record says nothing either way". Everything below
-    is evidence of weakness (uncited, unreviewed, very old) and everything
-    above is evidence of reception (citations, a peer-reviewed venue).
+    is evidence of weakness (ignored despite having had time, unreviewed, very
+    old) and everything above is evidence of reception (citations, a
+    peer-reviewed venue). A paper too new to have been cited stays at neutral
+    on that axis rather than being marked down for it.
     """
     score = 0.5
     reasons: List[str] = []
@@ -386,12 +444,29 @@ def bibliometric_score(work: Dict[str, Any]) -> Tuple[float, List[str]]:
     # Citations on a log scale: the interesting distinction is 0 vs 10 vs 100,
     # not 900 vs 1000, and a linear scale would let one famous paper swamp
     # every other credibility input.
+    #
+    # Their *absence* is read against the paper's age. Citations are positive
+    # evidence whenever they exist, at any age; having none only means something
+    # once the paper has had time to be read. Without that split a paper
+    # published last month scores below a mediocre one from three years ago
+    # purely for being new, which is backwards for a product whose users ask
+    # what the latest techniques are.
     citations = int(work.get("cited_by_count") or 0)
+    age_months = _age_months(work)
+
     if citations > 0:
         score += min(0.35, 0.12 * math.log10(1 + citations))
         reasons.append(f"{citations} citations (OpenAlex)")
+    elif age_months is None:
+        # Undated and uncited: no basis for either reading.
+        reasons.append("no recorded citations (undated)")
+    elif age_months < OPENALEX_CITATION_GRACE_MONTHS:
+        reasons.append(
+            f"too recent to judge by citations ({int(age_months)}mo old, uncited)"
+        )
     else:
-        reasons.append("no recorded citations")
+        score -= OPENALEX_UNCITED_PENALTY
+        reasons.append(f"no citations after {int(age_months)}mo")
 
     venue_type = (work.get("venue_type") or "").lower()
     venue_name = work.get("venue")
