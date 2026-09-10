@@ -62,6 +62,21 @@ Five specialized agents, orchestrated as a [LangGraph](https://github.com/langch
 | **Insight**        | Turns claims into hypotheses, trend chains, and reasoning steps.             |
 | **Report builder** | Compiles everything into a structured, cited markdown report.                |
 
+Retrieval has two modes. By default the retriever fires one query at three
+channels and stops. Set `RESEARCH_LOOP_ENABLED=true` and it runs a
+search → reflect → search-again loop instead, borrowed from LangChain's
+[open_deep_research](https://github.com/langchain-ai/open_deep_research): the
+model names what is missing, the retriever chases it, and the results are
+de-duplicated and capped before they go downstream. Bounded on purpose — at the
+defaults it costs 2 extra model calls and 12 extra searches per run.
+
+Credibility is not just a URL pattern and a model's opinion. Papers (and any web
+result carrying a DOI) are resolved against [OpenAlex](https://openalex.org) for
+citation count, venue and the retraction flag, so a 400-citation paper is no
+longer indistinguishable from a preprint nobody read, and a retracted paper is
+floored rather than trusted. Free, no API key, and a lookup failure leaves the
+score untouched.
+
 ## Architecture
 
 <div align="center">
@@ -106,6 +121,8 @@ Full detail in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 | Storage      | Neon Postgres (Prisma); Chroma vector store (opt-in)                    |
 | Email        | AgentMail (transactional + newsletter broadcast)                        |
 | Hosting      | Vercel (frontend), Fly.io (backend, container)                          |
+| Bibliographic| OpenAlex — citation counts, venue, retraction flags (free, no key)       |
+| Tracing      | Langfuse — per-stage spans with token counts and cost (optional)         |
 
 The model mix is cost-optimized: each agent runs on the smallest model that does its
 job, and every default sits on a provider free tier. `OPENROUTER_FALLBACK_MODEL` is an

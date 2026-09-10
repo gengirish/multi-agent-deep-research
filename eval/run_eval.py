@@ -16,6 +16,11 @@ Two modes:
   local  Import ResearchWorkflow and run in-process. Needs OPEN_ROUTER_KEY
          etc. in .env, but reports per-stage timing the HTTP path can't see.
 
+--research-loop decides how the retriever runs: `env` (default) honours
+RESEARCH_LOOP_ENABLED, `on`/`off` force one arm, and `ab` runs both over the
+same queries in one process and prints a comparison table. `ab` needs
+--mode local, and doubles the sweep's cost.
+
 Optionally runs a single-LLM baseline (--baseline) for the ablation: one model,
 one prompt, no retrieval and no verification, asked for the same cited report.
 That baseline uses the strongest provider available (ANTHROPIC_API_KEY, then
@@ -28,6 +33,7 @@ Usage
     python eval/run_eval.py --queries 3 --check-urls
     python eval/run_eval.py --mode local --baseline
     python eval/run_eval.py --api-url http://localhost:8000
+    python eval/run_eval.py --mode local --research-loop ab --queries 2
 
 Writes eval/results/eval-<label>.json plus a markdown summary next to it, and
 prints the slide-ready aggregate to stdout.
@@ -215,6 +221,7 @@ def score_run(
 
     retrieved = collect_retrieved(sources)
     citations = extract_citations(report)
+    loop_trace = sources.get("research_loop") or {}
 
     # Grounded == the cited URL was actually retrieved by the pipeline. Exact
     # normalized match first, then same-domain, which catches a reporter that
@@ -278,6 +285,20 @@ def score_run(
             "trends": len(insights.get("trends") or []),
             "reasoning_chains": len(insights.get("reasoning_chains") or []),
         },
+        # Absent (all zeros) on a single-shot run, which is what makes the two
+        # arms comparable in the same results file.
+        "research_loop": {
+            "enabled": bool(loop_trace),
+            "iterations": loop_trace.get("iterations", 0),
+            "queries_issued": len(loop_trace.get("queries") or []) or (1 if report else 0),
+            "gaps_identified": len(loop_trace.get("gaps") or []),
+            "stopped_because": loop_trace.get("stopped_because"),
+            # Sources found before compression trimmed the set, so a run that
+            # gathered 30 and kept 12 is distinguishable from one that only
+            # ever found 12.
+            "sources_merged": loop_trace.get("merged_source_count"),
+            "sources_kept": loop_trace.get("final_source_count"),
+        },
     }
 
     if verify_urls:
@@ -303,13 +324,37 @@ def run_via_api(query: str, api_url: str, timeout: int) -> tuple[Dict[str, Any],
     return resp.json(), latency
 
 
-def run_local(query: str) -> tuple[Dict[str, Any], float]:
+# One workflow per arm, reused across queries. Constructing a workflow builds
+# six agents and their model clients; doing that per query added seconds of
+# setup to every measurement and made the latency numbers describe the harness
+# as much as the pipeline.
+_WORKFLOW_CACHE: Dict[Any, Any] = {}
+
+
+def _local_workflow(research_loop: Optional[bool]):
     from dotenv import load_dotenv
 
     load_dotenv(REPO_ROOT / ".env")
     from orchestration.coordinator import ResearchWorkflow
 
-    workflow = ResearchWorkflow()
+    if research_loop not in _WORKFLOW_CACHE:
+        _WORKFLOW_CACHE[research_loop] = ResearchWorkflow(
+            enable_research_loop=research_loop
+        )
+    return _WORKFLOW_CACHE[research_loop]
+
+
+def run_local(
+    query: str, research_loop: Optional[bool] = None
+) -> tuple[Dict[str, Any], float]:
+    """Run in-process.
+
+    `research_loop` overrides RESEARCH_LOOP_ENABLED for this run: True forces
+    the iterative retriever, False forces single-shot, None inherits the
+    environment. Passing it explicitly is what lets one process measure both
+    arms over the same queries.
+    """
+    workflow = _local_workflow(research_loop)
     start = time.perf_counter()
     result = workflow.run(query)
     latency = time.perf_counter() - start
@@ -484,7 +529,116 @@ def aggregate(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
             "mean_words": _mean([r["report"]["words"] for r in ok]),
             "mean_claim_lines": _mean([r["report"]["claim_lines"] for r in ok]),
         },
+        "research_loop": {
+            "runs_with_loop": sum(
+                1 for r in ok if (r.get("research_loop") or {}).get("enabled")
+            ),
+            "mean_iterations": _mean(
+                [(r.get("research_loop") or {}).get("iterations", 0) for r in ok]
+            ),
+            "mean_queries_issued": _mean(
+                [(r.get("research_loop") or {}).get("queries_issued", 1) for r in ok]
+            ),
+            "stop_reasons": sorted(
+                {
+                    (r.get("research_loop") or {}).get("stopped_because")
+                    for r in ok
+                    if (r.get("research_loop") or {}).get("stopped_because")
+                }
+            ),
+        },
     }
+
+
+# Metrics the A/B table compares, as
+# (label, dotted path into an aggregate, higher_is_better or None).
+AB_METRICS = [
+    ("Time to cited report (mean s)", "latency_s.mean", False),
+    ("Search queries issued (mean)", "research_loop.mean_queries_issued", None),
+    ("Sources retrieved (mean)", "sources_per_report.mean_total", True),
+    ("Distinct domains (mean)", "sources_per_report.mean_distinct_domains", True),
+    ("Citations per report (mean)", "citations.mean_per_report", True),
+    ("Citation grounding rate", "citations.grounding_rate", True),
+    ("Mean credibility of sources", "credibility.mean_average_score", True),
+    ("Contradictions flagged (mean)", "analysis.mean_contradictions", True),
+    ("Report length (mean words)", "report.mean_words", None),
+]
+
+
+def _dig(payload: Dict[str, Any], path: str) -> Any:
+    node: Any = payload
+    for part in path.split("."):
+        if not isinstance(node, dict):
+            return None
+        node = node.get(part)
+    return node
+
+
+def _fmt(value: Any, path: str) -> str:
+    if value is None:
+        return "n/a"
+    if path.endswith("grounding_rate"):
+        return f"{round(value * 100, 1)}%"
+    return str(value)
+
+
+def ab_comparison(arms: Dict[str, Any]) -> List[str]:
+    """Render the single-shot vs iterative table.
+
+    The verdict column is deliberately blunt: the loop costs extra searches and
+    model calls per run, so "it retrieved more sources" is not on its own a
+    reason to ship it. What matters is whether grounding rate and credibility
+    moved.
+    """
+    base_label, cand_label = "single-shot", "iterative"
+    base = (arms.get(base_label) or {}).get("aggregate") or {}
+    cand = (arms.get(cand_label) or {}).get("aggregate") or {}
+
+    lines = [
+        "",
+        "## Retrieval A/B: single-shot vs iterative loop",
+        "",
+        f"Same {base.get('runs', 0)} queries through both arms, one process, "
+        "identical models. `single-shot` is the original retriever; `iterative` "
+        "is `RESEARCH_LOOP_ENABLED=true`.",
+        "",
+        "| Metric | Single-shot | Iterative | Change |",
+        "| --- | --- | --- | --- |",
+    ]
+
+    for label, path, higher_is_better in AB_METRICS:
+        b, c = _dig(base, path), _dig(cand, path)
+        change = "—"
+        if isinstance(b, (int, float)) and isinstance(c, (int, float)):
+            delta = c - b
+            if path.endswith("grounding_rate"):
+                change = f"{delta * 100:+.1f} pp"
+            else:
+                change = f"{delta:+.2f}"
+                if b:
+                    change += f" ({delta / b * 100:+.0f}%)"
+            if higher_is_better is not None and abs(delta) > 1e-9:
+                improved = (delta > 0) == higher_is_better
+                change += " ✅" if improved else " ⚠️"
+        lines.append(
+            f"| {label} | {_fmt(b, path)} | {_fmt(c, path)} | {change} |"
+        )
+
+    stop_reasons = _dig(cand, "research_loop.stop_reasons") or []
+    if stop_reasons:
+        lines += ["", f"Loop stop reasons observed: {', '.join(stop_reasons)}."]
+
+    successes = (base.get("successful"), cand.get("successful"))
+    if successes[0] != successes[1]:
+        lines += [
+            "",
+            f"⚠️ Arms completed a different number of runs "
+            f"({successes[0]} vs {successes[1]}), so these means are not "
+            f"strictly comparable — most likely a provider rate-limited "
+            f"mid-sweep.",
+        ]
+
+    return lines
 
 
 def markdown_summary(payload: Dict[str, Any]) -> str:
@@ -568,6 +722,9 @@ def markdown_summary(payload: Dict[str, Any]) -> str:
             "the ablation column.",
         ]
 
+    if payload.get("arms"):
+        lines += ab_comparison(payload["arms"])
+
     lines += ["", "## Per-query detail", "", "| Query | Latency (s) | Sources | Citations | Grounded | Contradictions |", "| --- | --- | --- | --- | --- | --- |"]
     for r in payload["multi_agent"]["runs"]:
         q = r["query"][:60] + ("…" if len(r["query"]) > 60 else "")
@@ -592,6 +749,73 @@ def markdown_summary(payload: Dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def execute_queries(
+    queries: List[str],
+    args: Any,
+    capture_dir: Optional[Path],
+    research_loop: Optional[bool] = None,
+    arm_label: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Run every query once and score it. One call per A/B arm."""
+    runs: List[Dict[str, Any]] = []
+    prefix = f"[{arm_label}] " if arm_label else ""
+
+    for i, query in enumerate(queries, 1):
+        print(f"\n{prefix}[{i}/{len(queries)}] {query}", flush=True)
+        try:
+            if args.mode == "api":
+                payload, latency = run_via_api(query, args.api_url, args.timeout)
+            else:
+                payload, latency = run_local(query, research_loop)
+        except Exception as exc:
+            print(f"  FAILED: {type(exc).__name__}: {exc}", flush=True)
+            runs.append({
+                "query": query,
+                "status": "error",
+                "error": f"{type(exc).__name__}: {exc}",
+                "latency_s": None,
+            })
+            continue
+
+        if capture_dir is not None:
+            slug = re.sub(r"[^a-z0-9]+", "-", query.lower()).strip("-")[:60]
+            # Arm-prefixed so an A/B sweep does not have its second arm
+            # overwrite the first arm's captures.
+            stem = f"{arm_label}-{i:02d}-{slug}" if arm_label else f"{i:02d}-{slug}"
+            (capture_dir / f"{stem}.json").write_text(
+                json.dumps(
+                    {
+                        "query": query,
+                        "latency_s": round(latency, 2),
+                        "arm": arm_label,
+                        "payload": payload,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+        scored = score_run(query, payload, latency, args.check_urls)
+        runs.append(scored)
+        gr = scored["citations"]["grounding_rate"]
+        loop = scored.get("research_loop") or {}
+        loop_note = (
+            f" · {loop['iterations']} loop iter / {loop['queries_issued']} queries"
+            if loop.get("enabled")
+            else ""
+        )
+        print(
+            f"  {scored['latency_s']}s · {scored['sources']['total']} sources · "
+            f"{scored['citations']['total']} citations · "
+            f"grounded {round(gr * 100, 1) if gr is not None else 'n/a'}% · "
+            f"{scored['analysis']['contradictions_flagged']} contradictions"
+            f"{loop_note}",
+            flush=True,
+        )
+
+    return runs
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=["api", "local"], default="api")
@@ -606,6 +830,14 @@ def main() -> int:
                         help="Fetch every cited URL and record whether it resolves")
     parser.add_argument("--baseline", action="store_true",
                         help="Also run the single-LLM ablation (needs an API key)")
+    parser.add_argument("--research-loop", choices=["env", "on", "off", "ab"],
+                        default="env",
+                        help="Iterative retrieval: 'env' honours "
+                             "RESEARCH_LOOP_ENABLED (default), 'on'/'off' force "
+                             "it, 'ab' runs both arms over the same queries and "
+                             "prints a comparison. 'ab' needs --mode local, "
+                             "since the flag is process-level and the deployed "
+                             "API cannot be toggled per request.")
     parser.add_argument("--label", default="live",
                         help="Filename label for the results files")
     parser.add_argument("--save-payloads", nargs="?", const="eval/semantic/captures",
@@ -614,6 +846,13 @@ def main() -> int:
                              "semantic suite to score offline (default "
                              "eval/semantic/captures)")
     args = parser.parse_args()
+
+    if args.research_loop == "ab" and args.mode != "local":
+        parser.error(
+            "--research-loop ab requires --mode local: RESEARCH_LOOP_ENABLED is "
+            "read when the workflow is constructed, so the deployed API serves "
+            "whichever arm it was started with and cannot be switched per request."
+        )
 
     queries = args.custom_queries or DEFAULT_QUERIES[: args.queries]
     out_dir = Path(__file__).parent / "results"
@@ -630,48 +869,45 @@ def main() -> int:
             capture_dir = REPO_ROOT / capture_dir
         capture_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Chronicle eval — mode={args.mode} queries={len(queries)}", flush=True)
+    print(
+        f"Chronicle eval — mode={args.mode} queries={len(queries)} "
+        f"research-loop={args.research_loop}",
+        flush=True,
+    )
     if args.mode == "api":
         print(f"  target: {args.api_url}", flush=True)
 
-    runs: List[Dict[str, Any]] = []
-    for i, query in enumerate(queries, 1):
-        print(f"\n[{i}/{len(queries)}] {query}", flush=True)
-        try:
-            if args.mode == "api":
-                payload, latency = run_via_api(query, args.api_url, args.timeout)
-            else:
-                payload, latency = run_local(query)
-        except Exception as exc:
-            print(f"  FAILED: {type(exc).__name__}: {exc}", flush=True)
-            runs.append({
-                "query": query,
-                "status": "error",
-                "error": f"{type(exc).__name__}: {exc}",
-                "latency_s": None,
-            })
-            continue
+    arms_block: Optional[Dict[str, Any]] = None
 
-        if capture_dir is not None:
-            slug = re.sub(r"[^a-z0-9]+", "-", query.lower()).strip("-")[:60]
-            (capture_dir / f"{i:02d}-{slug}.json").write_text(
-                json.dumps(
-                    {"query": query, "latency_s": round(latency, 2), "payload": payload},
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
-
-        scored = score_run(query, payload, latency, args.check_urls)
-        runs.append(scored)
-        gr = scored["citations"]["grounding_rate"]
+    if args.research_loop == "ab":
+        # Both arms in one process against the same queries, so provider,
+        # models and query set are held constant and the only difference is
+        # the retrieval strategy. Note this doubles the run's cost.
         print(
-            f"  {scored['latency_s']}s · {scored['sources']['total']} sources · "
-            f"{scored['citations']['total']} citations · "
-            f"grounded {round(gr * 100, 1) if gr is not None else 'n/a'}% · "
-            f"{scored['analysis']['contradictions_flagged']} contradictions",
+            "  A/B: running every query twice (single-shot, then iterative). "
+            "This doubles search and model spend for the sweep.",
             flush=True,
         )
+        single_runs = execute_queries(queries, args, capture_dir, False, "single-shot")
+        loop_runs = execute_queries(queries, args, capture_dir, True, "iterative")
+        arms_block = {
+            "single-shot": {
+                "research_loop": False,
+                "runs": single_runs,
+                "aggregate": aggregate(single_runs),
+            },
+            "iterative": {
+                "research_loop": True,
+                "runs": loop_runs,
+                "aggregate": aggregate(loop_runs),
+            },
+        }
+        # The iterative arm is the candidate, so it is what the headline
+        # multi-agent block describes.
+        runs = loop_runs
+    else:
+        forced = {"env": None, "on": True, "off": False}[args.research_loop]
+        runs = execute_queries(queries, args, capture_dir, forced)
 
     baseline_block: Optional[Dict[str, Any]] = None
     if args.baseline:
@@ -703,8 +939,10 @@ def main() -> int:
             "api_url": args.api_url if args.mode == "api" else None,
             "query_count": len(queries),
             "url_check_enabled": args.check_urls,
+            "research_loop": args.research_loop,
         },
         "multi_agent": {"runs": runs, "aggregate": aggregate(runs)},
+        "arms": arms_block,
         "baseline": baseline_block,
     }
 
