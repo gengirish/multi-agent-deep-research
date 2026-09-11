@@ -4,12 +4,65 @@ Suggests hypotheses or trends using reasoning chains.
 """
 
 import logging
-from typing import Dict, Any, List
+import re
+from typing import Any, Dict, List, Optional
 from langchain_core.prompts import ChatPromptTemplate
 from utils.llm_config import create_insight_llm, INSIGHT_MODEL, TEMPERATURES, message_text
 from utils.degraded import unavailable
 
 logger = logging.getLogger(__name__)
+
+
+# Section headings, normalised to our keys. Models ignore the prompt's exact
+# format: gpt-oss writes "**INSIGHTS**", Gemini writes "INSIGHTS:", others
+# write "## Key Insights" or "1. Insights".
+_SECTION_ALIASES = {
+    "INSIGHTS": "insights",
+    "KEY INSIGHTS": "insights",
+    "HYPOTHESES": "hypotheses",
+    "HYPOTHESIS": "hypotheses",
+    "TRENDS": "trends",
+    "KEY TRENDS": "trends",
+    "REASONING CHAINS": "reasoning_chains",
+    "REASONING": "reasoning_chains",
+    "CHAINS": "reasoning_chains",
+}
+
+# A heading is short. This length cap is what stops a sentence that merely
+# mentions trends — "- **Trend 1 – Retrieval-centric fine-tuning:** …" — from
+# being mistaken for the TRENDS heading and resetting the section.
+_MAX_HEADING_CHARS = 28
+
+# Bullet markers. `\*(?=\s)` requires whitespace after the asterisk so that a
+# markdown italic ("*Reasoning:* …") is read as prose rather than as a bullet,
+# which is what makes the continuation branch below reachable.
+_BULLET_RE = re.compile(r"^(?:[-•+\u2022]|\*(?=\s)|\d+[.)])\s*")
+
+_HORIZONTAL_RULE_RE = re.compile(r"^\s*([-*_])\1{2,}\s*$")
+
+
+# Bullet characters that rule a line out as a heading. A numeric prefix does
+# not: "1. Insights" is a heading and "1. the first item" is a bullet, and the
+# two are told apart by whether what follows names a section.
+_LIST_MARKER_RE = re.compile(r"^(?:[-•+\u2022]|\*(?=\s))")
+
+
+def _section_of(line: str) -> Optional[str]:
+    """Return the section a heading line names, or None if it is not a heading."""
+    text = line.strip()
+    if _LIST_MARKER_RE.match(text):
+        return None
+    text = re.sub(r"^#{1,6}\s*", "", text)        # "## Insights"
+    text = re.sub(r"^\d+[.)]\s*", "", text)      # "1. Insights"
+    text = text.strip("*_` \t")                   # "**INSIGHTS**"
+    # Trailing colon comes off before the parenthetical, so that
+    # "Key Insights (3-5):" reduces rather than being left with the paren.
+    text = text.rstrip(":").strip("*_` \t")
+    text = re.sub(r"\s*\([^)]*\)\s*$", "", text)  # "Insights (3-5)"
+    text = text.rstrip(":").strip("*_` \t")
+    if not text or len(text) > _MAX_HEADING_CHARS:
+        return None
+    return _SECTION_ALIASES.get(re.sub(r"\s+", " ", text).upper())
 
 
 class InsightGenerationAgent:
@@ -173,40 +226,54 @@ REASONING CHAINS:
         return "\n".join(formatted)
     
     def _parse_insights(self, insights_text: str) -> Dict[str, Any]:
-        """Parse LLM response into structured format."""
-        parsed = {
+        """Parse the LLM response into structured lists.
+
+        Models do not honour the prompt's exact layout, and this parser used to
+        require a literal colon (`'INSIGHTS:' in line`). The gpt-oss family
+        writes `**INSIGHTS**` instead, so no section was ever entered and a
+        perfectly good 4,500-character response was discarded in full — the
+        stage reported "no insights could be parsed" while the model had
+        answered well. Headings are now matched after stripping markdown, so
+        `INSIGHTS:`, `**INSIGHTS**` and `## Key Insights` all work.
+        """
+        parsed: Dict[str, List[str]] = {
             "insights": [],
             "hypotheses": [],
             "trends": [],
-            "reasoning_chains": []
+            "reasoning_chains": [],
         }
-        
-        current_section = None
-        for line in insights_text.split('\n'):
-            line = line.strip()
-            if not line:
+
+        current_section: Optional[str] = None
+        for raw_line in insights_text.split("\n"):
+            line = raw_line.strip()
+            if not line or _HORIZONTAL_RULE_RE.match(line):
+                # Models separate sections with `---`, which starts with a
+                # bullet character and would otherwise be collected as an item.
                 continue
-            
-            if 'INSIGHTS:' in line.upper():
-                current_section = "insights"
+
+            section = _section_of(line)
+            if section:
+                current_section = section
                 continue
-            elif 'HYPOTHESES:' in line.upper():
-                current_section = "hypotheses"
+
+            if current_section is None:
+                # Preamble before the first heading ("Here are the insights:").
                 continue
-            elif 'TRENDS:' in line.upper():
-                current_section = "trends"
-                continue
-            elif 'REASONING CHAINS:' in line.upper():
-                current_section = "reasoning_chains"
-                continue
-            
-            if current_section and (line.startswith('-') or line.startswith('*')):
-                content = line[1:].strip()
+
+            bullet = _BULLET_RE.match(line)
+            if bullet:
+                content = line[bullet.end():].strip()
                 if content:
                     parsed[current_section].append(content)
-            elif current_section == "trends" and ':' in line:
+            elif parsed[current_section]:
+                # An unbulleted continuation line — gpt-oss puts its
+                # `*Reasoning:* …` justification on its own line under each
+                # hypothesis. Attach it to the item it belongs to rather than
+                # dropping it or promoting it to an item of its own.
+                parsed[current_section][-1] += " " + line
+            else:
                 parsed[current_section].append(line)
-        
+
         return parsed
     
     def _unavailable(self, reason: str) -> Dict[str, Any]:

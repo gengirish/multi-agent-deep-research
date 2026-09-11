@@ -96,11 +96,23 @@ DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "anthropic/claude-sonnet-4-5")
 # startup for exactly this reason; nothing probed the per-stage slugs, which is
 # why this sat unnoticed. `tests/test_model_slugs_live.py` now covers them.
 RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/openai/gpt-oss-20b")
-# Analysis ran on Claude until that account's balance ran out and every call
-# came back 400 ("credit balance is too low"). Gemini Flash is a free-tier
-# native path. Set ANALYZER_MODEL=anthropic/claude-sonnet-4-5 to go back once
-# the Anthropic account is funded — reasoning quality there is better.
-ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "google/gemini-flash-latest")
+# Analysis ran on Claude until that account's balance ran out, then on Gemini
+# Flash as a free-tier native path. Gemini's free tier is 20 requests per day
+# *per model*, and once that is spent the google SDK retries with exponential
+# backoff rather than failing fast: a verified production run spent 35 of its
+# 133 seconds here before falling through to OpenRouter, and an earlier one
+# spent minutes. The stage was never broken — just slow and wasteful.
+#
+# Haiku is paid, so it has no daily cap, and the report stage already carries
+# all ~17 sources on it, which is the evidence that it has the context this
+# stage needs too. It also keeps analysis off Groq, where three stages already
+# share a 12k tokens/min budget and a 17-source prompt would 429 the way the
+# report stage used to.
+#
+# Set ANALYZER_MODEL=anthropic/claude-sonnet-4-5 for better reasoning at higher
+# cost — analysis is the stage where that would show up most, since it scores
+# credibility and finds contradictions.
+ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "anthropic/claude-haiku-4-5")
 
 # Credibility runs one call per source (~17 per query), so it gets its own
 # slot rather than riding on ANALYZER_MODEL: the task is a short 0-1 rating
