@@ -116,7 +116,7 @@ Full detail in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 | ------------ | ----------------------------------------------------------------------- |
 | Frontend     | Next.js 14 (App Router), React 18, TypeScript, D3 (visualizations)      |
 | Backend      | FastAPI, uvicorn, LangChain, LangGraph (inline asyncio execution)       |
-| Models       | Google (Gemini Flash), Groq (Llama 3.3 70B), OSS failover via OpenRouter |
+| Models       | Groq (gpt-oss 20B/120B), Google (Gemini Flash), Anthropic (Haiku), OSS failover via OpenRouter |
 | Search       | Tavily (primary), Perplexity (fallback), ArXiv                          |
 | Storage      | Neon Postgres (Prisma); Chroma vector store (opt-in)                    |
 | Email        | AgentMail (transactional + newsletter broadcast)                        |
