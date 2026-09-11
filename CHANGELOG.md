@@ -2,6 +2,48 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-11 — Models: replace three stale stage defaults
+
+- **Two stages were running on a model that no longer exists.** Groq retired its
+  entire Llama 3.x line, and `groq/llama-3.3-70b-versatile` was the default for
+  `RETRIEVER_MODEL` and `CREDIBILITY_MODEL`. Every call 404'd. Nothing broke:
+  `_with_free_fallback` caught each one and the stage carried on via OpenRouter,
+  so the pipeline kept producing reports while running a model nobody chose,
+  after paying for a failed request first. Credibility makes one call per source,
+  so that was ~17 wasted round-trips per run. It was found by reading `404 Not
+  Found` lines in production logs, not by anything failing.
+- New defaults, each verified against the live provider before being committed:
+  retriever and credibility on `groq/openai/gpt-oss-20b`, insight on
+  `groq/openai/gpt-oss-120b`. The 20b is deliberate for credibility — the prompt
+  asks for a bare number and the parser reads the first number it finds, so there
+  is nothing for a larger model to be better at, and that stage is the most
+  likely to brush Groq's per-minute cap.
+- **Insight moves off Gemini**, which is the change that should show up in
+  reports. It shared the analyzer's 20-requests-per-day-per-model Google quota
+  and drew second, so once the day's quota was spent it degraded to "the model
+  responded but no insights could be parsed" — which is what both of yesterday's
+  production runs did. Groq's quota is separate.
+- One trap found while verifying: `gpt-oss-120b` spends part of its token budget
+  on reasoning before emitting any visible content, so a small budget returns
+  HTTP 200 with an **empty** string — indistinguishable downstream from the parse
+  failure this change is meant to stop. `create_insight_llm`'s `max_tokens=1500`
+  is therefore load-bearing, and is now commented as such. At that budget the
+  real insight agent returns 4 insights, 2 hypotheses, 2 trends and 3 reasoning
+  chains.
+- **`tests/test_model_slugs_live.py` closes the class of bug**
+  (`MODEL_SLUG_LIVE_TESTS=1`). It probes every configured stage slug with the
+  fallback deliberately bypassed — routing through `create_llm` would assert
+  nothing, because OpenRouter answers for a dead primary and the test would pass
+  with the model retired. A 404 fails the test; a 429 or a credit error skips it,
+  since those mean the slug is real and the account is capped. Confirmed to fail
+  on the retired slug rather than pass vacuously.
+- Audited every other configured slug at the same time: `DEFAULT_MODEL`,
+  `ANALYZER_MODEL`, `REPORT_MODEL` and the OpenRouter fallback are all live. Only
+  the Groq Llama slug was dead.
+- Note that three stages now sit on Groq and share its 12k tokens/min free-tier
+  budget. The report stage stays off Groq deliberately — its prompt carries all
+  ~17 sources and exceeds that cap on its own.
+
 ## 2026-09-10 — Credibility: judge citations against a paper's age
 
 - **Fixed a flaw introduced by the entry below.** The citation signal treated

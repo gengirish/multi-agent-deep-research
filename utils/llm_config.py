@@ -86,8 +86,16 @@ GOOGLE_MIN_OUTPUT_TOKENS = int(os.getenv("GOOGLE_MIN_OUTPUT_TOKENS", "8192"))
 #   *             → OpenRouter (langchain-openai with custom base_url)
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "anthropic/claude-sonnet-4-5")
-# Retrieval-stage metadata + sentiment — Groq Llama 3.3 70B for sub-second.
-RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/llama-3.3-70b-versatile")
+# Retrieval-stage metadata, sentiment and classification, plus the research
+# loop's reflection step — Groq for sub-second inference.
+#
+# This said groq/llama-3.3-70b-versatile until Groq retired its whole Llama 3.x
+# line. A retired slug does not fail loudly: every call 404'd and silently fell
+# back to OpenRouter, so the stage kept working on the wrong model while paying
+# for a wasted request first. `validate_fallback()` probes the fallback at
+# startup for exactly this reason; nothing probed the per-stage slugs, which is
+# why this sat unnoticed. `tests/test_model_slugs_live.py` now covers them.
+RETRIEVER_MODEL = os.getenv("RETRIEVER_MODEL", "groq/openai/gpt-oss-20b")
 # Analysis ran on Claude until that account's balance ran out and every call
 # came back 400 ("credit balance is too low"). Gemini Flash is a free-tier
 # native path. Set ANALYZER_MODEL=anthropic/claude-sonnet-4-5 to go back once
@@ -97,13 +105,27 @@ ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "google/gemini-flash-latest")
 # Credibility runs one call per source (~17 per query), so it gets its own
 # slot rather than riding on ANALYZER_MODEL: the task is a short 0-1 rating
 # that a small fast model handles, and keeping it off the analyzer's provider
-# stops one stage's per-minute quota from starving the other.
-CREDIBILITY_MODEL = os.getenv("CREDIBILITY_MODEL", "groq/llama-3.3-70b-versatile")
+# stops one stage's per-minute quota from starving the other. Same Groq Llama
+# retirement as the retriever above.
+#
+# The 20b is deliberate over the 120b here: the prompt asks for a bare number
+# and `_llm_credibility` reads the first number it finds, so there is nothing
+# for a larger model to be better at — and 17 calls per run is the stage most
+# likely to brush Groq's per-minute token cap.
+CREDIBILITY_MODEL = os.getenv("CREDIBILITY_MODEL", "groq/openai/gpt-oss-20b")
 # Insight ran on openai/gpt-4o via OpenRouter until that account ran out of
-# credit and the stage started returning 402s, degrading to no insights at
-# all. Gemini Flash is a native path with its own quota, so the insight stage
-# no longer shares a failure domain with the OpenRouter fallback.
-INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "google/gemini-flash-latest")
+# credit and the stage started returning 402s, then on Gemini Flash — which
+# stacked it onto the same 20-requests-per-day-per-model Google quota as the
+# analyzer. In practice insight was the stage that lost: it drew after the
+# analyzer and degraded to "the model responded but no insights could be parsed"
+# on every run once the daily quota was spent.
+#
+# Groq's gpt-oss-120b has its own quota and is the strongest reasoning model
+# Groq serves. Note it spends part of the token budget on reasoning before any
+# visible content, so create_insight_llm's max_tokens=1500 is load-bearing —
+# a small budget returns HTTP 200 with empty content, which reads downstream as
+# exactly the parse failure this change is meant to stop.
+INSIGHT_MODEL = os.getenv("INSIGHT_MODEL", "groq/openai/gpt-oss-120b")
 # The report prompt carries all ~17 sources, so it needs headroom: Groq's
 # free tier caps at 12k tokens/minute and 429'd into the template writer.
 #

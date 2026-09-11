@@ -199,8 +199,20 @@ Two constraints shape the defaults, and both are easy to trip over:
   roughly six runs a day — and the report stage, drawing last, is the one that
   429s into an empty template. Keep at least two providers in the mix.
 - **Groq is fastest but caps at 12k tokens/min**, which a report prompt built
-  from ~17 sources exceeds. It suits the retriever and credibility stages, not
-  the report.
+  from ~17 sources exceeds. It suits the retriever, credibility and insight
+  stages, not the report. Those three share that per-minute budget; credibility
+  is the one to watch, at one call per source (~17 per run).
+- **A retired model slug fails silently.** `_with_free_fallback` catches the
+  provider's 404 and the stage carries on via OpenRouter, so the pipeline keeps
+  producing reports while running a model nobody chose — after paying for a
+  failed request first. Groq retired its whole Llama 3.x line while
+  `groq/llama-3.3-70b-versatile` was the default for the retriever and
+  credibility stages, and nothing surfaced it; it was found by reading 404s in
+  production logs. `validate_fallback()` probes the *fallback* slug at startup
+  for this reason, and `tests/test_model_slugs_live.py`
+  (`MODEL_SLUG_LIVE_TESTS=1`) now covers the per-stage slugs, probing each one
+  with the fallback deliberately bypassed — routing through `create_llm` would
+  assert nothing, since OpenRouter would answer for a dead primary.
 
 `OPENROUTER_FALLBACK_MODEL` is an invoke-time safety net for any stage whose
 primary rate-limits. It must name a real slug: OpenRouter retired its `:free`
