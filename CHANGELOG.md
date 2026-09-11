@@ -2,6 +2,53 @@
 
 Notable changes, newest first. Dates are commit dates.
 
+## 2026-09-11 — Insight: parse the response the model actually sends
+
+- **The insight stage was never broken by quota — it was broken by a colon.**
+  `_parse_insights` entered a section only on a literal `INSIGHTS:`, which is
+  what Gemini emits. The gpt-oss family writes `**INSIGHTS**` instead, so no
+  section was ever entered, every bullet was discarded, and the run reported
+  "the model responded but no insights could be parsed from it". A verified
+  production run shows the model returning **4,500 characters of good insights
+  in 3 seconds** with `finish_reason: stop`, all of it thrown away.
+- This is also the correction to yesterday's diagnosis. Moving the stage off
+  Gemini was attributed to its exhausted daily quota; the quota exhaustion was
+  real but incidental, and the same parse failure happened on both providers —
+  on Gemini via the OpenRouter fallback, which is also gpt-oss. Changing the
+  model did not fix the symptom and could not have.
+- Headings are now matched after markdown is stripped, so `INSIGHTS:`,
+  `**INSIGHTS**`, `**Insights:**`, `## Insights`, `### KEY INSIGHTS`,
+  `1. Insights` and `Key Insights (3-5):` all work. Two related bugs went with
+  it: `---` rules between sections were being collected as items (they start
+  with a bullet character), and a single `*` was treated as a bullet, so
+  gpt-oss's unbulleted `*Reasoning:* …` line became a phantom hypothesis instead
+  of being attached to the one it justifies.
+- A length cap is what stops the fix from over-reaching: `- **Trend 1 —
+  Retrieval-centric fine-tuning:** …` contains the word TREND, and treating it
+  as the TRENDS heading would silently restart the section and drop everything
+  before it. Headings are short; sentences that merely mention a section are not.
+- `tests/test_insight_parsing.py` pins the exact production response that parsed
+  to nothing — it now yields 5 insights, 2 hypotheses, 3 trends and 3 reasoning
+  chains — plus every heading variant, the bullet markers, the degenerate cases,
+  and the Gemini-style format, so fixing one provider cannot regress the other.
+
+## 2026-09-11 — Analyzer: off Gemini, onto Haiku
+
+- **Gemini's free tier does not fail fast, it fails slowly.** The limit is 20
+  requests per day *per model*, and once spent the Google SDK retries with
+  exponential backoff instead of erroring: a verified run spent 35 of its 133
+  seconds in analyzer backoff before falling through to OpenRouter, and an
+  earlier one spent minutes. The stage worked; it was just slow and wasteful,
+  and it was the last stage still defaulting to Gemini.
+- `ANALYZER_MODEL` now defaults to `anthropic/claude-haiku-4-5`. Paid, so no
+  daily cap; the report stage already carries all ~17 sources on Haiku, which is
+  the evidence it has the context this stage needs; and it keeps analysis off
+  Groq, where three stages already share a 12k tokens/min budget and a
+  17-source prompt would 429 the way the report stage used to.
+- `ANALYZER_MODEL=anthropic/claude-sonnet-4-5` is the opt-in quality upgrade at
+  higher cost. Analysis is where it would show up most, since that stage scores
+  credibility and finds contradictions.
+
 ## 2026-09-11 — Models: replace three stale stage defaults
 
 - **Two stages were running on a model that no longer exists.** Groq retired its

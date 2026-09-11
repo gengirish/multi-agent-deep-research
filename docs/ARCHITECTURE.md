@@ -202,6 +202,20 @@ Two constraints shape the defaults, and both are easy to trip over:
   from ~17 sources exceeds. It suits the retriever, credibility and insight
   stages, not the report. Those three share that per-minute budget; credibility
   is the one to watch, at one call per source (~17 per run).
+- **Google's free tier is 20 requests/day per model, and it fails slowly.**
+  Once the quota is spent the Google SDK retries with exponential backoff rather
+  than erroring, so a stage sitting on Gemini stops being a quota problem and
+  becomes a latency problem: a verified run spent 35 of its 133 seconds in
+  analyzer backoff before falling through to OpenRouter. No stage defaults to
+  Gemini any more for that reason.
+- **A model's output format is part of its contract.** The insight stage parsed
+  sections by looking for a literal `INSIGHTS:`, which Gemini emits and the
+  gpt-oss family does not — it writes `**INSIGHTS**`. Moving the stage between
+  those two providers therefore discarded a complete, good 4,500-character
+  response and reported "no insights could be parsed", with no error anywhere.
+  `_parse_insights` now strips markdown before matching headings, keeps the raw
+  text either way, and `tests/test_insight_parsing.py` pins the real production
+  response that failed.
 - **A retired model slug fails silently.** `_with_free_fallback` catches the
   provider's 404 and the stage carries on via OpenRouter, so the pipeline keeps
   producing reports while running a model nobody chose — after paying for a
