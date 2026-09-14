@@ -48,6 +48,16 @@ def _payload(report="# R\n\nA claim long enough to count as an assertion here.\n
     }
 
 
+def _graph_state(**extra):
+    """What ResearchWorkflow.run actually returns: the graph state, with no
+    `status` key. The API layer is what adds one, so a stub that includes it
+    cannot exercise the defaulting in run_local."""
+    state = _payload()
+    state.pop("status")
+    state.update(extra)
+    return state
+
+
 def _args(**overrides):
     base = dict(
         mode="local", api_url=None, timeout=60, check_urls=False, research_loop="env"
@@ -172,6 +182,79 @@ def test_workflows_are_reused_across_queries_within_an_arm(monkeypatch):
     run_eval.run_local("q4", research_loop=False)
 
     assert constructed == [True, False], "one workflow per arm, not per query"
+
+
+def test_a_local_run_is_recorded_as_successful(monkeypatch):
+    """The graph returns its state dict with no `status` key — the HTTP layer
+    adds that. Without run_local supplying one, score_run records "unknown",
+    aggregate() counts only "success", and a sweep that actually ran reports
+    every metric as n/a."""
+    class StubWorkflow:
+        def run(self, query):
+            return _graph_state()
+
+    monkeypatch.setattr(run_eval, "_WORKFLOW_CACHE", {})
+    monkeypatch.setitem(
+        sys.modules,
+        "orchestration.coordinator",
+        SimpleNamespace(ResearchWorkflow=lambda **kw: StubWorkflow()),
+    )
+
+    payload, _ = run_eval.run_local("q", research_loop=False)
+    assert "status" in payload, "run_local must supply the status the graph omits"
+    assert payload["status"] == "success"
+
+    scored = run_eval.score_run("q", payload, 10.0, False)
+    assert run_eval.aggregate([scored])["successful"] == 1
+
+
+def test_a_failed_local_run_is_recorded_as_an_error(monkeypatch):
+    class StubWorkflow:
+        def run(self, query):
+            return _graph_state(error="Retrieval failed: tavily down")
+
+    monkeypatch.setattr(run_eval, "_WORKFLOW_CACHE", {})
+    monkeypatch.setitem(
+        sys.modules,
+        "orchestration.coordinator",
+        SimpleNamespace(ResearchWorkflow=lambda **kw: StubWorkflow()),
+    )
+
+    payload, _ = run_eval.run_local("q")
+    assert payload["status"] == "error"
+
+
+def test_an_api_supplied_status_is_not_overwritten(monkeypatch):
+    class StubWorkflow:
+        def run(self, query):
+            return _graph_state(status="partial")
+
+    monkeypatch.setattr(run_eval, "_WORKFLOW_CACHE", {})
+    monkeypatch.setitem(
+        sys.modules,
+        "orchestration.coordinator",
+        SimpleNamespace(ResearchWorkflow=lambda **kw: StubWorkflow()),
+    )
+
+    payload, _ = run_eval.run_local("q")
+    assert payload["status"] == "partial"
+
+
+def test_an_empty_arm_says_so_instead_of_printing_a_table_of_na():
+    """A table of n/a reads as "the loop changed nothing", which is the one
+    conclusion a broken sweep must never imply."""
+    empty = {
+        "single-shot": {"aggregate": {"runs": 2, "successful": 0}, "runs": [
+            {"degraded": ["retrieval: no results from web — no web search provider configured"]},
+        ]},
+        "iterative": {"aggregate": {"runs": 2, "successful": 0}, "runs": []},
+    }
+    out = "\n".join(run_eval.ab_comparison(empty))
+
+    assert "no comparison possible" in out
+    assert "not a result about the" in out
+    assert "no web search provider configured" in out
+    assert "| Citation grounding rate |" not in out, "must not print a comparison table"
 
 
 # -- comparison table --------------------------------------------------------
