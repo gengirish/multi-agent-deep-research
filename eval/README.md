@@ -86,6 +86,67 @@ which is the point of the comparison. It uses the strongest provider available �
 baseline is a fair fight; override with `BASELINE_MODEL`. Without any key it is
 skipped and the multi-agent numbers still run.
 
+## Retrieval A/B — 15 Sep 2026: the loop does not earn its cost
+
+3 queries through both arms in one process, same models, same query list.
+Full detail in [`results/eval-loop-ab.json`](results/eval-loop-ab.json).
+
+**Verdict: leave `RESEARCH_LOOP_ENABLED` off.** Read the per-query table below
+rather than the aggregate — every ✅ in the summary comes from a single run.
+
+| Query | Arm | Time | Sources | Citations | Grounded | Loop |
+| --- | --- | --- | --- | --- | --- | --- |
+| TAM | single-shot | 155s | 12 | 6 | 100% | — |
+| | iterative | 129s | 12 | 7 | 86% | 0 iters, *sufficient* |
+| Competitors | single-shot | **92s** | 12 | 10 | 100% | — |
+| | iterative | **300s** | **29** | 24 | 100% | 1 iter, 3 queries, 36→29 |
+| EU regulation | single-shot | 85s | 12 | 9 | 100% | — |
+| | iterative | 73s | 12 | 0 | n/a | 0 iters, *sufficient* |
+
+Four things this shows, in order of how much they matter:
+
+1. **The loop fires on roughly one query in three.** On the other two,
+   reflection parsed fine and judged 12 sources already sufficient — so those
+   runs are single-shot plus a wasted reflection call.
+2. **When it fires it triples the run.** 92s → 300s on the same query. The UI
+   promises "most runs finish in ~60s"; a 5-minute run reads as a hang.
+3. **Grounding has no headroom.** Single-shot is pinned at 100% on every run, so
+   the metric the loop was meant to improve cannot improve. It went *down*
+   (96.8%) on variance, from a run where the loop never even fired.
+4. **The noise is larger than the effect.** Citations across identical
+   single-shot runs: 6, 10, 9 — and in an earlier sweep 6, 1, 9. Contradictions:
+   1, 3, 13. Any between-arm difference below that spread is unmeasurable at
+   n=3.
+
+What the loop *did* do on the one run it fired is real: 12 → 29 sources across
+36 merged, distinct domains 8 → 12, citations 10 → 24, grounding held at 100%.
+The mechanism works. It is solving a problem this pipeline does not currently
+have, at a latency cost the product cannot absorb.
+
+**Caveats.** n=3 with one loop activation is directional, not a measurement. All
+six runs had **zero papers** — arXiv was returning 429/503 throughout — so this
+measured a web+news-only pipeline whose credibility scores (0.49/0.51) sit well
+below a healthy run's 0.62.
+
+**The question this eval cannot answer** is whether a founder gets a *better
+answer*, as opposed to more sources. That needs a judge scoring report quality,
+which is what `eval/semantic/` exists for and has still never run.
+
+### Two bugs this sweep found before it could report anything
+
+Both made earlier runs of this same A/B look like clean results when they were
+not, which is the more useful finding:
+
+- **The loop's trace was being destroyed before scoring.** `enrich_sources`
+  rebuilds the sources dict and dropped `research_loop`, so the harness reported
+  `loop_enabled=False` and "1 search query" on both arms — reading as "the loop
+  did nothing" when the evidence had been thrown away two stages earlier.
+- **Reflection had no room to answer.** It inherited the retriever's
+  `max_tokens=800`, and on a reasoning model 675–1226 of those go to reasoning
+  before any visible output. It returned an empty string two times in three, the
+  loop correctly refused to guess, and the early stop was indistinguishable from
+  success. Two whole sweeps measured a loop that never issued a follow-up search.
+
 ## Measured run — 26 Jul 2026 (fixed pipeline)
 
 6 queries against the live deployment, with every stage running for real

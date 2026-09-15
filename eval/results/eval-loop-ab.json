@@ -1,0 +1,661 @@
+{
+  "meta": {
+    "timestamp": "2026-09-15T14:42:31+00:00",
+    "mode": "local",
+    "api_url": null,
+    "query_count": 3,
+    "url_check_enabled": false,
+    "research_loop": "ab"
+  },
+  "multi_agent": {
+    "runs": [
+      {
+        "query": "What is the total addressable market for AI coding assistants in 2025?",
+        "status": "success",
+        "error": null,
+        "degraded": [
+          "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=What+is+the+total+addressable+market+for+AI+coding+assistants+in+2025%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+        ],
+        "latency_s": 129.45,
+        "sources": {
+          "web": 6,
+          "papers": 0,
+          "news": 6,
+          "total": 12,
+          "distinct_domains": 7
+        },
+        "report": {
+          "words": 1959,
+          "claim_lines": 80
+        },
+        "citations": {
+          "total": 7,
+          "grounded_exact": 5,
+          "grounded_same_domain": 1,
+          "ungrounded": 1,
+          "grounding_rate": 0.8571,
+          "ungrounded_urls": [
+            "https://www.astuteanalytics.com/industry-report/ai-coding-assistant-market"
+          ]
+        },
+        "credibility": {
+          "average_score": 0.4,
+          "high": 0,
+          "medium": 0,
+          "low": 12,
+          "scored_sources": 12
+        },
+        "analysis": {
+          "key_claims": 7,
+          "contradictions_flagged": 1,
+          "summary_points": 6
+        },
+        "insights": {
+          "insights": 5,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 3
+        },
+        "research_loop": {
+          "enabled": true,
+          "iterations": 0,
+          "queries_issued": 1,
+          "gaps_identified": 0,
+          "stopped_because": "sufficient",
+          "sources_merged": 12,
+          "sources_kept": 12
+        }
+      },
+      {
+        "query": "Who are the main competitors in the AI research assistant space and how do they differ?",
+        "status": "success",
+        "error": null,
+        "degraded": [],
+        "latency_s": 299.72,
+        "sources": {
+          "web": 12,
+          "papers": 5,
+          "news": 12,
+          "total": 29,
+          "distinct_domains": 21
+        },
+        "report": {
+          "words": 1858,
+          "claim_lines": 78
+        },
+        "citations": {
+          "total": 24,
+          "grounded_exact": 24,
+          "grounded_same_domain": 0,
+          "ungrounded": 0,
+          "grounding_rate": 1.0,
+          "ungrounded_urls": []
+        },
+        "credibility": {
+          "average_score": 0.49,
+          "high": 3,
+          "medium": 5,
+          "low": 21,
+          "scored_sources": 29
+        },
+        "analysis": {
+          "key_claims": 11,
+          "contradictions_flagged": 5,
+          "summary_points": 6
+        },
+        "insights": {
+          "insights": 5,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 3
+        },
+        "research_loop": {
+          "enabled": true,
+          "iterations": 1,
+          "queries_issued": 3,
+          "gaps_identified": 3,
+          "stopped_because": "sufficient",
+          "sources_merged": 36,
+          "sources_kept": 29
+        }
+      },
+      {
+        "query": "What regulatory requirements apply to AI-generated medical advice in the EU?",
+        "status": "success",
+        "error": null,
+        "degraded": [
+          "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=What+regulatory+requirements+apply+to+AI-generated+medical+advice+in+the+EU%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+        ],
+        "latency_s": 72.71,
+        "sources": {
+          "web": 6,
+          "papers": 0,
+          "news": 6,
+          "total": 12,
+          "distinct_domains": 8
+        },
+        "report": {
+          "words": 2396,
+          "claim_lines": 89
+        },
+        "citations": {
+          "total": 0,
+          "grounded_exact": 0,
+          "grounded_same_domain": 0,
+          "ungrounded": 0,
+          "grounding_rate": null,
+          "ungrounded_urls": []
+        },
+        "credibility": {
+          "average_score": 0.63,
+          "high": 4,
+          "medium": 3,
+          "low": 5,
+          "scored_sources": 12
+        },
+        "analysis": {
+          "key_claims": 9,
+          "contradictions_flagged": 3,
+          "summary_points": 5
+        },
+        "insights": {
+          "insights": 5,
+          "hypotheses": 2,
+          "trends": 2,
+          "reasoning_chains": 3
+        },
+        "research_loop": {
+          "enabled": true,
+          "iterations": 0,
+          "queries_issued": 1,
+          "gaps_identified": 0,
+          "stopped_because": "sufficient",
+          "sources_merged": 12,
+          "sources_kept": 12
+        }
+      }
+    ],
+    "aggregate": {
+      "runs": 3,
+      "successful": 3,
+      "latency_s": {
+        "mean": 167.29,
+        "median": 129.45,
+        "min": 72.71,
+        "max": 299.72
+      },
+      "sources_per_report": {
+        "mean_total": 17.67,
+        "mean_distinct_domains": 12,
+        "mean_web": 8,
+        "mean_papers": 1.67,
+        "mean_news": 8
+      },
+      "citations": {
+        "total": 31,
+        "grounded": 30,
+        "grounding_rate": 0.9677,
+        "mean_per_report": 10.33
+      },
+      "url_check": null,
+      "credibility": {
+        "mean_average_score": 0.51,
+        "mean_high": 2.33,
+        "mean_medium": 2.67,
+        "mean_low": 12.67
+      },
+      "analysis": {
+        "mean_key_claims": 9,
+        "mean_contradictions": 3,
+        "reports_with_contradictions": 3
+      },
+      "report": {
+        "mean_words": 2071,
+        "mean_claim_lines": 82.33
+      },
+      "research_loop": {
+        "runs_with_loop": 3,
+        "mean_iterations": 0.33,
+        "mean_queries_issued": 1.67,
+        "stop_reasons": [
+          "sufficient"
+        ]
+      }
+    }
+  },
+  "arms": {
+    "single-shot": {
+      "research_loop": false,
+      "runs": [
+        {
+          "query": "What is the total addressable market for AI coding assistants in 2025?",
+          "status": "success",
+          "error": null,
+          "degraded": [
+            "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=What+is+the+total+addressable+market+for+AI+coding+assistants+in+2025%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+          ],
+          "latency_s": 155.42,
+          "sources": {
+            "web": 6,
+            "papers": 0,
+            "news": 6,
+            "total": 12,
+            "distinct_domains": 7
+          },
+          "report": {
+            "words": 1755,
+            "claim_lines": 77
+          },
+          "citations": {
+            "total": 6,
+            "grounded_exact": 5,
+            "grounded_same_domain": 1,
+            "ungrounded": 0,
+            "grounding_rate": 1.0,
+            "ungrounded_urls": []
+          },
+          "credibility": {
+            "average_score": 0.42,
+            "high": 0,
+            "medium": 0,
+            "low": 12,
+            "scored_sources": 12
+          },
+          "analysis": {
+            "key_claims": 7,
+            "contradictions_flagged": 1,
+            "summary_points": 6
+          },
+          "insights": {
+            "insights": 5,
+            "hypotheses": 3,
+            "trends": 2,
+            "reasoning_chains": 3
+          },
+          "research_loop": {
+            "enabled": false,
+            "iterations": 0,
+            "queries_issued": 1,
+            "gaps_identified": 0,
+            "stopped_because": null,
+            "sources_merged": null,
+            "sources_kept": null
+          }
+        },
+        {
+          "query": "Who are the main competitors in the AI research assistant space and how do they differ?",
+          "status": "success",
+          "error": null,
+          "degraded": [
+            "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=Who+are+the+main+competitors+in+the+AI+research+assistant+space+and+how+do+they+differ%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+          ],
+          "latency_s": 91.64,
+          "sources": {
+            "web": 6,
+            "papers": 0,
+            "news": 6,
+            "total": 12,
+            "distinct_domains": 9
+          },
+          "report": {
+            "words": 2075,
+            "claim_lines": 91
+          },
+          "citations": {
+            "total": 10,
+            "grounded_exact": 10,
+            "grounded_same_domain": 0,
+            "ungrounded": 0,
+            "grounding_rate": 1.0,
+            "ungrounded_urls": []
+          },
+          "credibility": {
+            "average_score": 0.43,
+            "high": 1,
+            "medium": 1,
+            "low": 10,
+            "scored_sources": 12
+          },
+          "analysis": {
+            "key_claims": 8,
+            "contradictions_flagged": 3,
+            "summary_points": 5
+          },
+          "insights": {
+            "insights": 5,
+            "hypotheses": 2,
+            "trends": 2,
+            "reasoning_chains": 3
+          },
+          "research_loop": {
+            "enabled": false,
+            "iterations": 0,
+            "queries_issued": 1,
+            "gaps_identified": 0,
+            "stopped_because": null,
+            "sources_merged": null,
+            "sources_kept": null
+          }
+        },
+        {
+          "query": "What regulatory requirements apply to AI-generated medical advice in the EU?",
+          "status": "success",
+          "error": null,
+          "degraded": [
+            "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=What+regulatory+requirements+apply+to+AI-generated+medical+advice+in+the+EU%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+          ],
+          "latency_s": 84.79,
+          "sources": {
+            "web": 6,
+            "papers": 0,
+            "news": 6,
+            "total": 12,
+            "distinct_domains": 8
+          },
+          "report": {
+            "words": 2260,
+            "claim_lines": 86
+          },
+          "citations": {
+            "total": 9,
+            "grounded_exact": 8,
+            "grounded_same_domain": 1,
+            "ungrounded": 0,
+            "grounding_rate": 1.0,
+            "ungrounded_urls": []
+          },
+          "credibility": {
+            "average_score": 0.62,
+            "high": 3,
+            "medium": 4,
+            "low": 5,
+            "scored_sources": 12
+          },
+          "analysis": {
+            "key_claims": 9,
+            "contradictions_flagged": 13,
+            "summary_points": 6
+          },
+          "insights": {
+            "insights": 5,
+            "hypotheses": 2,
+            "trends": 2,
+            "reasoning_chains": 3
+          },
+          "research_loop": {
+            "enabled": false,
+            "iterations": 0,
+            "queries_issued": 1,
+            "gaps_identified": 0,
+            "stopped_because": null,
+            "sources_merged": null,
+            "sources_kept": null
+          }
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "successful": 3,
+        "latency_s": {
+          "mean": 110.62,
+          "median": 91.64,
+          "min": 84.79,
+          "max": 155.42
+        },
+        "sources_per_report": {
+          "mean_total": 12,
+          "mean_distinct_domains": 8,
+          "mean_web": 6,
+          "mean_papers": 0,
+          "mean_news": 6
+        },
+        "citations": {
+          "total": 25,
+          "grounded": 25,
+          "grounding_rate": 1.0,
+          "mean_per_report": 8.33
+        },
+        "url_check": null,
+        "credibility": {
+          "mean_average_score": 0.49,
+          "mean_high": 1.33,
+          "mean_medium": 1.67,
+          "mean_low": 9
+        },
+        "analysis": {
+          "mean_key_claims": 8,
+          "mean_contradictions": 5.67,
+          "reports_with_contradictions": 3
+        },
+        "report": {
+          "mean_words": 2030,
+          "mean_claim_lines": 84.67
+        },
+        "research_loop": {
+          "runs_with_loop": 0,
+          "mean_iterations": 0,
+          "mean_queries_issued": 1,
+          "stop_reasons": []
+        }
+      }
+    },
+    "iterative": {
+      "research_loop": true,
+      "runs": [
+        {
+          "query": "What is the total addressable market for AI coding assistants in 2025?",
+          "status": "success",
+          "error": null,
+          "degraded": [
+            "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=What+is+the+total+addressable+market+for+AI+coding+assistants+in+2025%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+          ],
+          "latency_s": 129.45,
+          "sources": {
+            "web": 6,
+            "papers": 0,
+            "news": 6,
+            "total": 12,
+            "distinct_domains": 7
+          },
+          "report": {
+            "words": 1959,
+            "claim_lines": 80
+          },
+          "citations": {
+            "total": 7,
+            "grounded_exact": 5,
+            "grounded_same_domain": 1,
+            "ungrounded": 1,
+            "grounding_rate": 0.8571,
+            "ungrounded_urls": [
+              "https://www.astuteanalytics.com/industry-report/ai-coding-assistant-market"
+            ]
+          },
+          "credibility": {
+            "average_score": 0.4,
+            "high": 0,
+            "medium": 0,
+            "low": 12,
+            "scored_sources": 12
+          },
+          "analysis": {
+            "key_claims": 7,
+            "contradictions_flagged": 1,
+            "summary_points": 6
+          },
+          "insights": {
+            "insights": 5,
+            "hypotheses": 2,
+            "trends": 2,
+            "reasoning_chains": 3
+          },
+          "research_loop": {
+            "enabled": true,
+            "iterations": 0,
+            "queries_issued": 1,
+            "gaps_identified": 0,
+            "stopped_because": "sufficient",
+            "sources_merged": 12,
+            "sources_kept": 12
+          }
+        },
+        {
+          "query": "Who are the main competitors in the AI research assistant space and how do they differ?",
+          "status": "success",
+          "error": null,
+          "degraded": [],
+          "latency_s": 299.72,
+          "sources": {
+            "web": 12,
+            "papers": 5,
+            "news": 12,
+            "total": 29,
+            "distinct_domains": 21
+          },
+          "report": {
+            "words": 1858,
+            "claim_lines": 78
+          },
+          "citations": {
+            "total": 24,
+            "grounded_exact": 24,
+            "grounded_same_domain": 0,
+            "ungrounded": 0,
+            "grounding_rate": 1.0,
+            "ungrounded_urls": []
+          },
+          "credibility": {
+            "average_score": 0.49,
+            "high": 3,
+            "medium": 5,
+            "low": 21,
+            "scored_sources": 29
+          },
+          "analysis": {
+            "key_claims": 11,
+            "contradictions_flagged": 5,
+            "summary_points": 6
+          },
+          "insights": {
+            "insights": 5,
+            "hypotheses": 2,
+            "trends": 2,
+            "reasoning_chains": 3
+          },
+          "research_loop": {
+            "enabled": true,
+            "iterations": 1,
+            "queries_issued": 3,
+            "gaps_identified": 3,
+            "stopped_because": "sufficient",
+            "sources_merged": 36,
+            "sources_kept": 29
+          }
+        },
+        {
+          "query": "What regulatory requirements apply to AI-generated medical advice in the EU?",
+          "status": "success",
+          "error": null,
+          "degraded": [
+            "retrieval: no results from papers \u2014 arXiv: HTTPError: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=What+regulatory+requirements+apply+to+AI-generated+medical+advice+in+the+EU%3F&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+          ],
+          "latency_s": 72.71,
+          "sources": {
+            "web": 6,
+            "papers": 0,
+            "news": 6,
+            "total": 12,
+            "distinct_domains": 8
+          },
+          "report": {
+            "words": 2396,
+            "claim_lines": 89
+          },
+          "citations": {
+            "total": 0,
+            "grounded_exact": 0,
+            "grounded_same_domain": 0,
+            "ungrounded": 0,
+            "grounding_rate": null,
+            "ungrounded_urls": []
+          },
+          "credibility": {
+            "average_score": 0.63,
+            "high": 4,
+            "medium": 3,
+            "low": 5,
+            "scored_sources": 12
+          },
+          "analysis": {
+            "key_claims": 9,
+            "contradictions_flagged": 3,
+            "summary_points": 5
+          },
+          "insights": {
+            "insights": 5,
+            "hypotheses": 2,
+            "trends": 2,
+            "reasoning_chains": 3
+          },
+          "research_loop": {
+            "enabled": true,
+            "iterations": 0,
+            "queries_issued": 1,
+            "gaps_identified": 0,
+            "stopped_because": "sufficient",
+            "sources_merged": 12,
+            "sources_kept": 12
+          }
+        }
+      ],
+      "aggregate": {
+        "runs": 3,
+        "successful": 3,
+        "latency_s": {
+          "mean": 167.29,
+          "median": 129.45,
+          "min": 72.71,
+          "max": 299.72
+        },
+        "sources_per_report": {
+          "mean_total": 17.67,
+          "mean_distinct_domains": 12,
+          "mean_web": 8,
+          "mean_papers": 1.67,
+          "mean_news": 8
+        },
+        "citations": {
+          "total": 31,
+          "grounded": 30,
+          "grounding_rate": 0.9677,
+          "mean_per_report": 10.33
+        },
+        "url_check": null,
+        "credibility": {
+          "mean_average_score": 0.51,
+          "mean_high": 2.33,
+          "mean_medium": 2.67,
+          "mean_low": 12.67
+        },
+        "analysis": {
+          "mean_key_claims": 9,
+          "mean_contradictions": 3,
+          "reports_with_contradictions": 3
+        },
+        "report": {
+          "mean_words": 2071,
+          "mean_claim_lines": 82.33
+        },
+        "research_loop": {
+          "runs_with_loop": 3,
+          "mean_iterations": 0.33,
+          "mean_queries_issued": 1.67,
+          "stop_reasons": [
+            "sufficient"
+          ]
+        }
+      }
+    }
+  },
+  "baseline": null
+}
