@@ -50,8 +50,21 @@ logger = logging.getLogger(__name__)
 
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 # Judge default. Deliberately not one of the pipeline's own models: the stages
-# run Gemini Flash and Groq Llama, so the judge is a third family.
-DEFAULT_JUDGE_MODEL = os.getenv("JUDGE_MODEL", "meta/llama-3.3-70b-instruct")
+# run Groq gpt-oss and Anthropic Claude, so Nemotron is a third family.
+#
+# This said meta/llama-3.3-70b-instruct until that model reached end of life on
+# NIM in August 2026 and every call started returning 410 Gone — the same
+# retired-slug failure that hit the Groq stages, and the reason to prefer a
+# model this file has actually been exercised against.
+#
+# Choosing a replacement is not just "pick a big model": most ids the /models
+# endpoint lists are not deployed for a given account (404) or take 45s+ and
+# time out. This one answers in 4-12s and honours response_format=json_object.
+# It is a reasoning model, so it needs room to think before it writes: at
+# max_tokens=200 it returns finish_reason="length" mid-thought and looks like a
+# preamble-emitting model that cannot produce JSON. The 2048 default below
+# clears that comfortably — do not lower it.
+DEFAULT_JUDGE_MODEL = os.getenv("JUDGE_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b")
 
 MODE_JSON_SCHEMA = "json_schema"
 MODE_JSON_OBJECT = "json_object"
