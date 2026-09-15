@@ -58,11 +58,17 @@ class DataEnrichmentAgent:
             }
         }
 
-        # Carry retrieval failures through — this dict replaces the retriever's
-        # output in workflow state, and dropping the errors here would hide a
-        # broken channel behind an empty one.
-        if sources.get("errors"):
-            enriched["errors"] = sources["errors"]
+        # Carry through everything the retriever attached that this stage does
+        # not rebuild. This dict *replaces* the retriever's output in workflow
+        # state, so a key dropped here is gone for good — and that has now
+        # happened twice: first with `errors`, which hid a broken channel behind
+        # an empty one, and then with the research loop's `research_loop` trace,
+        # whose loss left an A/B sweep unable to tell whether the loop had even
+        # run. Copying unknown keys rather than enumerating them means the next
+        # key someone adds upstream survives without a change here.
+        for key, value in sources.items():
+            if key not in enriched and value:
+                enriched[key] = value
         
         logger.info(f"Enricher: Enriched {enriched['metadata']['total_sources']} sources")
         return enriched
