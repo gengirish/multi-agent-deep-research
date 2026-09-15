@@ -73,6 +73,10 @@ OPENROUTER_FALLBACK_MODEL = os.getenv(
     "OPENROUTER_FALLBACK_MODEL", "openai/gpt-oss-20b"
 )
 
+# Output budget for the research loop's reflection call. See
+# create_reflection_llm() — a reasoning model needs room to think *and* answer.
+REFLECTION_MAX_TOKENS = int(os.getenv("RESEARCH_LOOP_REFLECTION_MAX_TOKENS", "2500"))
+
 # Minimum output budget for Gemini, which spends part of it on reasoning.
 GOOGLE_MIN_OUTPUT_TOKENS = int(os.getenv("GOOGLE_MIN_OUTPUT_TOKENS", "8192"))
 
@@ -530,6 +534,30 @@ def create_retriever_llm():
         model=RETRIEVER_MODEL,
         temperature=TEMPERATURES["retriever"],
         max_tokens=800,
+    )
+
+
+def create_reflection_llm():
+    """LLM for the research loop's reflection step.
+
+    Same model as the retriever but a much larger output budget, and that is the
+    entire point of the separate factory. Reflection asks for a JSON verdict on
+    a digest of every source gathered so far, and on a reasoning model the
+    reasoning is charged against `max_tokens` before any visible content is
+    emitted. Measured against a real 12-source digest, reflection spends
+    675-1226 tokens thinking; at the retriever's 800 it therefore returned an
+    empty string two times in three, which the loop correctly read as
+    "reflection unavailable" and stopped — so the loop ran but never once issued
+    a follow-up search, and an A/B sweep measured a 32% latency cost for
+    identical retrieval.
+
+    A cap only truncates; unused budget is not billed. Raising it is close to
+    free and buys headroom for the long tail of reasoning.
+    """
+    return create_llm(
+        model=RETRIEVER_MODEL,
+        temperature=TEMPERATURES["retriever"],
+        max_tokens=REFLECTION_MAX_TOKENS,
     )
 
 
