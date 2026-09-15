@@ -358,6 +358,12 @@ def run_local(
     start = time.perf_counter()
     result = workflow.run(query)
     latency = time.perf_counter() - start
+
+    # The graph returns its state dict, which carries `error` but no `status` —
+    # the HTTP layer is what adds that. Without it `score_run` records
+    # "unknown", `aggregate()` counts only "success", and every metric comes out
+    # n/a on a sweep that actually ran. Mirror what the API reports.
+    result.setdefault("status", "error" if result.get("error") else "success")
     return result, latency
 
 
@@ -593,6 +599,32 @@ def ab_comparison(arms: Dict[str, Any]) -> List[str]:
     base_label, cand_label = "single-shot", "iterative"
     base = (arms.get(base_label) or {}).get("aggregate") or {}
     cand = (arms.get(cand_label) or {}).get("aggregate") or {}
+
+    # A table of n/a is indistinguishable from "the loop changed nothing", which
+    # is the one conclusion this must never imply by accident. Say what happened
+    # instead, and quote the pipeline's own degraded reasons.
+    if not base.get("successful") or not cand.get("successful"):
+        reasons: List[str] = []
+        for label in (base_label, cand_label):
+            for run in (arms.get(label) or {}).get("runs") or []:
+                for reason in run.get("degraded") or []:
+                    if reason not in reasons:
+                        reasons.append(reason)
+                if run.get("error") and run["error"] not in reasons:
+                    reasons.append(run["error"])
+        out = [
+            "",
+            "## Retrieval A/B: no comparison possible",
+            "",
+            f"`single-shot` completed {base.get('successful', 0)}/{base.get('runs', 0)} "
+            f"runs and `iterative` {cand.get('successful', 0)}/{cand.get('runs', 0)}, "
+            "so there is nothing to compare. **This is not a result about the "
+            "loop** — it is a broken sweep.",
+        ]
+        if reasons:
+            out += ["", "What the pipeline reported:", ""]
+            out += [f"- {r}" for r in reasons[:12]]
+        return out
 
     lines = [
         "",
