@@ -302,6 +302,59 @@ def test_nothing_retrieved_at_all_stops_the_loop():
     assert result["research_loop"]["stopped_because"] == "reflection unavailable"
 
 
+def test_an_empty_reflection_response_stops_the_loop(caplog):
+    """The failure that made the loop inert in production.
+
+    On a reasoning model an empty string means the output budget was spent
+    thinking before any answer was emitted. It stops the loop the same way a
+    malformed answer does, but it must be logged distinctly — as a well-behaved
+    early stop it is indistinguishable from "the sources were sufficient", which
+    is how it went unnoticed through two A/B sweeps.
+    """
+    retriever = FakeRetriever({"q": {"web": [_source("https://a.com")], "papers": [], "news": []}})
+    loop = IterativeResearchLoop(retriever=retriever, llm=FakeLLM([""]), max_iterations=2)
+
+    with caplog.at_level("WARNING"):
+        result = loop.run("q")
+
+    assert retriever.queries == ["q"]
+    assert result["research_loop"]["stopped_because"] == "reflection unavailable"
+    assert "returned no content" in caplog.text
+    assert "RESEARCH_LOOP_REFLECTION_MAX_TOKENS" in caplog.text
+
+
+def test_a_whitespace_only_reflection_is_treated_as_empty(caplog):
+    loop = IterativeResearchLoop(
+        retriever=FakeRetriever({"q": {"web": [_source("https://a.com")], "papers": [], "news": []}}),
+        llm=FakeLLM(["   \n  "]),
+        max_iterations=1,
+    )
+    with caplog.at_level("WARNING"):
+        loop.run("q")
+    assert "returned no content" in caplog.text
+
+
+def test_the_reflection_model_gets_its_own_budget(monkeypatch):
+    """Reflection must not inherit the retriever's 800-token cap: measured
+    against a real digest it spends 675-1226 tokens reasoning before writing
+    anything, so at 800 it returns an empty string more often than not."""
+    import utils.llm_config as llm_config
+
+    captured = {}
+
+    def fake_create_llm(model=None, temperature=0.3, base_url=None, max_tokens=None):
+        captured["model"] = model
+        captured["max_tokens"] = max_tokens
+        return object()
+
+    monkeypatch.setattr(llm_config, "create_llm", fake_create_llm)
+    llm_config.create_reflection_llm()
+
+    assert captured["model"] == llm_config.RETRIEVER_MODEL
+    assert captured["max_tokens"] == llm_config.REFLECTION_MAX_TOKENS
+    assert captured["max_tokens"] >= 2000, "must clear the observed reasoning tail"
+
+
 def test_is_enabled_defaults_to_off(monkeypatch):
     monkeypatch.delenv("RESEARCH_LOOP_ENABLED", raising=False)
     assert is_enabled() is False

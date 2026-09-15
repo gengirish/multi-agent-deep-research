@@ -114,7 +114,7 @@ class IterativeResearchLoop:
         Args:
             retriever: anything with `.retrieve(query, max_results) -> dict`.
             llm: chat model for reflection. Built lazily from
-                `create_retriever_llm()` when omitted; when it cannot be built,
+                `create_reflection_llm()` when omitted; when it cannot be built,
                 or when None is passed explicitly, the loop degrades to a
                 single retrieval pass.
             on_event: optional `(event_name, payload)` hook, used by the
@@ -148,9 +148,9 @@ class IterativeResearchLoop:
             # eval fixtures) where no provider key exists, and a module-level
             # import would make llm_config a hard dependency of the module.
             try:
-                from utils.llm_config import create_retriever_llm
+                from utils.llm_config import create_reflection_llm
 
-                self.llm = create_retriever_llm()
+                self.llm = create_reflection_llm()
             except Exception as e:
                 logger.warning(f"Research loop could not build a reflection LLM: {e}")
                 self.llm = None
@@ -285,6 +285,20 @@ class IterativeResearchLoop:
             return None
 
         text = self._message_text(response)
+        if not text.strip():
+            # Distinguish this from a malformed answer. On a reasoning model an
+            # empty string means the token budget was spent thinking before any
+            # visible output — the failure that made this loop inert in
+            # production while looking like a well-behaved early stop.
+            logger.warning(
+                "Research loop: reflection returned no content. On a reasoning "
+                "model this means the output budget was consumed by reasoning "
+                "before any answer was emitted — raise "
+                "RESEARCH_LOOP_REFLECTION_MAX_TOKENS (currently the only fix; "
+                "the loop cannot proceed without a verdict)."
+            )
+            return None
+
         parsed = self._parse_reflection(text)
         if parsed is None:
             logger.warning(
